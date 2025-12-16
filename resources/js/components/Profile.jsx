@@ -17,7 +17,7 @@
     ];
 
     const [products] = useState(userProducts);
-    const [activeTab, setActiveTab] = useState("aktif"); // 'aktif', 'terjual', 'menunggu'
+    const [activeTab, setActiveTab] = useState("aktif");
 
     const getStatusBadge = (status) => {
         switch (status) {
@@ -39,14 +39,12 @@
         navigate(`/sell?productId=${id}`);
     };
 
-    // Tentukan produk untuk tab yang dipilih
     const getProductsByTab = () => {
         if (activeTab === "aktif") {
         return products.filter(p => p.status === "aktif");
         } else if (activeTab === "terjual") {
         return products.filter(p => p.status === "terjual");
         } else if (activeTab === "menunggu") {
-        // Tampilkan "menunggu" + "ditolak" di tab "Menunggu"
         return products.filter(p => p.status === "menunggu" || p.status === "ditolak");
         }
         return [];
@@ -168,7 +166,8 @@
                     {currentProducts.map((product) => (
                     <div
                         key={product.id}
-                        className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-[0px_4px_11px_rgba(0,0,0,0.07)]"
+                        className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-[0px_4px_11px_rgba(0,0,0,0.07)] cursor-pointer"
+                        onClick={() => navigate(`/detailseller/${product.id}`)} // ✅ Arahkan ke detail seller
                     >
                         <div className="bg-gray-200 h-32 w-full"></div>
                         <div className="p-4">
@@ -188,7 +187,10 @@
                             variant="primary"
                             size="sm"
                             className="mt-2 w-full"
-                            onClick={() => handleReupload(product.id)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleReupload(product.id);
+                            }}
                             >
                             Unggah Ulang
                             </Button>

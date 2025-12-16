@@ -1,13 +1,13 @@
-// src/pages/admin/AdminDashboard.js
+// src/pages/admin/AdminProducts.js
 import React, { useState } from "react";
-    import { useNavigate } from "react-router-dom";
-    import AdminLayout from "./AdminLayout";
-    import Button from "../ui/Button"
+import { useNavigate } from "react-router-dom";
+import AdminLayout from "./AdminLayout";
+import Button from "../ui/Button";
 
 export default function AdminProducts() {
-  const [activeTab, setActiveTab] = useState("menunggu"); // default: menunggu persetujuan
+  const [activeTab, setActiveTab] = useState("menunggu");
 
-  // Data dummy dengan semua status
+  // ✅ Hapus produk dengan status "dilaporkan"
   const [products] = useState([
     {
       id: 1,
@@ -39,16 +39,7 @@ export default function AdminProducts() {
       uploadedAt: "3 hari lalu",
       status: "terjual",
     },
-    {
-      id: 4,
-      name: "Laptop ASUS Curian",
-      seller: "Andi",
-      category: "Elektronik",
-      price: "8.000.000",
-      location: "Jakarta",
-      uploadedAt: "5 jam lalu",
-      status: "dilaporkan",
-    },
+    // ✅ Produk "Laptop ASUS Curian" (status: dilaporkan) DIHAPUS
     {
       id: 5,
       name: "Sepatu Nike KW",
@@ -71,7 +62,6 @@ export default function AdminProducts() {
     },
   ]);
 
-  // Fungsi aksi
   const handleApprove = (id) => {
     alert(`Produk ID ${id} telah disetujui dan aktif!`);
   };
@@ -85,27 +75,19 @@ export default function AdminProducts() {
     alert(`Produk ID ${id} disembunyikan (dihapus)!`);
   };
 
-  const handleDeleteReported = (id) => {
-    alert(`Produk ID ${id} dihapus permanen!`);
-  };
+  // ✅ Hapus fungsi handleDeleteReported & handleRestore
 
-  const handleRestore = (id) => {
-    alert(`Produk ID ${id} dipulihkan ke status "Aktif"!`);
-  };
-
-  // Filter produk berdasarkan tab
   const filteredProducts = products.filter(product => {
     if (activeTab === "semua") return true;
     return product.status === activeTab;
   });
 
-  // Label status untuk tampilan
   const getStatusBadge = (status) => {
     const config = {
       menunggu: { text: "Menunggu", bg: "bg-yellow-100", textC: "text-yellow-800" },
       aktif: { text: "Aktif", bg: "bg-green-100", textC: "text-green-800" },
       terjual: { text: "Terjual", bg: "bg-blue-100", textC: "text-blue-800" },
-      dilaporkan: { text: "Dilaporkan", bg: "bg-red-100", textC: "text-red-800" },
+      // ✅ "dilaporkan" dihapus
       dihapus: { text: "Dihapus", bg: "bg-gray-100", textC: "text-gray-800" },
       ditolak: { text: "Ditolak", bg: "bg-red-100", textC: "text-red-800" },
     };
@@ -117,7 +99,6 @@ export default function AdminProducts() {
     );
   };
 
-  // Tombol aksi sesuai status
   const renderActions = (product) => {
     switch (product.status) {
       case "menunggu":
@@ -137,17 +118,7 @@ export default function AdminProducts() {
             Sembunyikan
           </Button>
         );
-      case "dilaporkan":
-        return (
-          <div className="flex gap-2">
-            <Button variant="danger" size="sm" onClick={() => handleDeleteReported(product.id)}>
-              Hapus
-            </Button>
-            <Button variant="primary" size="sm" onClick={() => handleRestore(product.id)}>
-              Pulihkan
-            </Button>
-          </div>
-        );
+      // ✅ Hapus case "dilaporkan"
       default:
         return (
           <span className="text-gray-500 text-sm">Tidak ada aksi</span>
@@ -169,14 +140,14 @@ export default function AdminProducts() {
           </div>
         </div>
 
-        {/* Tab Filter */}
+        {/* ✅ Tab Filter — HAPUS "Dilaporkan" */}
         <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
           {[
             { id: "semua", label: "Semua" },
             { id: "menunggu", label: "Menunggu Persetujuan" },
             { id: "aktif", label: "Aktif" },
             { id: "terjual", label: "Terjual" },
-            { id: "dilaporkan", label: "Dilaporkan" },
+            // ✅ "Dilaporkan" dihapus
             { id: "dihapus", label: "Dihapus" },
             { id: "ditolak", label: "Ditolak" },
           ].map((tab) => (
@@ -194,7 +165,6 @@ export default function AdminProducts() {
           ))}
         </div>
 
-        {/* Daftar Produk */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
           {filteredProducts.length === 0 ? (
             <div className="text-center py-12 text-gray-500">

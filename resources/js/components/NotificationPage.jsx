@@ -5,73 +5,70 @@
     import NavbarAfter from "./NavbarAfter";
     import Footer from "./Footer";
     import Background from "../components/Background";
+    import { MessageCircle, Heart, Tag, Pencil } from "lucide-react";
 
     export default function NotificationPage() {
     const navigate = useNavigate();
 
-    // ✅ Data dummy notifikasi (simpan di state agar bisa diubah status "read")
+    // ✅ Data notifikasi sesuai dropdown
     const [notifications, setNotifications] = useState([
         {
         id: 1,
-        type: "message",
         message: "Randitya mengirim pesan baru",
         time: "2 menit lalu",
+        icon: <MessageCircle size={18} className="text-green-600" />,
         read: false,
         link: "/chat/1"
         },
         {
         id: 2,
-        type: "favorite",
         message: "Produk Anda disukai oleh 3 orang",
         time: "1 jam lalu",
+        icon: <Heart size={18} className="text-red-500" />,
         read: false,
         link: "/favorite"
         },
         {
         id: 3,
-        type: "sold",
         message: "Produk Anda terjual!",
         time: "2 hari lalu",
+        icon: <Tag size={18} className="text-blue-500" />,
         read: true,
         link: "/profile"
         },
         {
         id: 4,
-        type: "system",
         message: "Pembaruan fitur chat tersedia!",
         time: "3 hari lalu",
+        icon: <Pencil size={18} className="text-orange-500" />,
         read: true,
         link: "/"
         },
         {
         id: 5,
-        type: "message",
         message: "Budi menawar produk Anda",
         time: "1 hari lalu",
+        icon: <MessageCircle size={18} className="text-green-600" />,
         read: false,
         link: "/chat/2"
         }
     ]);
 
-    // ✅ Tandai semua sebagai sudah dibaca
     const markAllAsRead = () => {
         setNotifications(notifications.map(n => ({ ...n, read: true })));
     };
 
-    // ✅ Tandai satu notifikasi sebagai sudah dibaca
     const markAsRead = (id) => {
         setNotifications(notifications.map(n => 
         n.id === id ? { ...n, read: true } : n
         ));
     };
 
-    // ✅ Handle klik notifikasi
     const handleNotificationClick = (link, id) => {
         markAsRead(id);
         navigate(link);
     };
 
-    // ✅ Hitung notifikasi belum dibaca
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
@@ -130,31 +127,14 @@
                     onClick={() => handleNotificationClick(notif.link, notif.id)}
                     >
                     <div className="flex items-start gap-3">
-                        {/* Ikon Jenis Notifikasi */}
-                        <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                        notif.type === "message" ? "bg-[#D5F0DD]" :
-                        notif.type === "favorite" ? "bg-[#f3cbcb]" :
-                        notif.type === "sold" ? "bg-[#DDE7FF]" : "bg-[#FED7AA]"
-                        }`}>
-                        {notif.type === "message" && (
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="#1E3A8A" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-                            </svg>
-                        )}
-                        {notif.type === "favorite" && (
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="#1E3A8A" className="w-5 h-5">
-                            <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                            </svg>
-                        )}
-                        {notif.type === "sold" && (
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="#1E3A8A" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75l1.5-1.5m1.5-1.5l1.5 1.5M9 4.5l6 6m-6 6l6-6m-6 6h12m-12 0V3m12 18V9" />
-                            </svg>
-                        )}
-                        {notif.type === "system" && (
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="#1E3A8A" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l-2.55-2.55m5.337-2.551l-2.55 2.55" />
-                            </svg>
+                        {/* ✅ Ikon dengan background dan titik merah */}
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        !notif.read ? "bg-gray-100" : "bg-gray-100"
+                        } relative`}>
+                        {notif.icon}
+                        {/* ✅ Titik merah jika belum dibaca */}
+                        {!notif.read && (
+                            <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
                         )}
                         </div>
 

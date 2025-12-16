@@ -5,9 +5,10 @@ import Button from "../components/ui/Button";
 import NavbarAfter from "./NavbarAfter";
 import Footer from "./Footer";
 import Background from "../components/Background";
-import { useFavorites } from "../components/context/FavoriteContext"; // ✅ Tambahkan ini
+import { useFavorites } from "../components/context/FavoriteContext";
+import { useChat } from "../components/context/ChatContext";
 
-// ✅ Tambahkan sellerName ke setiap produk
+// ✅ Data produk lengkap
 const mockProducts = [
   { 
     id: 1, 
@@ -15,9 +16,9 @@ const mockProducts = [
     category: "Elektronik", 
     price: "12.000.000", 
     location: "Jakarta Utara", 
-    publishedDate: "11/10/2025", 
-    condition: "Bekas Baik",
-    sellerName: "Budi Santoso"
+    sellerName: "Budi Santoso",
+    publishedDate: "11/10/2025",
+    condition: "Bekas Baik"
   },
   { 
     id: 2, 
@@ -25,9 +26,9 @@ const mockProducts = [
     category: "Elektronik", 
     price: "15.500.000", 
     location: "Bandung", 
-    publishedDate: "12/10/2025", 
-    condition: "Baru",
-    sellerName: "Siti Rahayu"
+    sellerName: "Siti Rahayu",
+    publishedDate: "12/10/2025",
+    condition: "Baru"
   },
   { 
     id: 3, 
@@ -35,9 +36,9 @@ const mockProducts = [
     category: "Furnitur", 
     price: "2.300.000", 
     location: "Surabaya", 
-    publishedDate: "10/10/2025", 
-    condition: "Bekas Baik",
-    sellerName: "Andi Wijaya"
+    sellerName: "Andi Wijaya",
+    publishedDate: "10/10/2025",
+    condition: "Bekas Baik"
   },
   { 
     id: 4, 
@@ -45,9 +46,9 @@ const mockProducts = [
     category: "Olahraga", 
     price: "1.200.000", 
     location: "Yogyakarta", 
-    publishedDate: "09/10/2025", 
-    condition: "Mulus",
-    sellerName: "Dina Putri"
+    sellerName: "Dina Putri",
+    publishedDate: "09/10/2025",
+    condition: "Mulus"
   },
 ];
 
@@ -55,10 +56,9 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [product, setProduct] = useState(null);
-  
-  // ✅ Ganti state local dengan context
   const { favorites, toggleFavorite } = useFavorites();
-  const isFavorited = favorites.has(parseInt(id)); // ✅ cek dari context
+  const { startChatAsBuyer } = useChat();
+  const isFavorited = favorites.has(parseInt(id));
 
   useEffect(() => {
     const found = mockProducts.find(p => p.id === parseInt(id));
@@ -71,19 +71,17 @@ export default function ProductDetailPage() {
 
   if (!product) return null;
 
-  const seller = {
-    name: product.sellerName,
-    location: product.location,
+  const handleContactSeller = () => {
+    const message = `Halo, saya tertarik dengan produk "${product.name}". Apakah masih tersedia?`;
+    const chatId = startChatAsBuyer(product.id, product, product.sellerName, message);
+    navigate(`/chatroom/${chatId}`);
   };
-
-  // ✅ Hapus fungsi toggle local (karena sudah di-handle oleh context)
 
   return (
     <>
       <NavbarAfter />
       <Background>
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-8 py-8">
-
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-[#1E3A8A] font-medium mb-6 hover:text-[#162e68] transition"
@@ -95,43 +93,35 @@ export default function ProductDetailPage() {
           </button>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Kiri: Gambar + Tentang Penjual */}
             <div>
-              <div className="bg-gray-100 h-[400px] w-full rounded-lg"></div>
-
+              <div className="bg-gray-200 h-[400px] w-full rounded-lg flex items-center justify-center">
+                <span className="text-gray-500">Gambar Produk</span>
+              </div>
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Tentang Penjual</h3>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-[#DDE7FF] rounded-full flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="#1E3A8A" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                    </svg>
+                    <span className="text-[#1E3A8A] font-bold">P</span>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-800 text-sm">{seller.name}</h4>
-                    <p className="text-xs text-gray-600">{seller.location}</p>
+                  <div>
+                    <h4 className="font-semibold text-gray-800 text-sm">{product.sellerName}</h4>
+                    <p className="text-xs text-gray-600">{product.location}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Kanan: Info Produk */}
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div>
                   <span className="text-sm font-semibold text-[#1E3A8A] bg-[#F0F7FF] px-3 py-1 rounded-full">
                     {product.category}
                   </span>
-                  <h1 className="text-2xl font-bold text-gray-900 mt-3 leading-tight">
-                    {product.name}
-                  </h1>
+                  <h1 className="text-2xl font-bold text-gray-900 mt-3">{product.name}</h1>
                 </div>
-
-                {/* ✅ Gunakan context untuk toggle */}
                 <button
                   onClick={() => toggleFavorite(product.id)}
                   className="p-2 text-gray-500 hover:text-[#1E3A8A] transition"
-                  aria-label={isFavorited ? "Hapus dari favorit" : "Tambah ke favorit"}
                 >
                   {isFavorited ? (
                     <svg xmlns="http://www.w3.org/2000/svg" fill="#1E3A8A" viewBox="0 0 24 24" className="w-6 h-6">
@@ -145,10 +135,9 @@ export default function ProductDetailPage() {
                 </button>
               </div>
 
-              <div>
-                <p className="text-2xl font-bold text-[#1E3A8A]">Rp. {product.price}</p>
-              </div>
+              <p className="text-2xl font-bold text-[#1E3A8A]">Rp. {product.price}</p>
 
+              {/* ✅ Grid Info: Lokasi, Kondisi, Dipublikasikan, Status */}
               <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                 <div>
                   <p className="font-medium text-gray-900">Lokasi</p>
@@ -163,36 +152,26 @@ export default function ProductDetailPage() {
                   <p>{product.publishedDate}</p>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Stok</p>
-                  <p>Tersedia</p>
+                  <p className="font-medium text-gray-900">Status</p>
+                  <span className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                    Tersedia
+                  </span>
                 </div>
               </div>
 
-              <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                <Button
-                  variant="primary"
-                  size="md"
-                  className="flex-1"
-                  onClick={() => alert("Fitur pembelian akan segera hadir!")}
-                >
+              <div className="pt-2 flex gap-3">
+                <Button variant="primary" size="md" className="flex-1" onClick={() => alert("Beli Sekarang")}>
                   Beli Sekarang
                 </Button>
-                <Button
-                  variant="outline"
-                  size="md"
-                  className="flex-1"
-                  onClick={() => navigate("/room")}
-                >
+                <Button variant="outline" size="md" className="flex-1" onClick={handleContactSeller}>
                   Hubungi Penjual
                 </Button>
               </div>
 
               <div className="pt-4 border-t border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Deskripsi</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Produk ini dalam kondisi sangat baik, masih mulus dan berfungsi sempurna. 
-                  Dijual karena ingin upgrade ke model terbaru. 
-                  Semua aksesori lengkap dan garansi masih berlaku.
+                <p className="text-gray-600">
+                  Produk ini dalam kondisi sangat baik, masih mulus dan berfungsi sempurna.
                 </p>
               </div>
             </div>

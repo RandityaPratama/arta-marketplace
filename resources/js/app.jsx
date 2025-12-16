@@ -2,6 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { FavoriteProvider } from "./components/context/FavoriteContext";
+import { ChatProvider } from "./components/context/ChatContext";
+import { ReportProvider } from "./components/context/ReportContext";
 
     // Users Import
     import LandingPage from "./components/LandingPage";
@@ -20,6 +22,7 @@ import { FavoriteProvider } from "./components/context/FavoriteContext";
     import ChatPage from "./components/ChatPage"
     import ChatRoom from "./components/ChatRoom"
     import NotificationPage from "./components/NotificationPage"
+    import PurchaseHistoryPage from "./components/PurchaseHistoryPage";
 
     // Admin Import
     import AdminDashboard from "./components/admin/AdminDashboard";
@@ -33,6 +36,8 @@ import { FavoriteProvider } from "./components/context/FavoriteContext";
     <React.StrictMode>
         <BrowserRouter>
             <FavoriteProvider>
+                <ChatProvider>
+                    <ReportProvider>
 
         <Routes>
             {/* Halaman User */}
@@ -50,8 +55,9 @@ import { FavoriteProvider } from "./components/context/FavoriteContext";
             <Route path="/detailSeller/:id" element={<DetailSeller />} />
             <Route path="/*" element={<NotFoundPage />} />
             <Route path="/chat" element={<ChatPage />} />
-            <Route path="/room" element={<ChatRoom />} />
+            <Route path="/chatroom/:id" element={<ChatRoom />} />
             <Route path="/notif" element={<NotificationPage />} />
+            <Route path="/history" element={<PurchaseHistoryPage />} />
 
             {/* Halaman Admin */}
             <Route path="/admin" element={<AdminDashboard />} />
@@ -64,6 +70,8 @@ import { FavoriteProvider } from "./components/context/FavoriteContext";
 
 
         </Routes>
+        </ReportProvider>
+        </ChatProvider>
         </FavoriteProvider>
     </BrowserRouter>
     </React.StrictMode>

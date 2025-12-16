@@ -20,7 +20,7 @@
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "lucide-react": "^0.548.0",
-        "react-router-dom": "^7.9.6",
+        "react-router-dom": "^7.10.1",
         "remixicon": "^4.7.0",
         "tailwind-merge": "^3.3.1"
     }

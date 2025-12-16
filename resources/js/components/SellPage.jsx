@@ -1,9 +1,10 @@
     // src/pages/SellPage.js
-    import React, { useState } from "react";
+    import React, { useState, useEffect } from "react";
     import { useNavigate } from "react-router-dom";
     import Button from "../components/ui/Button";
     import NavbarAfter from "./NavbarAfter";
     import Footer from "./Footer";
+    import Background from "../components/Background"; // ✅ Impor Background
 
     export default function SellPage() {
     const navigate = useNavigate();
@@ -17,58 +18,84 @@
         description: "",
     });
 
-    // ✅ State untuk gambar
     const [images, setImages] = useState([]);
+    const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    // ✅ Handle unggah gambar
     const handleImageUpload = (e) => {
         const files = Array.from(e.target.files);
         if (files.length + images.length > 5) {
-        alert("Maksimal 5 gambar!");
+        setNotification({ 
+            show: true, 
+            message: "Maksimal 5 gambar!", 
+            type: "error" 
+        });
         return;
         }
         const newImages = files.map(file => URL.createObjectURL(file));
         setImages(prev => [...prev, ...newImages]);
     };
 
-    // ✅ Hapus gambar
     const handleRemoveImage = (index) => {
         setImages(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleSave = () => {
         if (!formData.name || !formData.price) {
-        alert("Nama dan harga wajib diisi!");
+        setNotification({ 
+            show: true, 
+            message: "Nama dan harga wajib diisi!", 
+            type: "error" 
+        });
         return;
         }
         if (images.length === 0) {
-        alert("Harap unggah minimal 1 gambar!");
+        setNotification({ 
+            show: true, 
+            message: "Harap unggah minimal 1 gambar!", 
+            type: "error" 
+        });
         return;
         }
 
-        // ✅ Simpan dengan status "menunggu" + gambar
         const newProduct = {
         ...formData,
         id: Date.now(),
         status: "menunggu",
-        images: images, // ✅ Sertakan gambar
+        images: images,
         uploadedAt: new Date().toLocaleString("id-ID"),
         };
 
         console.log("Produk dikirim ke admin:", newProduct);
-        alert("Produk berhasil dikirim! Menunggu persetujuan admin.");
+        
+        setNotification({ 
+        show: true, 
+        message: "Produk berhasil dikirim! Menunggu persetujuan admin.", 
+        type: "success" 
+        });
+
+        setTimeout(() => {
         navigate("/profil");
+        }, 2000);
     };
+
+    useEffect(() => {
+        if (notification.show) {
+        const timer = setTimeout(() => {
+            setNotification({ show: false, message: "", type: "" });
+        }, 3000);
+        return () => clearTimeout(timer);
+        }
+    }, [notification.show]);
 
     return (
         <>
         <NavbarAfter />
-        <div className="font-[Poppins] bg-white min-h-screen">
+        <Background> {/* ✅ Gunakan komponen Background */}
             <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8">
             <button
                 onClick={() => navigate("/profil")}
@@ -83,7 +110,7 @@
             <div className="bg-white border border-[#1E3A8A] rounded-xl p-[24px] shadow-[0px_4px_11px_rgba(0,0,0,0.07)]">
                 <h2 className="text-[17px] font-[600] text-gray-800 mb-[24px]">Unggah Produk Baru</h2>
 
-                {/* ✅ Area Unggah Gambar */}
+                {/* Area Unggah Gambar */}
                 <div className="mb-6">
                 <label className="block text-[13px] font-[500] text-gray-700 mb-[8px]">
                     Foto Produk <span className="text-red-500">*</span>
@@ -93,7 +120,6 @@
                 </p>
                 
                 <div className="flex flex-wrap gap-3">
-                    {/* ✅ Preview Gambar */}
                     {images.map((img, index) => (
                     <div key={index} className="relative w-24 h-24 border-2 border-dashed border-[#1E3A8A] rounded-lg overflow-hidden">
                         <img src={img} alt={`Preview ${index}`} className="w-full h-full object-cover" />
@@ -106,7 +132,6 @@
                     </div>
                     ))}
                     
-                    {/* ✅ Tombol Tambah Gambar */}
                     {images.length < 5 && (
                     <label className="w-24 h-24 border-2 border-dashed border-[#1E3A8A] rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50 transition">
                         <svg
@@ -263,7 +288,34 @@
                 </div>
             </div>
             </div>
-        </div>
+
+            {/* ✅ POPUP NOTIFIKASI */}
+            {notification.show && (
+            <div 
+                className="fixed top-4 right-4 z-50 max-w-xs p-4 rounded-lg shadow-lg text-white animate-fade-in"
+                style={{ backgroundColor: notification.type === "success" ? "#10B981" : "#EF4444" }}
+                onClick={() => setNotification({ show: false, message: "", type: "" })}
+            >
+                <div className="flex items-start gap-3">
+                <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    strokeWidth={2} 
+                    stroke="currentColor" 
+                    className="w-5 h-5"
+                >
+                    {notification.type === "success" ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    )}
+                </svg>
+                <p className="text-sm">{notification.message}</p>
+                </div>
+            </div>
+            )}
+        </Background>
         <Footer />
         </>
     );

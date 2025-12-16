@@ -1,36 +1,89 @@
     // src/pages/DetailSellerPage.js
-    import React, { useState } from "react";
-    import { useNavigate } from "react-router-dom";
+    import React, { useState, useEffect } from "react";
+    import { useNavigate, useParams } from "react-router-dom";
     import Button from "../components/ui/Button";
     import NavbarAfter from "./NavbarAfter";
     import Background from "./Background";
     import Footer from "./Footer";
 
+    // ✅ Data produk yang sama dengan ProfilPage
+    const mockProducts = [
+    { 
+        id: 1, 
+        name: "Samsung S24 Ultra", 
+        category: "Elektronik", 
+        price: "12000000", 
+        location: "Surabaya", 
+        publishedDate: "11/10/2025", 
+        condition: "Bekas Baik", 
+        description: "Produk ini dalam kondisi sangat baik, masih mulus dan berfungsi sempurna. Dijual karena ingin upgrade ke model terbaru. Semua aksesori lengkap dan garansi masih berlaku.", 
+        status: "menunggu" 
+    },
+    { 
+        id: 2, 
+        name: "iPhone 15 Pro", 
+        category: "Elektronik", 
+        price: "15500000", 
+        location: "Bandung", 
+        publishedDate: "12/10/2025", 
+        condition: "Baru", 
+        description: "iPhone terbaru dengan kamera terbaik dan baterai tahan lama.", 
+        status: "aktif" 
+    },
+    { 
+        id: 3, 
+        name: "Kursi Gaming", 
+        category: "Furnitur", 
+        price: "2300000", 
+        location: "Surabaya", 
+        publishedDate: "10/10/2025", 
+        condition: "Bekas Baik", 
+        description: "Kursi ergonomis dengan bahan kulit sintetis dan sandaran nyaman.", 
+        status: "terjual" 
+    },
+    { 
+        id: 6, 
+        name: "HP Android Rusak", 
+        category: "Elektronik", 
+        price: "300000", 
+        location: "Bandung", 
+        publishedDate: "05/10/2025", 
+        condition: "Rusak", 
+        description: "HP masih bisa dinyalakan, layar retak, baterai lemah.", 
+        status: "ditolak", 
+        rejectionReason: "Foto tidak jelas" 
+    },
+    { 
+        id: 7, 
+        name: "Laptop ASUS", 
+        category: "Elektronik", 
+        price: "5000000", 
+        location: "Jakarta", 
+        publishedDate: "01/10/2025", 
+        condition: "Mulus", 
+        description: "Laptop gaming dengan spek tinggi, layar 144Hz, RAM 16GB.", 
+        status: "menunggu" 
+    },
+    ];
+
     export default function DetailSellerPage() {
     const navigate = useNavigate();
-
-    // ✅ Data dummy — nanti diisi dari API atau context
-    const initialProduct = {
-        id: 1,
-        name: "Samsung S24 Ultra",
-        category: "Elektronik",
-        price: "12000000",
-        location: "Surabaya",
-        publishedDate: "11/10/2025",
-        condition: "Bekas Baik",
-        description: "Produk ini dalam kondisi sangat baik, masih mulus dan berfungsi sempurna. Dijual karena ingin upgrade ke model terbaru. Semua aksesori lengkap dan garansi masih berlaku.",
-        status: "aktif", // ✅ Bisa: "menunggu", "aktif", "terjual", "ditolak"
-    };
-
-    const seller = {
-        id: 101,
-        name: "Randitya Pratama",
-        location: "Surabaya",
-    };
-
-    const [product, setProduct] = useState(initialProduct);
+    const { id } = useParams();
+    const [product, setProduct] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
-    const [formData, setFormData] = useState({ ...initialProduct });
+    const [formData, setFormData] = useState({});
+
+    useEffect(() => {
+        const found = mockProducts.find(p => p.id === parseInt(id));
+        if (found) {
+        setProduct(found);
+        setFormData(found);
+        } else {
+        navigate("/profil");
+        }
+    }, [id, navigate]);
+
+    if (!product) return null;
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -73,7 +126,6 @@
         return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     };
 
-    // ✅ Mapping status untuk ditampilkan
     const getStatusLabel = (status) => {
         switch (status) {
         case "menunggu": return "Menunggu Persetujuan";
@@ -124,17 +176,9 @@
                         </svg>
                     </div>
                     <div className="flex-1">
-                        <h4 className="font-semibold text-gray-800 text-sm">{seller.name}</h4>
-                        <p className="text-xs text-gray-600">{seller.location}</p>
+                        <h4 className="font-semibold text-gray-800 text-sm">Randitya Pratama</h4>
+                        <p className="text-xs text-gray-600">{product.location}</p>
                     </div>
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => navigate(`/penjual/${seller.id}`)}
-                        className="text-xs px-2 py-1"
-                    >
-                        Profil
-                    </Button>
                     </div>
                 </div>
                 </div>
@@ -162,7 +206,6 @@
                         <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                         Edit
                         </Button>
-                        {/* ✅ Hanya tampilkan "Tandai Terjual" jika status "aktif" */}
                         {product.status === "aktif" && (
                         <Button
                             variant="primary"
@@ -193,7 +236,6 @@
 
                 {isEditing ? (
                     <div className="space-y-4">
-                    {/* Nama */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Nama Produk *</label>
                         <input
@@ -205,7 +247,6 @@
                         />
                     </div>
 
-                    {/* Kategori */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Kategori *</label>
                         <select
@@ -222,7 +263,6 @@
                         </select>
                     </div>
 
-                    {/* Harga */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Harga (Rp) *</label>
                         <input
@@ -234,7 +274,6 @@
                         />
                     </div>
 
-                    {/* Lokasi */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Lokasi *</label>
                         <input
@@ -246,7 +285,6 @@
                         />
                     </div>
 
-                    {/* Kondisi */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Kondisi *</label>
                         <select
@@ -262,7 +300,6 @@
                         </select>
                     </div>
 
-                    {/* Deskripsi */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi *</label>
                         <textarea
@@ -297,11 +334,10 @@
                         </div>
                     </div>
 
-                    {/* ✅ Tampilkan alasan penolakan jika status "ditolak" */}
                     {product.status === "ditolak" && (
                         <div className="pt-2">
                         <p className="text-sm text-red-600">
-                            <span className="font-medium">Alasan penolakan:</span> Foto tidak jelas
+                            <span className="font-medium">Alasan penolakan:</span> {product.rejectionReason}
                         </p>
                         </div>
                     )}
@@ -311,13 +347,12 @@
                         variant="danger"
                         size="md"
                         onClick={handleDelete}
-                        className="bg-red-600 hover:bg-red-700"
+                        className="border border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
                         >
                         Hapus Produk
                         </Button>
                     </div>
 
-                    {/* Deskripsi */}
                     <div className="pt-4 border-t border-gray-200">
                         <h3 className="text-lg font-semibold text-gray-900 mb-3">Deskripsi</h3>
                         <p className="text-gray-600 leading-relaxed whitespace-pre-wrap break-words max-h-40 overflow-y-auto">

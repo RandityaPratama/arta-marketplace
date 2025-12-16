@@ -11,7 +11,7 @@
             animation: 'pulse 8s ease-in-out infinite'
             }}
         >
-            <style jsx>{`
+            <style>{`
             @keyframes pulse {
                 0% { background-position: 0% 50%; }
                 50% { background-position: 100% 50%; }
