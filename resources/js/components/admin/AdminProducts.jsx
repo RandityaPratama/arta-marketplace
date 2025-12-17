@@ -107,14 +107,14 @@ export default function AdminProducts() {
             <Button variant="primary" size="sm" onClick={() => handleApprove(product.id)}>
               Setujui
             </Button>
-            <Button variant="danger" size="sm" onClick={() => handleReject(product.id)}>
+            <Button variant="danger" className="border border-red-600 text-red-600 hover:bg-red-600 hover:text-white" size="sm" onClick={() => handleReject(product.id)}>
               Tolak
             </Button>
           </div>
         );
       case "aktif":
         return (
-          <Button variant="danger" size="sm" onClick={() => handleHide(product.id)}>
+          <Button variant="danger" className="border border-red-600 text-red-600 hover:bg-red-600 hover:text-white" size="sm" onClick={() => handleHide(product.id)}>
             Sembunyikan
           </Button>
         );

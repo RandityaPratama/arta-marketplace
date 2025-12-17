@@ -178,7 +178,7 @@ export default function NavbarAfter() {
                 <div className="px-4 py-2.5 border-t border-gray-200">
                   <button 
                     className="w-full text-[#1E3A8A] text-sm font-medium hover:underline text-center"
-                    onClick={() => { setIsNotificationOpen(false); navigate("/notification"); }}
+                    onClick={() => { setIsNotificationOpen(false); navigate("/notif"); }}
                   >
                     Lihat Semua
                   </button>

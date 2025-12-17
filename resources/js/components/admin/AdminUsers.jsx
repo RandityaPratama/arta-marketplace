@@ -1,16 +1,22 @@
-    // src/pages/admin/AdminDashboard.js
-import React, { useState } from "react";
+    // src/pages/admin/AdminUsers.js
+    import React, { useState } from "react";
     import { useNavigate } from "react-router-dom";
     import AdminLayout from "./AdminLayout";
-    import Button from "../ui/Button"
+    import Button from "../ui/Button";
 
     export default function AdminUsers() {
+    const navigate = useNavigate();
     const [users] = useState([
         { id: 1, name: "Randitya Pratama", email: "randi@example.com", role: "Penjual", status: "Aktif", joined: "12 Jan 2025" },
         { id: 2, name: "Budi Santoso", email: "budi@example.com", role: "Pembeli", status: "Aktif", joined: "3 Feb 2025" },
         { id: 3, name: "Dina Putri", email: "dina@example.com", role: "Penjual", status: "Diblokir", joined: "15 Mar 2025" },
         { id: 4, name: "Eko Wijaya", email: "eko@example.com", role: "Pembeli", status: "Aktif", joined: "22 Apr 2025" },
     ]);
+
+    // ✅ Handle klik nama pengguna
+    const handleUserClick = (userId) => {
+        navigate(`/admin/user/${userId}`);
+    };
 
     return (
         <AdminLayout active="Pengguna">
@@ -42,8 +48,14 @@ import React, { useState } from "react";
                 <tbody className="divide-y divide-gray-200">
                 {users.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50">
+                    {/* ✅ Klik nama → buka profil */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900">{user.name}</div>
+                        <button
+                        onClick={() => handleUserClick(user.id)}
+                        className="font-medium text-[#1E3A8A] hover:underline"
+                        >
+                        {user.name}
+                        </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-700">{user.email}</td>
                     <td className="px-6 py-4 whitespace-nowrap">

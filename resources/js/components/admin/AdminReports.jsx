@@ -1,98 +1,69 @@
 // src/pages/admin/AdminReports.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "./AdminLayout";
 import Button from "../ui/Button";
 
 export default function AdminReports() {
   const [activeTab, setActiveTab] = useState("iklan");
-  
-  // Laporan Iklan
-  const [adReports, setAdReports] = useState([
-    { 
-      id: 1, 
-      product: "iPhone 15 Curian", 
-      reporter: "Andi", 
-      reportedDate: "2 jam lalu", 
-      reason: "Barang ilegal", 
-      status: "Menunggu",
-      productImage: "https://via.placeholder.com/60x60?text=iPhone15"
-    },
-    { 
-      id: 2, 
-      product: "Laptop ASUS Palsu", 
-      reporter: "Budi", 
-      reportedDate: "5 jam lalu", 
-      reason: "Deskripsi menipu", 
-      status: "Diproses",
-      productImage: "https://via.placeholder.com/60x60?text=Laptop"
-    },
-    { 
-      id: 3, 
-      product: "Sepatu Nike KW", 
-      reporter: "Citra", 
-      reportedDate: "1 hari lalu", 
-      reason: "Foto tidak sesuai", 
-      status: "Selesai",
-      productImage: "https://via.placeholder.com/60x60?text=Sepatu"
-    },
-  ]);
+  const [adReports, setAdReports] = useState([]);
+  const [purchaseReports, setPurchaseReports] = useState([]);
 
-  // Laporan Pembelian
-  const [purchaseReports, setPurchaseReports] = useState([
-    { 
-      id: 4, 
-      product: "Samsung S24 Ultra", 
-      buyer: "Randitya", 
-      seller: "Budi Santoso",
-      reportedDate: "1 jam lalu", 
-      reason: "Barang rusak parah saat diterima. Layar retak dan casing penyok. Tidak sesuai dengan deskripsi 'kondisi mulus'.", 
-      evidenceImages: [
-        "https://via.placeholder.com/40x40?text=Rusak",
-        "https://via.placeholder.com/40x40?text=Chat"
-      ],
-      status: "Menunggu",
-      purchaseDate: "12 Des 2025",
-      productImage: "https://via.placeholder.com/60x60?text=Samsung"
-    },
-    { 
-      id: 5, 
-      product: "Kursi Gaming", 
-      buyer: "Dina Putri", 
-      seller: "Andi Wijaya",
-      reportedDate: "3 jam lalu", 
-      reason: "Penjual tidak merespon setelah pembayaran. Barang tidak dikirim selama 3 hari.", 
-      evidenceImages: [
-        "https://via.placeholder.com/40x40?text=Chat1",
-        "https://via.placeholder.com/40x40?text=Chat2"
-      ],
-      status: "Diproses",
-      purchaseDate: "10 Des 2025",
-      productImage: "https://via.placeholder.com/60x60?text=Kursi"
-    },
-    { 
-      id: 6, 
-      product: "Adidas Adizero", 
-      buyer: "Eko", 
-      seller: "Dina Putri",
-      reportedDate: "1 hari lalu", 
-      reason: "Ukuran sepatu tidak sesuai pesanan. Saya pesan ukuran 42, yang datang ukuran 39.", 
-      evidenceImages: [
-        "https://via.placeholder.com/40x40?text=Ukuran"
-      ],
-      status: "Selesai",
-      purchaseDate: "8 Des 2025",
-      productImage: "https://via.placeholder.com/60x60?text=Adidas"
-    },
-  ]);
+  // ✅ Baca laporan dari localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("product_reports");
+    if (saved) {
+      const reports = JSON.parse(saved);
+      const adReportsFromStorage = reports
+        .filter(r => r.type === "iklan")
+        .map(r => ({
+          id: r.id,
+          product: r.productName,
+          reporter: "Pengguna",
+          reportedDate: r.reportedAt,
+          reason: r.reason,
+          status: r.status || "Menunggu",
+          productImage: "https://via.placeholder.com/60x60?text=Product",
+          sellerId: r.sellerId || 100 // ✅ Simpan ID penjual
+        }));
+      setAdReports(adReportsFromStorage);
 
-  const [fullReason, setFullReason] = useState("");
-  const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
+      const purchaseReportsFromStorage = reports
+        .filter(r => r.type === "pembelian")
+        .map(r => ({
+          id: r.id,
+          product: r.productName,
+          buyer: r.buyer || "Pembeli",
+          seller: r.sellerName || "Penjual",
+          reportedDate: r.reportedAt,
+          reason: r.reason,
+          evidenceImages: r.evidenceImages || [],
+          status: r.status || "Menunggu",
+          purchaseDate: r.purchaseDate || "1 Jan 2025",
+          productImage: "https://via.placeholder.com/60x60?text=Product",
+          sellerId: r.sellerId || 100 // ✅ Simpan ID penjual
+        }));
+      setPurchaseReports(purchaseReportsFromStorage);
+    }
+  }, []);
 
-  // Fungsi handle (tetap sama)
+  // ✅ Fungsi untuk laporan iklan
   const handleHideAd = (reportId) => {
-    if (window.confirm("Sembunyikan iklan ini?")) {
-      alert("Iklan disembunyikan!");
+    if (window.confirm("Hapus iklan ini secara permanen?")) {
+      alert("Iklan telah dihapus!");
+      setAdReports(prev => 
+        prev.map(report => 
+          report.id === reportId 
+            ? { ...report, status: "Selesai" }
+            : report
+        )
+      );
+    }
+  };
+
+  const handleBanSellerFromAd = (reportId) => {
+    if (window.confirm("Ban akun penjual ini secara permanen?")) {
+      alert("Akun penjual telah di-ban!");
       setAdReports(prev => 
         prev.map(report => 
           report.id === reportId 
@@ -113,30 +84,10 @@ export default function AdminReports() {
     );
   };
 
-  const handleResolveAd = (reportId) => {
-    setAdReports(prev => 
-      prev.map(report => 
-        report.id === reportId 
-          ? { ...report, status: "Selesai" }
-          : report
-      )
-    );
-  };
-
-  const handleWarnSeller = (reportId) => {
-    alert("Peringatan dikirim!");
-    setPurchaseReports(prev => 
-      prev.map(report => 
-        report.id === reportId 
-          ? { ...report, status: "Selesai" }
-          : report
-      )
-    );
-  };
-
-  const handleBanSeller = (reportId) => {
-    if (window.confirm("Ban akun penjual?")) {
-      alert("Akun di-ban!");
+  // ✅ Fungsi untuk laporan pembelian
+  const handleBanSellerFromPurchase = (reportId) => {
+    if (window.confirm("Ban akun penjual ini secara permanen?")) {
+      alert("Akun penjual telah di-ban!");
       setPurchaseReports(prev => 
         prev.map(report => 
           report.id === reportId 
@@ -157,36 +108,14 @@ export default function AdminReports() {
     );
   };
 
-  const handleResolvePurchase = (reportId) => {
-    setPurchaseReports(prev => 
-      prev.map(report => 
-        report.id === reportId 
-          ? { ...report, status: "Selesai" }
-          : report
-      )
-    );
-  };
-
-  const openReasonModal = (reason) => {
-    setFullReason(reason);
-    setIsReasonModalOpen(true);
-  };
-
   const currentReports = activeTab === "iklan" ? adReports : purchaseReports;
   const isAdTab = activeTab === "iklan";
-
-  // ✅ Potong jadi 25 karakter
-  const truncateReason = (text) => {
-    if (text.length <= 25) return text;
-    return text.substring(0, 25);
-  };
 
   return (
     <AdminLayout active="Laporan">
       <div>
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Laporan Pelanggaran</h2>
 
-        {/* Tab */}
         <div className="flex border-b border-gray-200 mb-6">
           <button
             onClick={() => setActiveTab("iklan")}
@@ -211,26 +140,26 @@ export default function AdminReports() {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <table className="w-full min-w-full">
+          <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Produk</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
                 {isAdTab ? (
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Pelapor</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pelapor</th>
                 ) : (
                   <>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Pembeli</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Penjual</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Beli</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pembeli</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Penjual</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Beli</th>
                   </>
                 )}
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Tanggal Lapor</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Lapor</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alasan</th>
                 {!isAdTab && (
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Bukti</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bukti</th>
                 )}
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Aksi</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -250,7 +179,6 @@ export default function AdminReports() {
                       </div>
                     </div>
                   </td>
-                  
                   {isAdTab ? (
                     <td className="px-4 py-4 text-gray-700 text-sm">{report.reporter}</td>
                   ) : (
@@ -260,28 +188,26 @@ export default function AdminReports() {
                       <td className="px-4 py-4 text-gray-700 text-sm">{report.purchaseDate}</td>
                     </>
                   )}
-                  
                   <td className="px-4 py-4 text-gray-700 text-sm">{report.reportedDate}</td>
-                  
-                  {/* ✅ Alasan: Hanya 25 karakter + selengkapnya */}
-                  <td className="px-4 py-4 text-gray-700 text-sm">
-                    <div>
-                      <span>{truncateReason(report.reason)}</span>
-                      {report.reason.length > 25 && (
+                  <td className="px-4 py-4 text-gray-700 text-sm max-w-md">
+                    {report.reason.length > 50 ? (
+                      <>
+                        <span>{report.reason.substring(0, 50)}...</span>
                         <button
-                          onClick={() => openReasonModal(report.reason)}
+                          onClick={() => alert(report.reason)}
                           className="ml-1 text-[#1E3A8A] hover:underline text-xs"
                         >
-                          ...
+                          selengkapnya
                         </button>
-                      )}
-                    </div>
+                      </>
+                    ) : (
+                      report.reason
+                    )}
                   </td>
-                  
                   {!isAdTab && (
                     <td className="px-4 py-4">
                       <div className="flex gap-1.5">
-                        {report.evidenceImages.map((img, idx) => (
+                        {report.evidenceImages?.map((img, idx) => (
                           <div key={idx} className="w-10 h-10 bg-gray-200 rounded overflow-hidden">
                             <img 
                               src={img} 
@@ -293,7 +219,6 @@ export default function AdminReports() {
                       </div>
                     </td>
                   )}
-                  
                   <td className="px-4 py-4">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                       report.status === "Menunggu" ? "bg-yellow-100 text-yellow-800" :
@@ -303,18 +228,26 @@ export default function AdminReports() {
                       {report.status}
                     </span>
                   </td>
-                  
                   <td className="px-4 py-4">
                     <div className="flex flex-wrap gap-1.5">
                       {isAdTab ? (
+                        // ✅ Laporan Iklan: Hapus Iklan + Ban Akun
                         <>
                           <Button
                             variant="danger"
                             size="sm"
                             onClick={() => handleHideAd(report.id)}
-                            className="text-[11px] px-2 py-1 h-7"
+                            className="text-[11px] px-2 py-1 h-7 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
                           >
-                            Sembunyikan
+                            Hapus Iklan
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleBanSellerFromAd(report.id)}
+                            className="text-[11px] px-2 py-1 h-7 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
+                          >
+                            Ban Akun
                           </Button>
                           {report.status === "Menunggu" && (
                             <Button
@@ -338,34 +271,25 @@ export default function AdminReports() {
                           )}
                         </>
                       ) : (
+                        // ✅ Laporan Pembelian: Hanya Ban Akun
                         <>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleBanSellerFromPurchase(report.id)}
+                            className="text-[11px] px-2 py-1 h-7 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
+                          >
+                            Ban Akun
+                          </Button>
                           {report.status === "Menunggu" && (
-                            <div className="flex gap-1.5">
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => handleProcessPurchase(report.id)}
-                                className="text-[11px] px-2 py-1 h-7"
-                              >
-                                Proses
-                              </Button>
-                              <Button
-                                variant="warning"
-                                size="sm"
-                                onClick={() => handleWarnSeller(report.id)}
-                                className="text-[11px] px-2 py-1 h-7 bg-orange-100 text-orange-800 hover:bg-orange-200"
-                              >
-                                ⚠️
-                              </Button>
-                              <Button
-                                variant="danger"
-                                size="sm"
-                                onClick={() => handleBanSeller(report.id)}
-                                className="text-[11px] px-2 py-1 h-7"
-                              >
-                                🚫
-                              </Button>
-                            </div>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleProcessPurchase(report.id)}
+                              className="text-[11px] px-2 py-1 h-7"
+                            >
+                              Proses
+                            </Button>
                           )}
                           {report.status === "Diproses" && (
                             <Button
@@ -386,38 +310,6 @@ export default function AdminReports() {
             </tbody>
           </table>
         </div>
-
-        {/* Modal Alasan Lengkap */}
-        {isReasonModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">Alasan Laporan</h3>
-                <button
-                  onClick={() => setIsReasonModalOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <p className="text-gray-800 whitespace-pre-wrap break-words leading-relaxed">
-                {fullReason}
-              </p>
-              <div className="mt-4 text-right">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setIsReasonModalOpen(false)}
-                  className="px-4 py-2"
-                >
-                  Tutup
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </AdminLayout>
   );

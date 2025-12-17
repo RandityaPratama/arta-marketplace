@@ -29,6 +29,7 @@ import { ReportProvider } from "./components/context/ReportContext";
     import AdminUsers from "./components/admin/AdminUsers";
     import AdminProducts from "./components/admin/AdminProducts";
     import AdminReports from "./components/admin/AdminReports";
+    import AdminUserProfile from "./components/admin/AdminUserProfile";
 
 
 
@@ -64,6 +65,8 @@ import { ReportProvider } from "./components/context/ReportContext";
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/products" element={<AdminProducts />} />
             <Route path="/admin/reports" element={<AdminReports />} />
+            <Route path="/admin/user/:userId" element={<AdminUserProfile />} />
+
 
 
 

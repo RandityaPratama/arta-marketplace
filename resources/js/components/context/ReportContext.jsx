@@ -25,19 +25,13 @@ export const ReportProvider = ({ children }) => {
     localStorage.setItem("product_reports", JSON.stringify(reports));
   }, [reports]);
 
-  // ✅ Tambahkan evidenceImages
-  const submitReport = (productId, productName, reason, evidenceImages = []) => {
+  const submitReport = (reportData) => {
     const newReport = {
+      ...reportData,
       id: Date.now(),
-      productId,
-      productName,
-      reason,
-      evidenceImages, // ✅ Simpan array URL foto
       reportedAt: new Date().toLocaleString("id-ID"),
-      status: "Menunggu",
     };
     setReports(prev => [newReport, ...prev]);
-    return newReport;
   };
 
   return (
