@@ -1,15 +1,13 @@
-    // src/components/ProfilPage.js
-    import React, { useState } from "react";
-    import { useNavigate } from "react-router-dom";
+    // src/components/ProfilePage.js
+    import React, { useState, useEffect } from "react";
+    import { useNavigate, useLocation } from "react-router-dom"; // ✅ Tambahkan useLocation
     import Button from "../components/ui/Button";
     import NavbarAfter from "./NavbarAfter";
     import Background from "../components/Background";
     import Footer from "./Footer";
     import { useProducts } from "../components/context/ProductContext";
-    // ✅ Import ikon dari lucide-react
     import { User, Mail, Phone, MapPin, Calendar } from "lucide-react";
 
-    // ✅ Fungsi format harga: 12000000 → "12.000.000"
     const formatPrice = (priceStr) => {
     if (!priceStr) return "";
     const clean = priceStr.toString().replace(/\D/g, '');
@@ -17,13 +15,16 @@
     return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     };
 
-    export default function ProfilPage() {
+    export default function ProfilePage() {
     const navigate = useNavigate();
+    const location = useLocation(); // ✅
     const { getUserProducts } = useProducts();
     const products = getUserProducts();
-    const [activeTab, setActiveTab] = useState("aktif");
     
-    // ✅ State untuk nama user
+    // ✅ Set tab berdasarkan asal halaman
+    const initialTab = location.state?.fromSellPage ? "menunggu" : "aktif";
+    const [activeTab, setActiveTab] = useState(initialTab);
+    
     const [userName, setUserName] = useState("Randitya Pratama");
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [newName, setNewName] = useState(userName);
@@ -61,7 +62,6 @@
 
     const currentProducts = getProductsByTab();
 
-    // ✅ Handle edit profil
     const handleEditProfile = () => {
         setIsEditModalOpen(true);
         setNewName(userName);
@@ -78,6 +78,17 @@
         setIsEditModalOpen(false);
         setNewName(userName);
     };
+
+    // ✅ Reset state setelah beberapa detik (opsional)
+    useEffect(() => {
+        if (location.state?.fromSellPage) {
+        // Opsional: reset state setelah 5 detik agar tab normal lagi
+        const timer = setTimeout(() => {
+            navigate("/profile", { replace: true });
+        }, 5000);
+        return () => clearTimeout(timer);
+        }
+    }, [location.state, navigate]);
 
     return (
         <>
@@ -177,7 +188,7 @@
                 </div>
 
                 {/* Daftar Produk Berdasarkan Tab */}
-                <div>
+                <div id="products-section"> {/* ✅ ID untuk scroll (opsional) */}
                 {currentProducts.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {currentProducts.map((product) => (
@@ -186,7 +197,6 @@
                         className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-[0px_4px_11px_rgba(0,0,0,0.07)] relative cursor-pointer"
                         onClick={() => navigate(`/detailseller/${product.id}`)}
                         >
-                        {/* ✅ BADGE DISKON DI POJOK KIRI ATAS */}
                         {product.onDiscount && (
                             <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
                             -{product.discount}%
@@ -200,7 +210,6 @@
                             </span>
                             <h4 className="text-[14px] font-[500] text-gray-800 truncate">{product.name}</h4>
                             
-                            {/* ✅ TAMPILAN HARGA DENGAN DISKON */}
                             <div className="mt-1">
                             {product.onDiscount ? (
                                 <>
@@ -251,7 +260,6 @@
             </div>
         </Background>
         
-        {/* ✅ MODAL EDIT PROFIL */}
         {isEditModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl p-6 w-full max-w-md">

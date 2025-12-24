@@ -1,15 +1,15 @@
 // src/components/SellPage.js
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // ✅ Tidak perlu useLocation di sini
 import Button from "../components/ui/Button";
 import NavbarAfter from "./NavbarAfter";
 import Footer from "./Footer";
 import Background from "../components/Background";
-import { useProducts } from "../components/context/ProductContext"; // ✅
+import { useProducts } from "../components/context/ProductContext";
 
 export default function SellPage() {
   const navigate = useNavigate();
-  const { addProduct } = useProducts(); // ✅
+  const { addProduct } = useProducts();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -97,7 +97,6 @@ export default function SellPage() {
       uploadedAt: new Date().toLocaleString("id-ID"),
     };
 
-    // ✅ Simpan ke context
     addProduct(newProduct);
 
     setNotification({ 
@@ -106,8 +105,9 @@ export default function SellPage() {
       type: "success" 
     });
 
+    // ✅ Redirect dengan state
     setTimeout(() => {
-      navigate("/profil");
+      navigate("/profile", { state: { fromSellPage: true } });
     }, 2000);
   };
 
@@ -353,7 +353,7 @@ export default function SellPage() {
 
               <div className="flex justify-end gap-[16px] pt-4">
                 <button
-                  onClick={() => navigate("/profil")}
+                  onClick={() => navigate("/profile")}
                   className="px-[24px] py-[10px] border border-[#1E3A8A] text-[#1E3A8A] rounded-[10px] text-[15px] font-[500] hover:bg-[#1E3A8A] hover:text-white transition"
                 >
                   Batal

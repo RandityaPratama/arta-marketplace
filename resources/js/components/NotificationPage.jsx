@@ -86,14 +86,25 @@
                     </p>
                 )}
                 </div>
+                
+                {/* ✅ TOMBOL KEMBALI + TANDAI SEMUA BERDAMPINGAN */}
+                <div className="flex gap-3">
                 <Button
-                variant="primary"
-                size="md"
-                onClick={markAllAsRead}
-                disabled={unreadCount === 0}
+                    variant="primary"
+                    size="md"
+                    onClick={() => navigate(-1)}
                 >
-                Tandai Semua Sudah Dibaca
+                    Kembali
                 </Button>
+                <Button
+                    variant="primary"
+                    size="md"
+                    onClick={markAllAsRead}
+                    disabled={unreadCount === 0}
+                >
+                    Tandai Semua Sudah Dibaca
+                </Button>
+                </div>
             </div>
 
             {/* Daftar Notifikasi */}

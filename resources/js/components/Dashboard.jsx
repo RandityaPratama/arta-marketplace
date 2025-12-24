@@ -104,7 +104,7 @@ export default function Dashboard() {
             </button>
 
             <button
-              onClick={() => navigate("/profil")}
+              onClick={() => navigate("/profile")}
               className="flex items-center gap-3 p-5 border border-[#1E3A8A] rounded-lg hover:shadow-[0px_4px_11px_rgba(0,0,0,0.07)] transition w-full text-[#1E3A8A]"
             >
               <div className="w-10 h-10 bg-[#D5F0DD] rounded-md flex items-center justify-center">
@@ -119,7 +119,7 @@ export default function Dashboard() {
 
           <div className="mb-8 flex justify-between items-center">
             <h2 className="text-[15px] font-[500] text-gray-700">{totalProducts} produk</h2>
-            <Button variant="primary" size="md" onClick={() => navigate("/notification")}>
+            <Button variant="primary" size="md" onClick={() => navigate("/notif")}>
               <Bell size={18} className="text-white mr-1" strokeWidth={1.8} />
               Notifikasi
             </Button>
