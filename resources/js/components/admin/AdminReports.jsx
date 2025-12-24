@@ -1,4 +1,4 @@
-// src/pages/admin/AdminReports.js
+// components/admin/AdminReports.js
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "./AdminLayout";
@@ -237,7 +237,7 @@ export default function AdminReports() {
                             variant="danger"
                             size="sm"
                             onClick={() => handleHideAd(report.id)}
-                            className="text-[11px] px-2 py-1 h-7 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
+                            className="text-[11px] px-2 py-1 h-7 "
                           >
                             Hapus Iklan
                           </Button>
@@ -245,13 +245,13 @@ export default function AdminReports() {
                             variant="danger"
                             size="sm"
                             onClick={() => handleBanSellerFromAd(report.id)}
-                            className="text-[11px] px-2 py-1 h-7 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
+                            className="text-[11px] px-2 py-1 h-7 "
                           >
                             Ban Akun
                           </Button>
                           {report.status === "Menunggu" && (
                             <Button
-                              variant="primary"
+                              variant="outline"
                               size="sm"
                               onClick={() => handleProcessAd(report.id)}
                               className="text-[11px] px-2 py-1 h-7"
@@ -283,7 +283,7 @@ export default function AdminReports() {
                           </Button>
                           {report.status === "Menunggu" && (
                             <Button
-                              variant="primary"
+                              variant="outline"
                               size="sm"
                               onClick={() => handleProcessPurchase(report.id)}
                               className="text-[11px] px-2 py-1 h-7"

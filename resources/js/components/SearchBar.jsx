@@ -1,41 +1,143 @@
-    // src/components/SearchBar.js
-    import React from "react";
+    // components/SearchBar.js
+    import React, { useState, useEffect } from "react";
     import { useNavigate } from "react-router-dom";
+    import { 
+    Search, 
+    Smartphone, 
+    Home, 
+    Dumbbell, 
+    Bed, 
+    Package 
+    } from "lucide-react";
 
-    export default function SearchBar() {
+    export default function SearchBar({ onSearch, onCategoryChange }) {
     const navigate = useNavigate();
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState("Semua kategori");
+    const [categories, setCategories] = useState([
+        "Semua kategori",
+        "Elektronik",
+        "Rumah Tangga",
+        "Olahraga",
+        "Furnitur"
+    ]);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    // ✅ Mapping kategori ke ikon
+    const getCategoryIcon = (category) => {
+        switch (category) {
+        case "Elektronik":
+            return <Smartphone size={16} className="text-[#1E3A8A]" />;
+        case "Rumah Tangga":
+            return <Home size={16} className="text-[#1E3A8A]" />;
+        case "Olahraga":
+            return <Dumbbell size={16} className="text-[#1E3A8A]" />;
+        case "Furnitur":
+            return <Bed size={16} className="text-[#1E3A8A]" />;
+        case "Semua kategori":
+            return <Package size={16} className="text-gray-500" />;
+        default:
+            return <Package size={16} className="text-gray-500" />;
+        }
+    };
+
+    // ✅ Baca kategori dari localStorage (pengaturan admin)
+    useEffect(() => {
+        const savedSettings = localStorage.getItem("admin_settings");
+        if (savedSettings) {
+        try {
+            const settings = JSON.parse(savedSettings);
+            if (Array.isArray(settings.productCategories)) {
+            const validCategories = settings.productCategories.filter(cat => 
+                ["Elektronik", "Rumah Tangga", "Olahraga", "Furnitur"].includes(cat)
+            );
+            const newCategories = [
+                "Semua kategori",
+                ...new Set([...validCategories, "Elektronik", "Rumah Tangga", "Olahraga", "Furnitur"])
+            ];
+            setCategories(newCategories);
+            }
+        } catch (e) {
+            console.warn("Error reading admin settings");
+        }
+        }
+    }, []);
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (onSearch) {
+        onSearch(searchTerm, selectedCategory);
+        } else {
+        navigate(`/search?q=${encodeURIComponent(searchTerm)}&category=${encodeURIComponent(selectedCategory)}`);
+        }
+    };
+
+    const handleCategoryChange = (value) => {
+        setSelectedCategory(value);
+        if (onCategoryChange) {
+        onCategoryChange(value);
+        }
+        setIsDropdownOpen(false);
+    };
 
     return (
-        <div className="flex flex-col md:flex-row gap-6 mb-12">
+        <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-6 mb-12">
         {/* Search Bar */}
         <div className="flex-1">
             <div className="relative">
             <input
                 type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Cari produk..."
-                className="w-full px-5 py-3 text-[15px] border border-[#1E3A8A] rounded-lg focus:outline-none transition focus:ring-2 focus:ring-[#1E3A8A]"
+                className="w-full px-5 py-3 text-[15px] pl-12 border border-[#1E3A8A] rounded-lg focus:outline-none transition  focus:ring-[#1E3A8A]"
             />
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                className="absolute left-5 top-3 w-5 h-5"
-            >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m-2.803-2.803a7 7 0 00-10.606 10.606l5.197 5.197M21 21l-5.197-5.197" />
-            </svg>
+            <Search
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                size={20}
+            />
             </div>
         </div>
 
-        {/* Category Dropdown */}
-        <div className="md:w-[220px]">
-            <select className="w-full px-5 py-3 text-[15px] border border-[#1E3A8A] rounded-lg transition focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]">
-            <option>Semua kategori</option>
-            <option>Elektronik</option>
-            <option>Rumah Tangga</option>
-            <option>Olahraga</option>
-            <option>Furnitur</option>
-            </select>
+        {/* Category Dropdown dengan Ikon */}
+        <div className="md:w-[220px] relative">
+            <div
+            className="w-full px-5 py-3 text-[15px] border border-[#1E3A8A] rounded-lg cursor-pointer  flex items-center justify-between"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
+            <div className="flex items-center gap-2">
+                {getCategoryIcon(selectedCategory)}
+                <span className="block truncate">{selectedCategory}</span>
+            </div>
+            <svg 
+                className={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24" 
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+            </div>
+
+            {/* Dropdown Menu dengan Ikon */}
+            {isDropdownOpen && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-[#1E3A8A] rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {categories.map((category, index) => (
+                <div
+                    key={index}
+                    className={`px-5 py-3 cursor-pointer hover:bg-[#F0F7FF] flex items-center gap-3 ${
+                    category === selectedCategory ? "bg-[#F0F7FF] font-medium" : ""
+                    }`}
+                    onClick={() => handleCategoryChange(category)}
+                >
+                    {getCategoryIcon(category)}
+                    <span>{category}</span>
+                </div>
+                ))}
+            </div>
+            )}
         </div>
-        </div>
+        </form>
     );
     }

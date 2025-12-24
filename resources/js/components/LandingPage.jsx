@@ -1,3 +1,4 @@
+    // components/LandingPage.jsx
     import React from "react";
     import { useNavigate } from "react-router-dom";
     import {
@@ -11,10 +12,9 @@
     } from 'lucide-react';
     import NavbarBefore from "./NavbarBefore";
     import Footer from "./Footer";
-    
 
     export default function LandingPage() {
-        const navigate = useNavigate();
+    const navigate = useNavigate();
     return (
         <>
         <NavbarBefore/>
@@ -35,12 +35,16 @@
                 </p>
 
                 <div className="flex gap-[16px] mt-[32px]">
-                <button className="bg-[#1E3A8A] text-white rounded-[10px] text-[15px] font-[500] w-[200px] h-[46px] hover:opacity-90"
-                        onClick={() => navigate("/login")}>
+                <button 
+                    className="bg-[#1E3A8A] text-white rounded-[10px] text-[15px] font-[500] w-[200px] h-[46px] hover:opacity-90"
+                    onClick={() => navigate("/login")}
+                >
                     Mulai Jual Beli
                 </button>
-                <button className="border border-[#1E3A8A] text-[#1E3A8A] rounded-[10px] text-[15px] font-[500] w-[150px] h-[46px] hover:bg-[#1E3A8A] hover:text-white transition"
-                        onClick={() => navigate("/signup")}>
+                <button 
+                    className="border border-[#1E3A8A] text-[#1E3A8A] rounded-[10px] text-[15px] font-[500] w-[150px] h-[46px] hover:bg-[#1E3A8A] hover:text-white transition"
+                    onClick={() => navigate("/signup")}
+                >
                     Buat Akun
                 </button>
                 </div>
@@ -83,15 +87,10 @@
                     key={i}
                     className="border border-[#FED7AA] rounded-[14px] p-[28px] bg-[#F0F0F2] hover:shadow-[0px_6px_18px_rgba(0,0,0,0.07)] transition flex flex-col items-center text-center"
                     >
-                    {/* Ikon */}
                     <div className={`w-12 h-12 rounded-full ${item.bgColor} flex items-center justify-center mb-4`}>
                         <IconComponent size={24} className="text-white" />
                     </div>
-
-                    {/* Judul */}
                     <h3 className="text-[18px] font-[600] text-black mb-[8px]">{item.title}</h3>
-
-                    {/* Deskripsi */}
                     <p className="text-[14px] text-[#6F6F6F] leading-[22px]">{item.text}</p>
                     </div>
                 );
@@ -119,15 +118,10 @@
                     key={i}
                     className="border border-[#FED7AA] bg-white rounded-[14px] p-[26px] hover:shadow-[0px_4px_11px_rgba(0,0,0,0.07)] flex flex-col items-center text-center"
                     >
-                    {/* Ikon */}
                     <div className="w-12 h-12 bg-[#DDE7FF] rounded-full flex items-center justify-center mb-4">
                         <IconComponent size={24} className="text-[#1E3A8A]" />
                     </div>
-
-                    {/* Nama Kategori */}
                     <h3 className="text-black font-[600] text-[17px]">{item.name}</h3>
-
-                    {/* Jumlah Produk */}
                     <p className="text-[#6F6F6F] text-[13px] mt-[6px]">{item.total} Produk</p>
                     </div>
                 );
@@ -143,18 +137,21 @@
             </p>
 
             <div className="flex gap-[16px] mt-[38px] justify-center">
-                <button className="bg-[#FED7AA] text-[#1E3A8A] font-[600] text-[15px] rounded-[10px] w-[160px] h-[46px] hover:opacity-90"
-                        onClick={() => navigate("/signup")}>
+                <button 
+                className="bg-[#FED7AA] text-[#1E3A8A] font-[600] text-[15px] rounded-[10px] w-[160px] h-[46px] hover:opacity-90"
+                onClick={() => navigate("/signup")}
+                >
                 Daftar Sekarang
                 </button>
-                <button className="border border-white text-white font-[500] text-[15px] rounded-[10px] w-[160px] h-[46px] hover:bg-white hover:text-[#1E3A8A] transition"
-                        onClick={() => navigate("/login")}>
+                <button 
+                className="border border-white text-white font-[500] text-[15px] rounded-[10px] w-[160px] h-[46px] hover:bg-white hover:text-[#1E3A8A] transition"
+                onClick={() => navigate("/login")}
+                >
                 Sudah Punya Akun
                 </button>
             </div>
             </section>
         </div>
-
         <Footer/>
         </>
     );

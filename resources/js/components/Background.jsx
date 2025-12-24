@@ -1,4 +1,4 @@
-    // src/components/GradientLayout.js
+    // components/GradientLayout.js
     import React from "react";
 
     export default function GradientLayout({ children }) {

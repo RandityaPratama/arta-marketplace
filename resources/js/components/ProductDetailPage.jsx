@@ -1,35 +1,23 @@
-// src/pages/ProductDetailPage.js
-import React, { useState, useEffect } from "react";
+// src/components/ProductDetailPage.js
+import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Button from "../components/ui/Button";
 import NavbarAfter from "./NavbarAfter";
 import Footer from "./Footer";
 import Background from "../components/Background";
-import { useFavorites } from "../components/context/FavoriteContext"; // ✅ Perbaiki path
-import { useChat } from "../components/context/ChatContext";        // ✅ Perbaiki path
-import { useReports } from "../components/context/ReportContext";   // ✅ Perbaiki path
+import { useFavorites } from "../components/context/FavoriteContext";
+import { useChat } from "../components/context/ChatContext";
+import { useReports } from "../components/context/ReportContext";
+import { useProducts } from "../components/context/ProductContext";
 
-// ✅ Data produk
-const mockProducts = [
-  { 
-    id: 1, name: "Samsung S24 Ultra", category: "Elektronik", price: "12.000.000", 
-    location: "Jakarta Utara", sellerName: "Budi Santoso", publishedDate: "11/10/2025", condition: "Bekas Baik"
-  },
-  { 
-    id: 2, name: "iPhone 15 Pro", category: "Elektronik", price: "15.500.000", 
-    location: "Bandung", sellerName: "Siti Rahayu", publishedDate: "12/10/2025", condition: "Baru"
-  },
-  { 
-    id: 3, name: "Kursi Gaming", category: "Furnitur", price: "2.300.000", 
-    location: "Surabaya", sellerName: "Andi Wijaya", publishedDate: "10/10/2025", condition: "Bekas Baik"
-  },
-  { 
-    id: 4, name: "Adidas Adizero Evo SL", category: "Olahraga", price: "1.200.000", 
-    location: "Yogyakarta", sellerName: "Dina Putri", publishedDate: "09/10/2025", condition: "Mulus"
-  },
-];
+// ✅ Fungsi format harga
+const formatPrice = (priceStr) => {
+  if (!priceStr) return "";
+  const clean = priceStr.toString().replace(/\D/g, '');
+  if (!clean) return "";
+  return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
 
-// ✅ Alasan laporan tetap
 const REPORT_REASONS = [
   "Harga tidak sesuai pasar",
   "Menjual barang palsu",
@@ -40,7 +28,9 @@ const REPORT_REASONS = [
 export default function ProductDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [product, setProduct] = useState(null);
+  const { getProductById } = useProducts();
+  const product = getProductById(parseInt(id));
+  
   const { favorites, toggleFavorite } = useFavorites();
   const { startChatAsBuyer } = useChat();
   const { submitReport } = useReports();
@@ -50,25 +40,10 @@ export default function ProductDetailPage() {
   const [selectedReason, setSelectedReason] = useState("");
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
-  useEffect(() => {
-    const found = mockProducts.find(p => p.id === parseInt(id));
-    if (found) {
-      setProduct(found);
-    } else {
-      navigate("/");
-    }
-  }, [id, navigate]);
-
-  useEffect(() => {
-    if (notification.show) {
-      const timer = setTimeout(() => {
-        setNotification({ show: false, message: "", type: "" });
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [notification.show]);
-
-  if (!product) return null;
+  if (!product) {
+    navigate("/");
+    return null;
+  }
 
   const handleContactSeller = () => {
     const message = `Halo, saya tertarik dengan produk "${product.name}". Apakah masih tersedia?`;
@@ -136,15 +111,20 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="space-y-6">
-              {/* ✅ Header: "Laporkan" di kiri, ❤️ di kanan */}
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div>
-                  <span className="text-sm font-semibold text-[#1E3A8A] bg-[#F0F7FF] px-3 py-1 rounded-full">
-                    {product.category}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-[#1E3A8A] bg-[#F0F7FF] px-3 py-1 rounded-full">
+                      {product.category}
+                    </span>
+                    {product.onDiscount && (
+                      <span className="text-xs font-bold bg-red-500 text-white px-2 py-1 rounded-full">
+                        -{product.discount}%
+                      </span>
+                    )}
+                  </div>
                   <h1 className="text-2xl font-bold text-gray-900 mt-3">{product.name}</h1>
                 </div>
-                {/* ✅ Teks "Laporkan" di kiri, ikon favorit di kanan */}
                 <div className="flex items-center gap-3">
                   <button
                     onClick={openReportModal}
@@ -159,7 +139,7 @@ export default function ProductDetailPage() {
                   >
                     {isFavorited ? (
                       <svg xmlns="http://www.w3.org/2000/svg" fill="#1E3A8A" viewBox="0 0 24 24" className="w-6 h-6">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 7.22 9 12 9 12s9-4.78 9-12z" />
                       </svg>
                     ) : (
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -170,7 +150,17 @@ export default function ProductDetailPage() {
                 </div>
               </div>
 
-              <p className="text-2xl font-bold text-[#1E3A8A]">Rp. {product.price}</p>
+              {/* ✅ Harga dengan format titik */}
+              <div className="mt-2">
+                {product.onDiscount ? (
+                  <>
+                    <p className="text-xl text-gray-500 line-through">Rp. {formatPrice(product.originalPrice)}</p>
+                    <p className="text-2xl font-bold text-[#1E3A8A] mt-1">Rp. {formatPrice(product.price)}</p>
+                  </>
+                ) : (
+                  <p className="text-2xl font-bold text-[#1E3A8A]">Rp. {formatPrice(product.price)}</p>
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                 <div><p className="font-medium">Lokasi</p><p>{product.location}</p></div>
@@ -191,14 +181,13 @@ export default function ProductDetailPage() {
               <div className="pt-4 border-t border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Deskripsi</h3>
                 <p className="text-gray-600">
-                  Produk ini dalam kondisi sangat baik, masih mulus dan berfungsi sempurna.
+                  {product.description}
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Modal Laporan */}
         {isReportModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl p-6 w-full max-w-md">
@@ -256,7 +245,6 @@ export default function ProductDetailPage() {
           </div>
         )}
 
-        {/* Notifikasi */}
         {notification.show && (
           <div 
             className="fixed top-4 right-4 z-50 max-w-xs p-4 rounded-lg shadow-lg text-white animate-fade-in"

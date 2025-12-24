@@ -1,4 +1,4 @@
-// src/pages/FavoritPage.js
+// src/components/FavoritePage.js
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
@@ -6,19 +6,28 @@ import NavbarAfter from "./NavbarAfter";
 import Background from "../components/Background";
 import Footer from "./Footer";
 import { useFavorites } from "../components/context/FavoriteContext";
+import { useProducts } from "../components/context/ProductContext";
+import { Heart } from "lucide-react";
 
-export default function FavoritPage() {
+// ✅ Fungsi format harga
+const formatPrice = (priceStr) => {
+  if (!priceStr) return "";
+  const clean = priceStr.toString().replace(/\D/g, '');
+  if (!clean) return "";
+  return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
+// ✅ POSISI VERTIKAL FLEKSIBEL
+const badgeVerticalPosition = '54%';
+
+export default function FavoritePage() {
   const navigate = useNavigate();
-  const { favorites } = useFavorites();
+  const { favorites, toggleFavorite, isFavorited } = useFavorites(); // ✅ Tambahkan toggleFavorite dan isFavorited
+  const { products } = useProducts();
 
-  const mockProducts = [
-    { id: 1, name: "iPhone 15 Pro", category: "Elektronik", price: "15.500.000", location: "Bandung" },
-    { id: 2, name: "Sepatu Nike", category: "Fashion", price: "1.200.000", location: "Yogyakarta" },
-    { id: 3, name: "Kursi Gaming", category: "Furnitur", price: "2.300.000", location: "Surabaya", status: "aktif" },
-    { id: 4, name: "Adidas Adizero Evo SL", category: "Olahraga", price: "1.200.000", location: "Yogyakarta", status: "aktif" },
-  ];
-
-  const favoriteProducts = mockProducts.filter(p => favorites.has(p.id));
+  // ✅ Filter produk yang di-favoritkan dan aktif
+  const favoriteProducts = products
+    .filter(p => favorites.has(p.id) && p.status === "aktif");
   const totalFavorites = favoriteProducts.length;
 
   return (
@@ -60,10 +69,10 @@ export default function FavoritPage() {
                   Jelajahi produk dan klik ikon hati untuk menambahkannya ke daftar favorit.
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-3">
-                  <Button variant="primary" size="md" onClick={() => navigate("/")}>
+                  <Button variant="primary" size="md" onClick={() => navigate("/dashboard")}>
                     Jelajahi Produk
                   </Button>
-                  <Button variant="outline" size="md" onClick={() => navigate("/jual")}>
+                  <Button variant="outline" size="md" onClick={() => navigate("/sell")}>
                     Jual Barang
                   </Button>
                 </div>
@@ -75,21 +84,73 @@ export default function FavoritPage() {
                 <div
                   key={product.id}
                   className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-[0px_4px_11px_rgba(0,0,0,0.07)] relative cursor-pointer"
-                  onClick={() => navigate(`/product/${product.id}`)}
+                  onClick={() => {
+                    // ✅ Navigasi cerdas: produk sendiri vs orang lain
+                    if (product.sellerId === "user-1") {
+                      navigate(`/detailseller/${product.id}`);
+                    } else {
+                      navigate(`/product/${product.id}`);
+                    }
+                  }}
                 >
+                  {/* ✅ Badge Diskon */}
+                  {product.onDiscount && (
+                    <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
+                      -{product.discount}%
+                    </div>
+                  )}
+
+                  {/* ✅ FAVORIT ICON - BISA DIKLIK! */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation(); // ✅ Mencegah navigasi saat klik favorit
+                      toggleFavorite(product.id);
+                    }}
+                    className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center z-10 hover:bg-gray-50"
+                  >
+                    {isFavorited(product.id) ? (
+                      <Heart size={20} className="text-[#1E3A8A]" fill="currentColor" />
+                    ) : (
+                      <Heart size={20} className="text-[#1E3A8A]" strokeWidth={1.5} />
+                    )}
+                  </Button>
+
+                  {/* ✅ BADGE "IKLANKU" */}
+                  {product.sellerId === "user-1" && (
+                    <div 
+                      className="absolute right-0 transform -translate-y-1/2 bg-[#1E3A8A] text-white text-[11px] font-[600] px-2 py-1.5 rounded-l-full z-10 whitespace-nowrap"
+                      style={{ top: badgeVerticalPosition }}
+                    >
+                      Iklanku
+                    </div>
+                  )}
+
                   <div className="bg-gray-200 h-32 w-full"></div>
                   <div className="p-5">
                     <span className="inline-block bg-[#DDE7FF] text-[#1E3A8A] text-[13px] font-[500] px-2 py-1 rounded-full mb-2">
                       {product.category}
                     </span>
                     <h3 className="text-[15px] font-[500] text-gray-800">{product.name}</h3>
-                    <p className="text-[15px] font-bold text-black mt-2">Rp. {product.price}</p>
+                    
+                    {/* ✅ Tampilan harga dengan diskon */}
+                    {product.onDiscount ? (
+                      <div className="mt-1">
+                        <p className="text-[13px] text-gray-500 line-through">
+                          Rp. {formatPrice(product.originalPrice)}
+                        </p>
+                        <p className="text-[15px] font-bold text-red-600">
+                          Rp. {formatPrice(product.price)}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-[15px] font-bold text-black mt-2">
+                        Rp. {formatPrice(product.price)}
+                      </p>
+                    )}
+                    
                     <p className="text-[13px] text-gray-500 mt-1">{product.location}</p>
-                  </div>
-                  <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="#1E3A8A" viewBox="0 0 24 24" className="w-5 h-5">
-                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                    </svg>
                   </div>
                 </div>
               ))}

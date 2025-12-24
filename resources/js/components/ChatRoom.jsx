@@ -1,4 +1,4 @@
-// src/pages/ChatRoom.js
+// components/ChatRoom.js
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import NavbarAfter from "./NavbarAfter";

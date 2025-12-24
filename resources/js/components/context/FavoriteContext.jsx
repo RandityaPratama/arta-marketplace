@@ -1,5 +1,5 @@
-// src/context/FavoriteContext.js
-import React, { createContext, useContext, useState, useEffect } from "react";
+// components/context/FavoriteContext.js
+import React, { createContext, useContext, useState } from "react";
 
 const FavoriteContext = createContext();
 
@@ -12,18 +12,10 @@ export const useFavorites = () => {
 };
 
 export const FavoriteProvider = ({ children }) => {
-  const [favorites, setFavorites] = useState(new Set());
+  // ✅ Data dummy: ID produk yang difavoritkan
+  const [favorites, setFavorites] = useState(new Set([1, 4])); // Samsung & Adidas
 
-  useEffect(() => {
-    const saved = localStorage.getItem("favorites");
-    if (saved) {
-      setFavorites(new Set(JSON.parse(saved)));
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("favorites", JSON.stringify(Array.from(favorites)));
-  }, [favorites]);
+  // ❌ Hapus localStorage
 
   const toggleFavorite = (productId) => {
     setFavorites(prev => {

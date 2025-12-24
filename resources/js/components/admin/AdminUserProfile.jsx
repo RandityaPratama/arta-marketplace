@@ -1,4 +1,4 @@
-    // src/pages/admin/AdminUserProfile.js
+    // components/admin/AdminUserProfile.js
     import React, { useState, useEffect } from "react";
     import { useNavigate, useParams } from "react-router-dom";
     import AdminLayout from "./AdminLayout";

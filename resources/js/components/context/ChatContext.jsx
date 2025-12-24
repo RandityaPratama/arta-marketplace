@@ -1,5 +1,5 @@
-// src/context/ChatContext.js
-import React, { createContext, useContext, useState, useEffect } from "react";
+// components/context/ChatContext.js
+import React, { createContext, useContext, useState } from "react";
 
 const ChatContext = createContext();
 
@@ -12,32 +12,70 @@ export const useChat = () => {
 };
 
 export const ChatProvider = ({ children }) => {
-  const [conversations, setConversations] = useState([]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("chat_conversations");
-    if (saved) {
-      setConversations(JSON.parse(saved));
+  // ✅ Data dummy: percakapan awal
+  const [conversations, setConversations] = useState([
+    {
+      id: "chat_1",
+      participantType: "buyer",
+      product: { 
+        id: 1, 
+        name: "Samsung S24 Ultra", 
+        price: "10.800.000" 
+      },
+      sellerName: "Randitya Pratama",
+      productId: 1,
+      messages: [
+        {
+          id: 1001,
+          text: "Apakah masih tersedia?",
+          sender: "you",
+          time: "10:30"
+        },
+        {
+          id: 1002,
+          text: "Halo! Ya, masih tersedia. Minat?",
+          sender: "other",
+          time: "10:32"
+        }
+      ],
+      lastMessage: "Halo! Ya, masih tersedia. Minat?"
+    },
+    {
+      id: "chat_2",
+      participantType: "buyer",
+      product: { 
+        id: 2, 
+        name: "iPhone 15 Pro", 
+        price: "15.500.000" 
+      },
+      sellerName: "Siti Rahayu",
+      productId: 2,
+      messages: [
+        {
+          id: 2001,
+          text: "Boleh nego?",
+          sender: "you",
+          time: "09:15"
+        }
+      ],
+      lastMessage: "Boleh nego?"
     }
-  }, []);
+  ]);
 
-  useEffect(() => {
-    localStorage.setItem("chat_conversations", JSON.stringify(conversations));
-  }, [conversations]);
+  // ❌ Hapus localStorage
 
-  // ✅ Buat chat sebagai PEMBELI ke penjual
   const startChatAsBuyer = (productId, product, sellerName, message) => {
     const chatId = `chat_${Date.now()}`;
     const newMessage = {
       id: Date.now(),
       text: message,
-      sender: "you", // Anda = pembeli
+      sender: "you",
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
     const chat = {
       id: chatId,
-      participantType: "buyer", // Anda adalah pembeli
+      participantType: "buyer",
       product,
       sellerName,
       productId,
@@ -49,19 +87,18 @@ export const ChatProvider = ({ children }) => {
     return chatId;
   };
 
-  // ✅ Terima chat sebagai PENJUAL dari pembeli
   const receiveChatAsSeller = (productId, product, buyerName, message) => {
     const chatId = `chat_${Date.now()}_incoming`;
     const newMessage = {
       id: Date.now(),
       text: message,
-      sender: "other", // Pembeli = orang lain
+      sender: "other",
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
     const chat = {
       id: chatId,
-      participantType: "seller", // Anda adalah penjual
+      participantType: "seller",
       product,
       buyerName,
       productId,

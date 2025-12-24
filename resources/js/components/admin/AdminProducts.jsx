@@ -1,13 +1,28 @@
-// src/pages/admin/AdminProducts.js
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+// components/admin/AdminProducts.js
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom"; // ✅ Tambahkan useLocation
 import AdminLayout from "./AdminLayout";
 import Button from "../ui/Button";
 
 export default function AdminProducts() {
-  const [activeTab, setActiveTab] = useState("menunggu");
+  const navigate = useNavigate();
+  const location = useLocation(); // ✅ Ambil state dari navigasi
 
-  // ✅ Hapus produk dengan status "dilaporkan"
+  // ✅ Tentukan tab awal berdasarkan state
+  const getDefaultTab = () => {
+    if (location.state?.defaultTab) {
+      return location.state.defaultTab;
+    }
+    return "menunggu"; // Default saat buka dari sidebar
+  };
+
+  const [activeTab, setActiveTab] = useState(getDefaultTab);
+
+  // ✅ Opsional: update tab jika state berubah (misal navigasi ulang)
+  useEffect(() => {
+    setActiveTab(getDefaultTab());
+  }, [location.state]);
+
   const [products] = useState([
     {
       id: 1,
@@ -39,17 +54,6 @@ export default function AdminProducts() {
       uploadedAt: "3 hari lalu",
       status: "terjual",
     },
-    // ✅ Produk "Laptop ASUS Curian" (status: dilaporkan) DIHAPUS
-    {
-      id: 5,
-      name: "Sepatu Nike KW",
-      seller: "Eko",
-      category: "Fashion",
-      price: "500.000",
-      location: "Surabaya",
-      uploadedAt: "2 minggu lalu",
-      status: "dihapus",
-    },
     {
       id: 6,
       name: "HP Android Rusak",
@@ -72,10 +76,8 @@ export default function AdminProducts() {
   };
 
   const handleHide = (id) => {
-    alert(`Produk ID ${id} disembunyikan (dihapus)!`);
+    alert(`Produk ID ${id} disembunyikan (tidak tampil di publik)!`);
   };
-
-  // ✅ Hapus fungsi handleDeleteReported & handleRestore
 
   const filteredProducts = products.filter(product => {
     if (activeTab === "semua") return true;
@@ -87,8 +89,6 @@ export default function AdminProducts() {
       menunggu: { text: "Menunggu", bg: "bg-yellow-100", textC: "text-yellow-800" },
       aktif: { text: "Aktif", bg: "bg-green-100", textC: "text-green-800" },
       terjual: { text: "Terjual", bg: "bg-blue-100", textC: "text-blue-800" },
-      // ✅ "dilaporkan" dihapus
-      dihapus: { text: "Dihapus", bg: "bg-gray-100", textC: "text-gray-800" },
       ditolak: { text: "Ditolak", bg: "bg-red-100", textC: "text-red-800" },
     };
     const { text, bg, textC } = config[status] || config.menunggu;
@@ -104,21 +104,20 @@ export default function AdminProducts() {
       case "menunggu":
         return (
           <div className="flex gap-2">
-            <Button variant="primary" size="sm" onClick={() => handleApprove(product.id)}>
+            <Button variant="outline" size="sm" onClick={() => handleApprove(product.id)}>
               Setujui
             </Button>
-            <Button variant="danger" className="border border-red-600 text-red-600 hover:bg-red-600 hover:text-white" size="sm" onClick={() => handleReject(product.id)}>
+            <Button variant="danger" size="sm" onClick={() => handleReject(product.id)}>
               Tolak
             </Button>
           </div>
         );
       case "aktif":
         return (
-          <Button variant="danger" className="border border-red-600 text-red-600 hover:bg-red-600 hover:text-white" size="sm" onClick={() => handleHide(product.id)}>
+          <Button variant="danger" size="sm" onClick={() => handleHide(product.id)}>
             Sembunyikan
           </Button>
         );
-      // ✅ Hapus case "dilaporkan"
       default:
         return (
           <span className="text-gray-500 text-sm">Tidak ada aksi</span>
@@ -140,15 +139,13 @@ export default function AdminProducts() {
           </div>
         </div>
 
-        {/* ✅ Tab Filter — HAPUS "Dilaporkan" */}
+        {/* Tab Filter */}
         <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
           {[
             { id: "semua", label: "Semua" },
             { id: "menunggu", label: "Menunggu Persetujuan" },
             { id: "aktif", label: "Aktif" },
             { id: "terjual", label: "Terjual" },
-            // ✅ "Dilaporkan" dihapus
-            { id: "dihapus", label: "Dihapus" },
             { id: "ditolak", label: "Ditolak" },
           ].map((tab) => (
             <button

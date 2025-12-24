@@ -1,17 +1,16 @@
+// app.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { FavoriteProvider } from "./components/context/FavoriteContext";
 import { ChatProvider } from "./components/context/ChatContext";
 import { ReportProvider } from "./components/context/ReportContext";
+import { ProductProvider } from "./components/context/ProductContext";
 
     // Users Import
     import LandingPage from "./components/LandingPage";
     import SignupPage from "./components/SignupPage";
     import LoginPage from "./components/LoginPage";
-    import NavbarAfter from "./components/NavbarAfter";
-    import NavbarBefore from "./components/NavbarBefore";
-    import Footer from "./components/Footer"
     import Dashboard from "./components/Dashboard"
     import SellPage from "./components/SellPage"
     import FavoritePage from "./components/FavoritePage"
@@ -23,6 +22,7 @@ import { ReportProvider } from "./components/context/ReportContext";
     import ChatRoom from "./components/ChatRoom"
     import NotificationPage from "./components/NotificationPage"
     import PurchaseHistoryPage from "./components/PurchaseHistoryPage";
+    import DiskonPage from "./components/DiskonPage";
 
     // Admin Import
     import AdminDashboard from "./components/admin/AdminDashboard";
@@ -30,24 +30,25 @@ import { ReportProvider } from "./components/context/ReportContext";
     import AdminProducts from "./components/admin/AdminProducts";
     import AdminReports from "./components/admin/AdminReports";
     import AdminUserProfile from "./components/admin/AdminUserProfile";
+    import AdminSettings from "./components/admin/AdminSettings";
+    import AdminLogin from "./components/admin/AdminLogin";
+    import AdminActivity from "./components/admin/AdminActivity";
 
 
 
     ReactDOM.createRoot(document.getElementById("app")).render(
     <React.StrictMode>
-        <BrowserRouter>
-            <FavoriteProvider>
-                <ChatProvider>
-                    <ReportProvider>
+    <BrowserRouter>
+        <FavoriteProvider>
+        <ChatProvider>
+        <ReportProvider>
+        <ProductProvider>
 
         <Routes>
             {/* Halaman User */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/navbarAfter" element={<NavbarAfter />} />
-            <Route path="/navbarBefore" element={<NavbarBefore />} />
-            <Route path="/footer" element={<Footer />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/sell" element={<SellPage />} />
             <Route path="/favorite" element={<FavoritePage />} />
@@ -59,20 +60,20 @@ import { ReportProvider } from "./components/context/ReportContext";
             <Route path="/chatroom/:id" element={<ChatRoom />} />
             <Route path="/notif" element={<NotificationPage />} />
             <Route path="/history" element={<PurchaseHistoryPage />} />
+            <Route path="/diskon" element={<DiskonPage />} />
 
             {/* Halaman Admin */}
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/products" element={<AdminProducts />} />
             <Route path="/admin/reports" element={<AdminReports />} />
             <Route path="/admin/user/:userId" element={<AdminUserProfile />} />
-
-
-
-
-
-
+            <Route path="/admin/settings" element={<AdminSettings />} />
+            <Route path="/admin/activity" element={<AdminActivity />} />
         </Routes>
+
+        </ProductProvider>
         </ReportProvider>
         </ChatProvider>
         </FavoriteProvider>

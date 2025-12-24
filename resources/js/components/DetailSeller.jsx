@@ -1,89 +1,29 @@
-    // src/pages/DetailSellerPage.js
+    // src/components/DetailSellerPage.js
     import React, { useState, useEffect } from "react";
     import { useNavigate, useParams } from "react-router-dom";
     import Button from "../components/ui/Button";
     import NavbarAfter from "./NavbarAfter";
     import Background from "./Background";
     import Footer from "./Footer";
-
-    // ✅ Data produk yang sama dengan ProfilPage
-    const mockProducts = [
-    { 
-        id: 1, 
-        name: "Samsung S24 Ultra", 
-        category: "Elektronik", 
-        price: "12000000", 
-        location: "Surabaya", 
-        publishedDate: "11/10/2025", 
-        condition: "Bekas Baik", 
-        description: "Produk ini dalam kondisi sangat baik, masih mulus dan berfungsi sempurna. Dijual karena ingin upgrade ke model terbaru. Semua aksesori lengkap dan garansi masih berlaku.", 
-        status: "menunggu" 
-    },
-    { 
-        id: 2, 
-        name: "iPhone 15 Pro", 
-        category: "Elektronik", 
-        price: "15500000", 
-        location: "Bandung", 
-        publishedDate: "12/10/2025", 
-        condition: "Baru", 
-        description: "iPhone terbaru dengan kamera terbaik dan baterai tahan lama.", 
-        status: "aktif" 
-    },
-    { 
-        id: 3, 
-        name: "Kursi Gaming", 
-        category: "Furnitur", 
-        price: "2300000", 
-        location: "Surabaya", 
-        publishedDate: "10/10/2025", 
-        condition: "Bekas Baik", 
-        description: "Kursi ergonomis dengan bahan kulit sintetis dan sandaran nyaman.", 
-        status: "terjual" 
-    },
-    { 
-        id: 6, 
-        name: "HP Android Rusak", 
-        category: "Elektronik", 
-        price: "300000", 
-        location: "Bandung", 
-        publishedDate: "05/10/2025", 
-        condition: "Rusak", 
-        description: "HP masih bisa dinyalakan, layar retak, baterai lemah.", 
-        status: "ditolak", 
-        rejectionReason: "Foto tidak jelas" 
-    },
-    { 
-        id: 7, 
-        name: "Laptop ASUS", 
-        category: "Elektronik", 
-        price: "5000000", 
-        location: "Jakarta", 
-        publishedDate: "01/10/2025", 
-        condition: "Mulus", 
-        description: "Laptop gaming dengan spek tinggi, layar 144Hz, RAM 16GB.", 
-        status: "menunggu" 
-    },
-    ];
+    import { useProducts } from "../components/context/ProductContext";
 
     export default function DetailSellerPage() {
     const navigate = useNavigate();
     const { id } = useParams();
-    const [product, setProduct] = useState(null);
+    const { products, updateProduct, deleteProduct } = useProducts();
+    
+    const product = products.find(p => p.id === parseInt(id));
     const [isEditing, setIsEditing] = useState(false);
-    const [formData, setFormData] = useState({});
+    const [formData, setFormData] = useState(product || {});
 
-    useEffect(() => {
-        const found = mockProducts.find(p => p.id === parseInt(id));
-        if (found) {
-        setProduct(found);
-        setFormData(found);
-        } else {
-        navigate("/profil");
-        }
-    }, [id, navigate]);
+    // ✅ State untuk modal
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
-    if (!product) return null;
+    if (!product) {
+        navigate("/profile");
+        return null;
+    }
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -95,10 +35,53 @@
         setFormData((prev) => ({ ...prev, price: rawValue }));
     };
 
+    const handleOriginalPriceChange = (e) => {
+        const rawValue = e.target.value.replace(/\D/g, '');
+        setFormData((prev) => ({ ...prev, originalPrice: rawValue }));
+    };
+
+    const handleDiscountChange = (e) => {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value && parseInt(value) > 100) value = "100";
+        setFormData((prev) => ({ ...prev, discount: value }));
+    };
+
+    const calculateDiscountedPrice = () => {
+        const { originalPrice, discount } = formData;
+        if (!originalPrice || !discount) return formData.price;
+
+        const price = parseFloat(originalPrice);
+        const disc = parseFloat(discount);
+        
+        if (isNaN(price) || isNaN(disc) || disc < 0 || disc > 100) return formData.price;
+        
+        return Math.round(price * (1 - disc / 100)).toString();
+    };
+
     const handleSave = () => {
-        setProduct(formData);
+        let finalPrice = formData.price;
+        let onDiscount = false;
+
+        if (formData.originalPrice && formData.discount) {
+        finalPrice = calculateDiscountedPrice();
+        onDiscount = true;
+        }
+
+        const updatedProduct = {
+        ...formData,
+        price: finalPrice,
+        onDiscount,
+        };
+
+        updateProduct(product.id, updatedProduct);
         setIsEditing(false);
-        alert("Produk berhasil diperbarui!");
+        
+        // ✅ Notifikasi toast
+        setNotification({ 
+        show: true, 
+        message: "Produk berhasil diperbarui!", 
+        type: "success" 
+        });
     };
 
     const handleCancel = () => {
@@ -106,17 +89,37 @@
         setIsEditing(false);
     };
 
-    const handleDelete = () => {
-        if (window.confirm("Yakin ingin menghapus produk ini?")) {
-        alert("Produk dihapus!");
-        navigate("/profil");
-        }
+    // ✅ Buka modal hapus
+    const handleDeleteClick = () => {
+        setIsDeleteModalOpen(true);
+    };
+
+    // ✅ Konfirmasi hapus
+    const handleConfirmDelete = () => {
+        deleteProduct(product.id);
+        setIsDeleteModalOpen(false);
+        
+        setNotification({ 
+        show: true, 
+        message: "Produk berhasil dihapus!", 
+        type: "success" 
+        });
+        
+        // Redirect ke profil setelah 1.5 detik
+        setTimeout(() => {
+        navigate("/profile");
+        }, 1500);
     };
 
     const toggleStatus = () => {
         const newStatus = product.status === "aktif" ? "terjual" : "aktif";
-        setProduct({ ...product, status: newStatus });
-        alert(`Status diubah menjadi: ${newStatus === "terjual" ? "Terjual" : "Aktif"}`);
+        updateProduct(product.id, { status: newStatus });
+        
+        setNotification({ 
+        show: true, 
+        message: `Status diubah menjadi: ${newStatus === "terjual" ? "Terjual" : "Aktif"}`, 
+        type: "success" 
+        });
     };
 
     const formatPrice = (priceStr) => {
@@ -146,27 +149,34 @@
         }
     };
 
+    // ✅ Auto-hide notification
+    useEffect(() => {
+        if (notification.show) {
+        const timer = setTimeout(() => {
+            setNotification({ show: false, message: "", type: "" });
+        }, 3000);
+        return () => clearTimeout(timer);
+        }
+    }, [notification.show]);
+
     return (
         <>
         <NavbarAfter />
         <Background>
             <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-8 py-8">
-
             <button
-                onClick={() => navigate("/profil")}
+                onClick={() => navigate(-1)}
                 className="flex items-center gap-2 text-[#1E3A8A] font-medium mb-6 hover:text-[#162e68] transition"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                 </svg>
-                Kembali ke Profil
+                Kembali 
             </button>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                {/* Kiri: Gambar + Tentang Penjual */}
                 <div>
                 <div className="bg-gray-100 h-[400px] w-full rounded-lg"></div>
-
                 <div className="mt-4 pt-4 border-t border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">Tentang Penjual</h3>
                     <div className="flex items-center gap-3">
@@ -183,19 +193,25 @@
                 </div>
                 </div>
 
-                {/* Kanan: Info Produk */}
                 <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div>
                     {!isEditing ? (
-                        <>
-                        <span className="text-sm font-semibold text-[#1E3A8A] bg-[#F0F7FF] px-3 py-1 rounded-full">
+                        <div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-[#1E3A8A] bg-[#F0F7FF] px-3 py-1 rounded-full">
                             {product.category}
-                        </span>
+                            </span>
+                            {product.onDiscount && (
+                            <span className="text-xs font-bold bg-red-500 text-white px-2 py-1 rounded-full">
+                                -{product.discount}%
+                            </span>
+                            )}
+                        </div>
                         <h1 className="text-2xl font-bold text-gray-900 mt-3 leading-tight">
                             {product.name}
                         </h1>
-                        </>
+                        </div>
                     ) : (
                         <h1 className="text-2xl font-bold text-gray-900">Edit Produk</h1>
                     )}
@@ -228,11 +244,24 @@
                     )}
                 </div>
 
-                {!isEditing ? (
+                {!isEditing && (
                     <div>
-                    <p className="text-2xl font-bold text-[#1E3A8A]">Rp. {formatPrice(product.price)}</p>
+                    {product.onDiscount ? (
+                        <>
+                        <p className="text-xl text-gray-500 line-through">
+                            Rp. {formatPrice(product.originalPrice)}
+                        </p>
+                        <p className="text-2xl font-bold text-[#1E3A8A] mt-1">
+                            Rp. {formatPrice(product.price)}
+                        </p>
+                        </>
+                    ) : (
+                        <p className="text-2xl font-bold text-[#1E3A8A]">
+                        Rp. {formatPrice(product.price)}
+                        </p>
+                    )}
                     </div>
-                ) : null}
+                )}
 
                 {isEditing ? (
                     <div className="space-y-4">
@@ -263,6 +292,44 @@
                         </select>
                     </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Harga Asli (Rp)
+                        </label>
+                        <input
+                            type="text"
+                            value={formatPrice(formData.originalPrice || "")}
+                            onChange={handleOriginalPriceChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none transition focus:ring-2 focus:ring-[#1E3A8A]"
+                            placeholder="Contoh: 12000000"
+                        />
+                        </div>
+                        <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Diskon (%)
+                        </label>
+                        <input
+                            type="text"
+                            value={formData.discount || ""}
+                            onChange={handleDiscountChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none transition focus:ring-2 focus:ring-[#1E3A8A]"
+                            placeholder="Contoh: 10"
+                        />
+                        </div>
+                    </div>
+
+                    {formData.originalPrice && formData.discount && (
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-700">
+                            Harga setelah diskon:{" "}
+                            <span className="font-bold text-green-600">
+                            Rp. {formatPrice(calculateDiscountedPrice())}
+                            </span>
+                        </p>
+                        </div>
+                    )}
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Harga (Rp) *</label>
                         <input
@@ -272,6 +339,9 @@
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none transition focus:ring-2 focus:ring-[#1E3A8A]"
                         placeholder="Contoh: 12000000"
                         />
+                        <p className="text-xs text-gray-500 mt-1">
+                        Jika tidak pakai diskon, isi harga langsung di sini.
+                        </p>
                     </div>
 
                     <div>
@@ -346,7 +416,7 @@
                         <Button
                         variant="danger"
                         size="md"
-                        onClick={handleDelete}
+                        onClick={handleDeleteClick}
                         className="border border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
                         >
                         Hapus Produk
@@ -364,6 +434,71 @@
                 </div>
             </div>
             </div>
+
+            {/* ✅ MODAL HAPUS PRODUK */}
+            {isDeleteModalOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-xl p-6 w-full max-w-md">
+                <div className="text-center">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="red" className="w-6 h-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 5.63a1.5 1.5 0 002.122 2.122L9 17.424m7.178-8.25L18.878 12M3 12h18M5.5 19.5h13a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H5.5A1.5 1.5 0 004 6v12a1.5 1.5 0 001.5 1.5z" />
+                    </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Konfirmasi Hapus</h3>
+                    <p className="text-gray-600 mb-6">
+                    Apakah Anda yakin ingin menghapus produk <span className="font-medium">"{product.name}"</span>? 
+                    Tindakan ini tidak dapat dikembalikan.
+                    </p>
+                    <div className="flex gap-3">
+                    <Button
+                        variant="outline"
+                        size="md"
+                        onClick={() => setIsDeleteModalOpen(false)}
+                        className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
+                        Batal
+                    </Button>
+                    <Button
+                        variant="danger"
+                        size="md"
+                        onClick={handleConfirmDelete}
+                        className="flex-1 bg-red-600 text-white hover:bg-red-700 border-red-600"
+                    >
+                        Hapus
+                    </Button>
+                    </div>
+                </div>
+                </div>
+            </div>
+            )}
+
+            {/* ✅ NOTIFIKASI TOAST */}
+            {notification.show && (
+            <div 
+                className="fixed top-4 right-4 z-50 max-w-xs p-4 rounded-lg shadow-lg text-white animate-fade-in"
+                style={{ backgroundColor: notification.type === "success" ? "#10B981" : "#EF4444" }}
+                onClick={() => setNotification({ show: false, message: "", type: "" })}
+            >
+                <div className="flex items-start gap-3">
+                <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    strokeWidth={2} 
+                    stroke="currentColor" 
+                    className="w-5 h-5"
+                >
+                    {notification.type === "success" ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    )}
+                </svg>
+                <p className="text-sm">{notification.message}</p>
+                </div>
+            </div>
+            )}
         </Background>
         <Footer />
         </>

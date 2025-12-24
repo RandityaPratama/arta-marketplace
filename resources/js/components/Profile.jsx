@@ -1,23 +1,32 @@
-    // src/pages/ProfilPage.js
+    // src/components/ProfilPage.js
     import React, { useState } from "react";
     import { useNavigate } from "react-router-dom";
     import Button from "../components/ui/Button";
     import NavbarAfter from "./NavbarAfter";
+    import Background from "../components/Background";
     import Footer from "./Footer";
+    import { useProducts } from "../components/context/ProductContext";
+    // ✅ Import ikon dari lucide-react
+    import { User, Mail, Phone, MapPin, Calendar } from "lucide-react";
+
+    // ✅ Fungsi format harga: 12000000 → "12.000.000"
+    const formatPrice = (priceStr) => {
+    if (!priceStr) return "";
+    const clean = priceStr.toString().replace(/\D/g, '');
+    if (!clean) return "";
+    return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    };
 
     export default function ProfilPage() {
     const navigate = useNavigate();
-
-    const userProducts = [
-        { id: 1, name: "Samsung S24 Ultra", category: "Elektronik", price: "12.000.000", location: "Surabaya", status: "menunggu" },
-        { id: 2, name: "iPhone 15 Pro", category: "Elektronik", price: "15.500.000", location: "Bandung", status: "aktif" },
-        { id: 3, name: "Kursi Gaming", category: "Furnitur", price: "2.300.000", location: "Surabaya", status: "terjual" },
-        { id: 6, name: "HP Android Rusak", category: "Elektronik", price: "300.000", location: "Bandung", status: "ditolak", rejectionReason: "Foto tidak jelas" },
-        { id: 7, name: "Laptop ASUS", category: "Elektronik", price: "5.000.000", location: "Jakarta", status: "menunggu" },
-    ];
-
-    const [products] = useState(userProducts);
+    const { getUserProducts } = useProducts();
+    const products = getUserProducts();
     const [activeTab, setActiveTab] = useState("aktif");
+    
+    // ✅ State untuk nama user
+    const [userName, setUserName] = useState("Randitya Pratama");
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [newName, setNewName] = useState(userName);
 
     const getStatusBadge = (status) => {
         switch (status) {
@@ -52,161 +61,237 @@
 
     const currentProducts = getProductsByTab();
 
+    // ✅ Handle edit profil
+    const handleEditProfile = () => {
+        setIsEditModalOpen(true);
+        setNewName(userName);
+    };
+
+    const handleSaveName = () => {
+        if (newName.trim()) {
+        setUserName(newName.trim());
+        setIsEditModalOpen(false);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditModalOpen(false);
+        setNewName(userName);
+    };
+
     return (
         <>
         <NavbarAfter />
-        <div className="font-[Poppins] bg-white min-h-screen">
+        <Background>
+            <div className="font-[Poppins] min-h-screen">
             <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8">
-            {/* Profil Header */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-[0px_4px_11px_rgba(0,0,0,0.07)]">
+                {/* Profil Header */}
+                <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-[0px_4px_11px_rgba(0,0,0,0.07)]">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4">
                     <div className="w-16 h-16 bg-[#DDE7FF] rounded-full flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="#1E3A8A" className="w-8 h-8">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                    </svg>
+                        <User size={32} className="text-[#1E3A8A]" strokeWidth={1.5} />
                     </div>
                     <div>
-                    <h2 className="text-lg font-semibold text-gray-800">Randitya Pratama</h2>
-                    <div className="space-y-1 text-sm text-gray-600">
+                        <h2 className="text-lg font-semibold text-gray-800">{userName}</h2>
+                        <div className="space-y-1 text-sm text-gray-600">
                         <div className="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25-2.25c0-4.166-7.384-7.5-16.5-7.5a7.5 7.5 0 01-3.75 1.5" />
-                        </svg>
-                        <span>randityapratama@gmail.com</span>
+                            <Mail size={16} className="text-gray-500" strokeWidth={1.5} />
+                            <span>randityapratama@gmail.com</span>
                         </div>
                         <div className="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.954a1.5 1.5 0 012.122 2.122L12 14.172V21.75" />
-                        </svg>
-                        <span>+62 813-888-111</span>
+                            <Phone size={16} className="text-gray-500" strokeWidth={1.5} />
+                            <span>+62 813-888-111</span>
                         </div>
                         <div className="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-5.522 12.858-12 12.858a12.718 12.718 0 01-7.647-3.097 12.718 12.718 0 01-3.097-7.647A12.718 12.718 0 0121 3c7.142 0 12.858 5.522 12.858 12.858z" />
-                        </svg>
-                        <span>Surabaya</span>
+                            <MapPin size={16} className="text-gray-500" strokeWidth={1.5} />
+                            <span>Surabaya</span>
                         </div>
                         <div className="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>Bergabung sejak 1/1/2025</span>
+                            <Calendar size={16} className="text-gray-500" strokeWidth={1.5} />
+                            <span>Bergabung sejak 12 Jan 2025</span>
+                        </div>
                         </div>
                     </div>
                     </div>
-                </div>
 
-                <div className="flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" size="md" onClick={() => alert("Edit Profil")}>
-                    Edit Profil
+                    <div className="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" size="md" onClick={handleEditProfile}>
+                        Edit Profil
                     </Button>
                     <Button variant="primary" size="md" onClick={() => navigate("/sell")}>
-                    Jual Barang
+                        Jual Barang
                     </Button>
+                    </div>
                 </div>
                 </div>
-            </div>
 
-            {/* Statistik */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* Statistik */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-[0px_4px_11px_rgba(0,0,0,0.07)]">
-                <div className="text-center">
+                    <div className="text-center">
                     <p className="text-2xl font-bold text-[#1E3A8A]">{products.filter(p => p.status === "aktif").length}</p>
                     <p className="text-sm text-gray-600 mt-1">Produk Aktif</p>
-                </div>
+                    </div>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-[0px_4px_11px_rgba(0,0,0,0.07)]">
-                <div className="text-center">
+                    <div className="text-center">
                     <p className="text-2xl font-bold text-[#1E3A8A]">{products.filter(p => p.status === "terjual").length}</p>
                     <p className="text-sm text-gray-600 mt-1">Produk Terjual</p>
+                    </div>
                 </div>
                 </div>
-            </div>
 
-            {/* Tab Header */}
-            <div className="flex border-b border-gray-200 mb-6">
+                {/* Tab Header */}
+                <div className="flex border-b border-gray-200 mb-6">
                 <button
-                onClick={() => setActiveTab("aktif")}
-                className={`px-4 py-2 font-medium text-sm ${
+                    onClick={() => setActiveTab("aktif")}
+                    className={`px-4 py-2 font-medium text-sm ${
                     activeTab === "aktif"
-                    ? "text-[#1E3A8A] border-b-2 border-[#1E3A8A]"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
+                        ? "text-[#1E3A8A] border-b-2 border-[#1E3A8A]"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
                 >
-                Produk Aktif
+                    Produk Aktif
                 </button>
                 <button
-                onClick={() => setActiveTab("terjual")}
-                className={`px-4 py-2 font-medium text-sm ${
+                    onClick={() => setActiveTab("terjual")}
+                    className={`px-4 py-2 font-medium text-sm ${
                     activeTab === "terjual"
-                    ? "text-[#1E3A8A] border-b-2 border-[#1E3A8A]"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
+                        ? "text-[#1E3A8A] border-b-2 border-[#1E3A8A]"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
                 >
-                Terjual
+                    Terjual
                 </button>
                 <button
-                onClick={() => setActiveTab("menunggu")}
-                className={`px-4 py-2 font-medium text-sm ${
+                    onClick={() => setActiveTab("menunggu")}
+                    className={`px-4 py-2 font-medium text-sm ${
                     activeTab === "menunggu"
-                    ? "text-[#1E3A8A] border-b-2 border-[#1E3A8A]"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
+                        ? "text-[#1E3A8A] border-b-2 border-[#1E3A8A]"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
                 >
-                Menunggu Persetujuan
+                    Menunggu Persetujuan
                 </button>
-            </div>
+                </div>
 
-            {/* Daftar Produk Berdasarkan Tab */}
-            <div>
+                {/* Daftar Produk Berdasarkan Tab */}
+                <div>
                 {currentProducts.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {currentProducts.map((product) => (
-                    <div
+                        <div
                         key={product.id}
-                        className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-[0px_4px_11px_rgba(0,0,0,0.07)] cursor-pointer"
-                        onClick={() => navigate(`/detailseller/${product.id}`)} // ✅ Arahkan ke detail seller
-                    >
+                        className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-[0px_4px_11px_rgba(0,0,0,0.07)] relative cursor-pointer"
+                        onClick={() => navigate(`/detailseller/${product.id}`)}
+                        >
+                        {/* ✅ BADGE DISKON DI POJOK KIRI ATAS */}
+                        {product.onDiscount && (
+                            <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
+                            -{product.discount}%
+                            </div>
+                        )}
+
                         <div className="bg-gray-200 h-32 w-full"></div>
                         <div className="p-4">
-                        <span className="inline-block bg-[#DDE7FF] text-[#1E3A8A] text-[12px] font-[500] px-2 py-1 rounded-full mb-2">
+                            <span className="inline-block bg-[#DDE7FF] text-[#1E3A8A] text-[12px] font-[500] px-2 py-1 rounded-full mb-2">
                             {product.category}
-                        </span>
-                        <h4 className="text-[14px] font-[500] text-gray-800 truncate">{product.name}</h4>
-                        <p className="text-[14px] font-bold text-black mt-1">Rp. {product.price}</p>
-                        <div className="mt-2">
+                            </span>
+                            <h4 className="text-[14px] font-[500] text-gray-800 truncate">{product.name}</h4>
+                            
+                            {/* ✅ TAMPILAN HARGA DENGAN DISKON */}
+                            <div className="mt-1">
+                            {product.onDiscount ? (
+                                <>
+                                <p className="text-[12px] text-gray-500 line-through">
+                                    Rp. {formatPrice(product.originalPrice)}
+                                </p>
+                                <p className="text-[14px] font-bold text-red-600">
+                                    Rp. {formatPrice(product.price)}
+                                </p>
+                                </>
+                            ) : (
+                                <p className="text-[14px] font-bold text-black">
+                                Rp. {formatPrice(product.price)}
+                                </p>
+                            )}
+                            </div>
+                            
+                            <div className="mt-2">
                             {getStatusBadge(product.status)}
                             {product.status === "ditolak" && (
-                            <p className="text-[11px] text-gray-600 mt-1">Alasan: {product.rejectionReason}</p>
+                                <p className="text-[11px] text-gray-600 mt-1">Alasan: {product.rejectionReason}</p>
                             )}
-                        </div>
-                        {product.status === "ditolak" && (
+                            </div>
+                            {product.status === "ditolak" && (
                             <Button
-                            variant="primary"
-                            size="sm"
-                            className="mt-2 w-full"
-                            onClick={(e) => {
+                                variant="primary"
+                                size="sm"
+                                className="mt-2 w-full"
+                                onClick={(e) => {
                                 e.stopPropagation();
                                 handleReupload(product.id);
-                            }}
+                                }}
                             >
-                            Unggah Ulang
+                                Unggah Ulang
                             </Button>
-                        )}
+                            )}
                         </div>
-                    </div>
+                        </div>
                     ))}
-                </div>
+                    </div>
                 ) : (
-                <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-gray-500">
                     Tidak ada produk dalam kategori ini.
-                </div>
+                    </div>
                 )}
+                </div>
             </div>
             </div>
-        </div>
+        </Background>
+        
+        {/* ✅ MODAL EDIT PROFIL */}
+        {isEditModalOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-6 w-full max-w-md">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Edit Profil</h3>
+                
+                <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nama Lengkap
+                </label>
+                <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+                    placeholder="Masukkan nama lengkap"
+                />
+                </div>
+
+                <div className="flex gap-3">
+                <Button
+                    variant="outline"
+                    size="md"
+                    onClick={handleCancelEdit}
+                    className="flex-1"
+                >
+                    Batal
+                </Button>
+                <Button
+                    variant="primary"
+                    size="md"
+                    onClick={handleSaveName}
+                    className="flex-1"
+                >
+                    Simpan
+                </Button>
+                </div>
+            </div>
+            </div>
+        )}
+        
         <Footer />
         </>
     );

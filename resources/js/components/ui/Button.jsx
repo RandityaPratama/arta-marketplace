@@ -22,6 +22,8 @@
         return "bg-[#FED7AA] text-[#1E3A8A] hover:bg-[#ffca7a]";
         } else if (variant === "outline") {
         return "border border-[#1E3A8A] text-[#1E3A8A] hover:bg-[#1E3A8A] hover:text-white";
+        } else if (variant === "danger") {
+        return "border border-red-600 text-red-600 hover:bg-red-600 hover:text-white" ;
         } else {
         // Jika variant bukan yang dikenal, biarkan className yang atur semuanya
         return "";

@@ -1,3 +1,4 @@
+// components/NotFoundPage.jsx
     import React from "react";
     import { useNavigate } from "react-router-dom";
     import Button from "../components/ui/Button";

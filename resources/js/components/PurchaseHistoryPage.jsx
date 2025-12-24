@@ -1,11 +1,19 @@
-    // src/pages/PurchaseHistoryPage.js
+    // src/components/PurchaseHistoryPage.js
     import React, { useState, useEffect } from "react";
     import { useNavigate } from "react-router-dom";
     import Button from "../components/ui/Button";
     import NavbarAfter from "./NavbarAfter";
     import Footer from "./Footer";
     import Background from "../components/Background";
-    import { useReports } from "../components/context/ReportContext"; // ✅ Pastikan path benar
+    import { useReports } from "../components/context/ReportContext";
+
+    // ✅ Fungsi format harga
+    const formatPrice = (priceStr) => {
+    if (!priceStr) return "";
+    const clean = priceStr.toString().replace(/\D/g, '');
+    if (!clean) return "";
+    return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    };
 
     export default function PurchaseHistoryPage() {
     const navigate = useNavigate();
@@ -13,9 +21,7 @@
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [reportData, setReportData] = useState({ productId: null, productName: "" });
     const [reportReason, setReportReason] = useState("");
-    const [evidenceImages, setEvidenceImages] = useState([]); // ✅ State untuk foto bukti
-    
-    // ✅ State untuk notifikasi
+    const [evidenceImages, setEvidenceImages] = useState([]);
     const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
     const [purchases] = useState([
@@ -24,7 +30,7 @@
         productId: 2,
         productName: "iPhone 15 Pro",
         seller: "Siti Rahayu",
-        price: "15.500.000",
+        price: "15500000",
         date: "12 Desember 2025",
         status: "Diterima",
         image: "https://via.placeholder.com/60x60?text=iPhone15",
@@ -34,7 +40,7 @@
         productId: 3,
         productName: "Kursi Gaming",
         seller: "Andi Wijaya",
-        price: "2.300.000",
+        price: "2300000",
         date: "10 Desember 2025",
         status: "Dikirim",
         image: "https://via.placeholder.com/60x60?text=Chair",
@@ -44,7 +50,7 @@
         productId: 4,
         productName: "Adidas Adizero Evo SL",
         seller: "Dina Putri",
-        price: "1.200.000",
+        price: "1200000",
         date: "8 Desember 2025",
         status: "Diterima",
         image: "https://via.placeholder.com/60x60?text=Shoes",
@@ -58,7 +64,6 @@
         setIsReportModalOpen(true);
     };
 
-    // ✅ Handle upload foto bukti
     const handleEvidenceImageUpload = (e) => {
         const files = Array.from(e.target.files);
         if (files.length + evidenceImages.length > 3) {
@@ -73,7 +78,6 @@
         setEvidenceImages(prev => [...prev, ...newImages]);
     };
 
-    // ✅ Hapus foto bukti
     const handleRemoveEvidenceImage = (index) => {
         setEvidenceImages(prev => prev.filter((_, i) => i !== index));
     };
@@ -88,7 +92,6 @@
         return;
         }
         
-        // Simpan laporan dengan bukti foto
         submitReport(reportData.productId, reportData.productName, reportReason, evidenceImages);
         setIsReportModalOpen(false);
         
@@ -157,7 +160,7 @@
                             </div>
                         </td>
                         <td className="px-6 py-4 text-gray-700">{purchase.seller}</td>
-                        <td className="px-6 py-4 font-medium">Rp. {purchase.price}</td>
+                        <td className="px-6 py-4 font-medium">Rp. {formatPrice(purchase.price)}</td>
                         <td className="px-6 py-4 text-gray-700">{purchase.date}</td>
                         <td className="px-6 py-4">
                             <span className={`px-2 py-1 rounded-full text-xs ${
@@ -185,7 +188,7 @@
             )}
             </div>
 
-            {/* ✅ Modal Laporan dengan Upload Foto */}
+            {/* Modal Laporan dengan Upload Foto */}
             {isReportModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                 <div className="bg-white rounded-xl p-6 w-full max-w-md">
@@ -206,7 +209,7 @@
                     />
                 </div>
 
-                {/* ✅ Area Upload Foto Bukti */}
+                {/* Area Upload Foto Bukti */}
                 <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                     Foto Bukti <span className="text-red-500">*</span>
@@ -214,7 +217,6 @@
                     <p className="text-xs text-gray-600 mb-2">Unggah maksimal 3 foto (chat, kondisi barang, dll)</p>
                     
                     <div className="flex flex-wrap gap-2">
-                    {/* ✅ Preview Foto */}
                     {evidenceImages.map((img, index) => (
                         <div key={index} className="relative w-16 h-16 border-2 border-dashed border-[#1E3A8A] rounded-lg overflow-hidden">
                         <img src={img} alt={`Bukti ${index + 1}`} className="w-full h-full object-cover" />
@@ -227,7 +229,6 @@
                         </div>
                     ))}
                     
-                    {/* ✅ Tombol Tambah Foto */}
                     {evidenceImages.length < 3 && (
                         <label className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50">
                         <svg
@@ -274,7 +275,7 @@
             </div>
             )}
 
-            {/* ✅ POPUP NOTIFIKASI */}
+            {/* POPUP NOTIFIKASI */}
             {notification.show && (
             <div 
                 className="fixed top-4 right-4 z-50 max-w-xs p-4 rounded-lg shadow-lg text-white animate-fade-in"

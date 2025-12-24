@@ -1,4 +1,4 @@
-// src/pages/Dashboard.js
+// src/components/Dashboard.js
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
@@ -7,22 +7,37 @@ import NavbarAfter from "./NavbarAfter";
 import Footer from "./Footer";
 import SearchBar from "./SearchBar";
 import Background from "../components/Background";
-import { useFavorites } from "../components/context/FavoriteContext"; // ✅ Pastikan path benar
+import { useFavorites } from "../components/context/FavoriteContext";
+import { useProducts } from "../components/context/ProductContext";
+
+// ✅ Fungsi format harga: 12000000 → "12.000.000"
+const formatPrice = (priceStr) => {
+  if (!priceStr) return "";
+  const clean = priceStr.toString().replace(/\D/g, '');
+  if (!clean) return "";
+  return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { favorites, toggleFavorite, isFavorited } = useFavorites();
+  const { products } = useProducts();
 
-  // ✅ Tambahkan lebih banyak produk
-  const initialProducts = [
-    { id: 1, name: "Samsung S24 Ultra", category: "Elektronik", price: "12.000.000", location: "Jakarta Utara", status: "aktif" },
-    { id: 2, name: "iPhone 15 Pro", category: "Elektronik", price: "15.500.000", location: "Bandung", status: "aktif" },
-    { id: 3, name: "Kursi Gaming", category: "Furnitur", price: "2.300.000", location: "Surabaya", status: "aktif" },
-    { id: 4, name: "Adidas Adizero Evo SL", category: "Olahraga", price: "1.200.000", location: "Yogyakarta", status: "aktif" },
-  ];
+  const [categories] = useState([
+    "Semua", "Elektronik", "Fashion", "Furnitur", "Hobi", "Rumah Tangga"
+  ]);
+  const [selectedCategory, setSelectedCategory] = useState("Semua");
 
-  const [products] = useState(initialProducts);
-  const totalProducts = products.length;
+  // ✅ POSISI VERTIKAL FLEKSIBEL - BISA DIUBAH SESUAI KEBUTUHAN
+  const badgeVerticalPosition = '55%'; // ✅ Ganti nilai ini: '30%', '35%', '40%', '45%', '50%', dll
+
+  const filteredProducts = products
+    .filter(product => product.status === "aktif")
+    .filter(product => 
+      selectedCategory === "Semua" || product.category === selectedCategory
+    );
+
+  const totalProducts = filteredProducts.length;
 
   return (
     <>
@@ -31,9 +46,9 @@ export default function Dashboard() {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8">
           <SearchBar />
 
-          {/* ✅ Promo Banners — TINGGI SUDAH DIPERBAIKI */}
+          {/* Promo Banners */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            <div className="bg-gradient-to-r from-[#1E3A8A] to-red-300 h-[175px] rounded-xl border border-[#1E3A8A] flex items-center justify-between px-6 text-white">
+            <div className="bg-gradient-to-r from-[#1E3A8A] to-red-200 h-[170px] rounded-xl border border-[#1E3A8A] flex items-center justify-between px-6 text-white">
               <div className="w-[120px] h-[100px] bg-gray-200 rounded-lg flex items-center justify-center">
                 <Plus size={40} className="text-white" strokeWidth={1.5} />
               </div>
@@ -46,8 +61,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* ✅ TINGGI DIUBAH DARI 1400px → 140px */}
-            <div className="bg-gradient-to-r from-[#1E3A8A] to-red-300 h-[175px] rounded-xl border border-[#1E3A8A] flex items-center justify-between px-6 text-white">
+            <div className="bg-gradient-to-r from-[#1E3A8A] to-green-200 h-[170px] rounded-xl border border-[#1E3A8A] flex items-center justify-between px-6 text-white">
               <div className="w-[120px] h-[100px] bg-gray-200 rounded-lg flex items-center justify-center">
                 <User size={40} className="text-white" strokeWidth={1.5} />
               </div>
@@ -65,7 +79,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             <button
               onClick={() => navigate("/sell")}
-              className="flex items-center gap-3 p-5 border border-[#1E3A8A] rounded-lg hover:shadow-[0px_4px_11px_rgba(0,0,0,0.07)] transition w-full  text-[#1E3A8A]"
+              className="flex items-center gap-3 p-5 border border-[#1E3A8A] rounded-lg hover:shadow-[0px_4px_11px_rgba(0,0,0,0.07)] transition w-full text-[#1E3A8A]"
             >
               <div className="w-10 h-10 bg-[#DDE7FF] rounded-md flex items-center justify-center">
                 <Plus size={20} className="text-[#1E3A8A]" strokeWidth={2} />
@@ -78,7 +92,7 @@ export default function Dashboard() {
 
             <button
               onClick={() => navigate("/favorite")}
-              className="flex items-center gap-3 p-5 border border-[#1E3A8A] rounded-lg hover:shadow-[0px_4px_11px_rgba(0,0,0,0.07)] transition w-full  text-[#1E3A8A]"
+              className="flex items-center gap-3 p-5 border border-[#1E3A8A] rounded-lg hover:shadow-[0px_4px_11px_rgba(0,0,0,0.07)] transition w-full text-[#1E3A8A]"
             >
               <div className="w-10 h-10 bg-[#f3cbcb] rounded-md flex items-center justify-center">
                 <Heart size={20} className="text-[#ec3030]" strokeWidth={2} />
@@ -90,8 +104,8 @@ export default function Dashboard() {
             </button>
 
             <button
-              onClick={() => navigate("/profile")}
-              className="flex items-center gap-3 p-5 border border-[#1E3A8A] rounded-lg hover:shadow-[0px_4px_11px_rgba(0,0,0,0.07)] transition w-full  text-[#1E3A8A]"
+              onClick={() => navigate("/profil")}
+              className="flex items-center gap-3 p-5 border border-[#1E3A8A] rounded-lg hover:shadow-[0px_4px_11px_rgba(0,0,0,0.07)] transition w-full text-[#1E3A8A]"
             >
               <div className="w-10 h-10 bg-[#D5F0DD] rounded-md flex items-center justify-center">
                 <User size={20} className="text-[#119639]" strokeWidth={2} />
@@ -103,51 +117,96 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {/* Product Section Header */}
           <div className="mb-8 flex justify-between items-center">
             <h2 className="text-[15px] font-[500] text-gray-700">{totalProducts} produk</h2>
-            <Button variant="primary" size="md" onClick={() => navigate("/notif")}>
+            <Button variant="primary" size="md" onClick={() => navigate("/notification")}>
               <Bell size={18} className="text-white mr-1" strokeWidth={1.8} />
               Notifikasi
             </Button>
           </div>
 
-          {/* ✅ 4 Kolom Produk */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-[0px_4px_11px_rgba(0,0,0,0.07)] relative cursor-pointer"
-                onClick={() => navigate(`/product/${product.id}`)}
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(product.id);
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              Tidak ada produk yang tersedia.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {filteredProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-[0px_4px_11px_rgba(0,0,0,0.07)] relative cursor-pointer"
+                  onClick={() => {
+                    // ✅ Navigasi cerdas: produk sendiri vs orang lain
+                    if (product.sellerId === "user-1") {
+                      navigate(`/detailseller/${product.id}`);
+                    } else {
+                      navigate(`/product/${product.id}`);
+                    }
                   }}
-                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center z-10 hover:bg-gray-50"
                 >
-                  {isFavorited(product.id) ? (
-                    <Heart size={18} className="text-[#1E3A8A]" fill="#1E3A8A" strokeWidth={0} />
-                  ) : (
-                    <Heart size={18} className="text-[#1E3A8A]" strokeWidth={1.5} />
+                  {/* ✅ Badge Diskon (pojok kiri atas) */}
+                  {product.onDiscount && (
+                    <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
+                      -{product.discount}%
+                    </div>
                   )}
-                </Button>
 
-                <div className="bg-gray-200 h-32 w-full"></div>
-                <div className="p-5">
-                  <span className="inline-block bg-[#DDE7FF] text-[#1E3A8A] text-[13px] font-[500] px-2 py-1 rounded-full mb-2">
-                    {product.category}
-                  </span>
-                  <h3 className="text-[15px] font-[500] text-gray-800">{product.name}</h3>
-                  <p className="text-[15px] font-bold text-black mt-2">Rp. {product.price}</p>
-                  <p className="text-[13px] text-gray-500 mt-1">{product.location}</p>
+                  {/* ✅ FAVORIT ICON (pojok kanan atas - AMAN) */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(product.id);
+                    }}
+                    className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center z-10 hover:bg-gray-50"
+                  >
+                    {isFavorited(product.id) ? (
+                      <Heart size={18} className="text-[#1E3A8A]" fill="#1E3A8A" strokeWidth={0} />
+                    ) : (
+                      <Heart size={18} className="text-[#1E3A8A]" strokeWidth={1.5} />
+                    )}
+                  </Button>
+
+                  {/* ✅ BADGE "IKLANKU" (sisi kanan - POSISI FLEKSIBEL) */}
+                  {product.sellerId === "user-1" && (
+                    <div 
+                      className="absolute right-0 transform -translate-y-1/2 bg-[#1E3A8A] text-white text-[11px] font-[600] px-2 py-1.5 rounded-l-full z-10 whitespace-nowrap"
+                      style={{ top: badgeVerticalPosition }}
+                    >
+                      Iklanku
+                    </div>
+                  )}
+
+                  <div className="bg-gray-200 h-32 w-full"></div>
+                  <div className="p-5">
+                    <span className="inline-block bg-[#DDE7FF] text-[#1E3A8A] text-[13px] font-[500] px-2 py-1 rounded-full mb-2">
+                      {product.category}
+                    </span>
+                    <h3 className="text-[15px] font-[500] text-gray-800">{product.name}</h3>
+                    
+                    {/* ✅ Tampilan harga dengan diskon */}
+                    {product.onDiscount ? (
+                      <div className="mt-1">
+                        <p className="text-[13px] text-gray-500 line-through">
+                          Rp. {formatPrice(product.originalPrice)}
+                        </p>
+                        <p className="text-[15px] font-bold text-red-600">
+                          Rp. {formatPrice(product.price)}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-[15px] font-bold text-black mt-2">
+                        Rp. {formatPrice(product.price)}
+                      </p>
+                    )}
+                    
+                    <p className="text-[13px] text-gray-500 mt-1">{product.location}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </Background>
       <Footer />
