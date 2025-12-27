@@ -7,7 +7,7 @@
         <div
             className="min-h-screen"
             style={{
-            background: 'linear-gradient(135deg, #e2e9fd 0%, #fef9f3 50%, #e2e9fd 100%)',
+            background: 'linear-gradient(135deg, #e2e9fd 0%, #fef9f3 50%, #d2ddfb 100%)',
             animation: 'pulse 8s ease-in-out infinite'
             }}
         >

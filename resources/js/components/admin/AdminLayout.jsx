@@ -33,7 +33,7 @@ export default function AdminLayout({ children }) {
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("admin_profile");
-    navigate("/admin/login");
+    navigate("/admin");
   };
 
   return (
@@ -41,13 +41,8 @@ export default function AdminLayout({ children }) {
       {/* Sidebar - FIXED */}
       {isSidebarOpen && (
         <div className="w-64 bg-[#1E3A8A] text-white fixed min-h-screen p-4 z-10">
-          <div className="flex items-center gap-2 mb-10 mt-2">
-            <div className="bg-[#FED7AA] p-1.5 rounded">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-6 h-6">
-                <rect x="4" y="4" width="16" height="16" rx="2" />
-              </svg>
-            </div>
-            <span className="font-bold text-md">ARTA MARKETPLACE</span>
+          <div className="flex items-center text-center gap-2 mb-10 mt-2">
+            <span className="font-bold text-md">RARENSELL MARKETPLACE</span>
           </div>
 
           <nav className="space-y-2">

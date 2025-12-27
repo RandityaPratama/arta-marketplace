@@ -15,14 +15,28 @@
 
     export default function LandingPage() {
     const navigate = useNavigate();
+
+    // ✅ GANTI WARNA DI SINI - Gradien 3 Warna
+    const gradientColors = {
+        color1: "#e2e9fd", // Biru muda (warna utama ARTA)
+        color2: "#fef9f3", // Kuning muda (kesan hangat)
+        color3: "#d2ddfb"  // Biru sangat muda (transisi lembut)
+    };
+
+    // ✅ Buat string gradien
+    const gradientStyle = {
+        background: `linear-gradient(to bottom right, ${gradientColors.color1}, ${gradientColors.color2}, ${gradientColors.color3})`
+    };
+
     return (
         <>
         <NavbarBefore/>
-        <div className="font-[Poppins] bg-[#E5E5E5] w-full overflow-x-hidden">
+        {/* ✅ GRADIEN 3 WARNA DENGAN INLINE STYLE */}
+        <div className="font-[Poppins] w-full overflow-x-hidden" style={gradientStyle}>
             
-            {/* HERO */}
+            {/* HERO - LEBIH NATURAL & MENYATU */}
             <section className="flex mx-40 py-[85px]">
-            <div className="bg-white w-[520px] rounded-[18px] shadow-[0px_6px_20px_rgba(0,0,0,0.1)] px-[42px] py-[48px]">
+            <div className="bg-white/90 backdrop-blur-sm border border-[#1E3A8A]/10 w-[520px] rounded-[18px] shadow-[0px_8px_24px_rgba(0,0,0,0.08)] px-[42px] py-[48px]">
                 <h1 className="text-[42px] font-[700] leading-[52px] text-[#111111]">
                 Jual Beli Barang <br /> Bekas
                 </h1>
@@ -51,8 +65,8 @@
             </div>
             </section>
 
-            {/* WHY CHOOSE */}
-            <section className="bg-[#F0F0F2] pt-[65px] pb-[90px] text-center">
+            {/* WHY CHOOSE - TRANSPARAN (GRADIEN TERLIHAT) */}
+            <section className="bg-transparent pt-[65px] pb-[90px] text-center">
             <h2 className="text-[23px] font-[700] text-[#111111]">
                 Mengapa Pilih ARTA MARKETPLACE?
             </h2>
@@ -85,7 +99,7 @@
                 return (
                     <div
                     key={i}
-                    className="border border-[#FED7AA] rounded-[14px] p-[28px] bg-[#F0F0F2] hover:shadow-[0px_6px_18px_rgba(0,0,0,0.07)] transition flex flex-col items-center text-center"
+                    className="border border-[#1E3A8A] rounded-[14px] p-[28px] bg-[#ffffff80] hover:shadow-[0px_6px_18px_rgba(0,0,0,0.07)] transition flex flex-col items-center text-center"
                     >
                     <div className={`w-12 h-12 rounded-full ${item.bgColor} flex items-center justify-center mb-4`}>
                         <IconComponent size={24} className="text-white" />
@@ -98,8 +112,8 @@
             </div>
             </section>
 
-            {/* CATEGORIES */}
-            <section className="bg-white pt-[35px] pb-[88px] text-center">
+            {/* CATEGORIES - TRANSPARAN (GRADIEN TERLIHAT) */}
+            <section className="bg-transparent pt-[35px] pb-[88px] text-center">
             <h2 className="text-[23px] font-[700] text-[#111111]">Siap Memulai Jual Beli?</h2>
             <p className="text-[15px] text-[#6F6F6F] mt-[8px] max-w-[520px] mx-auto leading-[24px]">
                 Temukan berbagai kategori barang bekas berkualitas dengan harga terbaik
@@ -116,7 +130,7 @@
                 return (
                     <div
                     key={i}
-                    className="border border-[#FED7AA] bg-white rounded-[14px] p-[26px] hover:shadow-[0px_4px_11px_rgba(0,0,0,0.07)] flex flex-col items-center text-center"
+                    className="border border-[#1E3A8A] bg-[#ffffff80] rounded-[14px] p-[26px] hover:shadow-[0px_4px_11px_rgba(0,0,0,0.07)] flex flex-col items-center text-center"
                     >
                     <div className="w-12 h-12 bg-[#DDE7FF] rounded-full flex items-center justify-center mb-4">
                         <IconComponent size={24} className="text-[#1E3A8A]" />
@@ -129,7 +143,7 @@
             </div>
             </section>
 
-            {/* CTA */}
+            {/* CTA - BIRU TUA SOLID (KONTRAS) */}
             <section className="bg-[#1E3A8A] text-white text-center py-[92px] px-4">
             <h2 className="text-[27px] font-[700]">Siap Memulai Jual Beli?</h2>
             <p className="text-[15px] mt-[10px] max-w-[560px] mx-auto leading-[24px] text-[#EAEAEA]">

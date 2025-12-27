@@ -62,24 +62,8 @@
             <div className="grid md:grid-cols-2 gap-10 items-center max-w-7xl w-full">
                 
                 <div className="text-center md:text-center px-8">
-                <div className="flex justify-start md:justify-start">
-                    <div className="bg-[#1E3A8A] p-3 rounded-lg">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                        stroke="white"
-                        className="w-8 h-8"
-                    >
-                        <rect x="4" y="4" width="16" height="16" rx="2" />
-                        <path d="M9 9h6v6H9z" />
-                        <path d="M7 12h10" />
-                    </svg>
-                    </div>
-                </div>
 
-                <h1 className="text-2xl font-bold text-[#1E3A8A] mt-4">
+                <h1 className="text-2xl font-bold whitespace-pre-line text-[#1E3A8A] mt-4">
                     ARTA MARKETPLACE
                 </h1>
 

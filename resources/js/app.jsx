@@ -23,6 +23,7 @@ import { ProductProvider } from "./components/context/ProductContext";
     import NotificationPage from "./components/NotificationPage"
     import PurchaseHistoryPage from "./components/PurchaseHistoryPage";
     import DiskonPage from "./components/DiskonPage";
+    import PopularPage from "./components/PopularPage";
 
     // Admin Import
     import AdminDashboard from "./components/admin/AdminDashboard";
@@ -61,6 +62,8 @@ import { ProductProvider } from "./components/context/ProductContext";
             <Route path="/notif" element={<NotificationPage />} />
             <Route path="/history" element={<PurchaseHistoryPage />} />
             <Route path="/diskon" element={<DiskonPage />} />
+            <Route path="/popular" element={<PopularPage />} />
+            
 
             {/* Halaman Admin */}
             <Route path="/admin" element={<AdminLogin />} />

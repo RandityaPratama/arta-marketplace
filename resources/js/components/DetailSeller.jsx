@@ -6,6 +6,7 @@
     import Background from "./Background";
     import Footer from "./Footer";
     import { useProducts } from "../components/context/ProductContext";
+    import { Heart } from "lucide-react"; // ✅ Import ikon dari lucide-react
 
     export default function DetailSellerPage() {
     const navigate = useNavigate();
@@ -63,7 +64,7 @@
         let onDiscount = false;
 
         if (formData.originalPrice && formData.discount) {
-        finalPrice = calculateDiscountedPrice();
+        final_PRICE = calculateDiscountedPrice();
         onDiscount = true;
         }
 
@@ -412,7 +413,17 @@
                         </div>
                     )}
 
-                    <div className="pt-2">
+                    {/* ✅ ACTION BUTTONS - FAVORIT + HAPUS BERDAMPINGAN */}
+                    <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        {/* ✅ JUMLAH FAVORIT - DENGAN IKON BIRU */}
+                        <div className="flex items-center gap-2">
+                        <Heart size={17} className="text-[#1E3A8A]" /> {/* ✅ IKON BIRU */}
+                        <span className="text-sm text-gray-600">
+                            Disukai oleh <span className="font-medium">{product.favoriteCount || 0}</span> orang
+                        </span>
+                        </div>
+                        
+                        {/* ✅ TOMBOL HAPUS */}
                         <Button
                         variant="danger"
                         size="md"

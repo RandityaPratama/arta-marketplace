@@ -133,7 +133,7 @@
             </form>
 
             <div className="mt-6 text-center text-xs text-gray-500">
-                <p>ARTA MARKETPLACE • Panel Administrasi</p>
+                <p>RARENSELL • Panel Administrasi</p>
             </div>
             </div>
         </div>

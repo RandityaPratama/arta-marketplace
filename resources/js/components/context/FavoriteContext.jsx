@@ -12,10 +12,8 @@ export const useFavorites = () => {
 };
 
 export const FavoriteProvider = ({ children }) => {
-  // ✅ Data dummy: ID produk yang difavoritkan
-  const [favorites, setFavorites] = useState(new Set([1, 4])); // Samsung & Adidas
-
-  // ❌ Hapus localStorage
+  // ✅ SET KOSONG - TIDAK ADA PRODUK YANG LANGSUNG DIFAVORITKAN
+  const [favorites, setFavorites] = useState(new Set());
 
   const toggleFavorite = (productId) => {
     setFavorites(prev => {

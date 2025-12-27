@@ -43,31 +43,31 @@ export default function Dashboard() {
     <>
       <NavbarAfter />
       <Background>
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6  md:px-8 lg:px-12 py-8">
           <SearchBar />
 
           {/* Promo Banners */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            <div className="bg-gradient-to-r from-[#1E3A8A] to-red-200 h-[170px] rounded-xl border border-[#1E3A8A] flex items-center justify-between px-6 text-white">
+            <div className="bg-gradient-to-r from-[#1E3A8A] to-red-300 h-[170px] rounded-xl border border-[#1E3A8A] flex items-center justify-between px-6 text-white">
               <div className="w-[120px] h-[100px] bg-gray-200 rounded-lg flex items-center justify-center">
                 <Plus size={40} className="text-white" strokeWidth={1.5} />
               </div>
               <div className="flex-1 ml-5">
                 <h3 className="text-[18px] font-[700]">Iklan Terpopuler</h3>
-                <p className="text-[14px] mt-1 opacity-90">Produk paling banyak dibeli minggu ini</p>
-                <Button variant="primary" size="sm" onClick={() => navigate("/kategori/terpopuler")}>
+                <p className="text-[14px] mt-1 opacity-90">Temukan barang paling diminati!</p>
+                <Button variant="primary" size="sm" onClick={() => navigate("/popular")}>
                   Lihat Sekarang
                 </Button>
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-[#1E3A8A] to-green-200 h-[170px] rounded-xl border border-[#1E3A8A] flex items-center justify-between px-6 text-white">
+            <div className="bg-gradient-to-r from-[#1E3A8A] to-green-300 h-[170px] rounded-xl border border-[#1E3A8A] flex items-center justify-between px-6 text-white">
               <div className="w-[120px] h-[100px] bg-gray-200 rounded-lg flex items-center justify-center">
                 <User size={40} className="text-white" strokeWidth={1.5} />
               </div>
               <div className="flex-1 ml-5">
                 <h3 className="text-[18px] font-[700]">Diskon Spesial!</h3>
-                <p className="text-[14px] mt-1 opacity-90">Harga turun hingga 50% hari ini</p>
+                <p className="text-[14px] mt-1 opacity-90">Dapatkan barang dengan diskon sebesar-besarnya!</p>
                 <Button variant="primary" size="sm" onClick={() => navigate("/diskon")}>
                   Ambil Diskon
                 </Button>
