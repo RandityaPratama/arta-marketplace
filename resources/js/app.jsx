@@ -24,6 +24,7 @@ import { ProductProvider } from "./components/context/ProductContext";
     import PurchaseHistoryPage from "./components/PurchaseHistoryPage";
     import DiskonPage from "./components/DiskonPage";
     import PopularPage from "./components/PopularPage";
+    import ForgotPasswordPage from "./components/ForgotPasswordPage";
 
     // Admin Import
     import AdminDashboard from "./components/admin/AdminDashboard";
@@ -63,6 +64,7 @@ import { ProductProvider } from "./components/context/ProductContext";
             <Route path="/history" element={<PurchaseHistoryPage />} />
             <Route path="/diskon" element={<DiskonPage />} />
             <Route path="/popular" element={<PopularPage />} />
+            <Route path="/forgot" element={<ForgotPasswordPage />} />
             
 
             {/* Halaman Admin */}

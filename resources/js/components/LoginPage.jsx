@@ -94,7 +94,7 @@
 
                     {/* Links — ✅ Tambahkan mt-2 */}
                     <div className="flex justify-between text-xs mt-7sazz">
-                        <a href="#" className="text-[#1E3A8A] font-semibold hover:underline">
+                        <a href="#" className="text-[#1E3A8A] font-semibold hover:underline" onClick={() => navigate("/forgot")}>
                         Lupa password?
                         </a>
                         <span className="text-gray-600 font-semibold">
