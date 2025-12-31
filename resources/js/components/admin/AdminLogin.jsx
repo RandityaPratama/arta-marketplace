@@ -26,15 +26,15 @@
             body: JSON.stringify({ email, password }),
         } )
 
-        const data=await response.json();
+        const result=await response.json();
 
         if(!response.ok){
-             throw new Error(data.message||"Login gagal silahkan cek email dan password anda");
+             throw new Error(result.data.message||"Login gagal silahkan cek email dan password anda");
         };
 
-        if(data.token){localStorage.setItem("token",data.token)};
-        if(data.admin){localStorage.setItem("admin",JSON.stringify(data,admin))}
-
+        if(result.data.token){localStorage.setItem("token",result.data.token)};
+        if(result.data.admin){localStorage.setItem("admin",JSON.stringify(result.data.admin))}
+        
         navigate("/admin/dashboard");
        }catch(err){
         setError(err.message);

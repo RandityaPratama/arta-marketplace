@@ -27,14 +27,14 @@
                 body: JSON.stringify({ email, password }),
             });
 
-            const data = await response.json();
+            const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || "Login gagal. Periksa email dan password Anda.");
+                throw new Error(result.data.message || "Login gagal. Periksa email dan password Anda.");
             }
 
-            if (data.token) localStorage.setItem("token", data.token);
-            if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+            if (result.data.token) localStorage.setItem("token", result.data.token);
+            if (result.data.user) localStorage.setItem("user", JSON.stringify(result.data.user));
 
             navigate("/dashboard");
         } catch (err) {
