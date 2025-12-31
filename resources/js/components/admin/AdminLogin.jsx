@@ -12,25 +12,35 @@
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         setError("");
 
-        if (!email || !password) {
-        setError("Email dan password wajib diisi!");
-        return;
-        }
+       try{
+        const response= await fetch("http://127.0.0.1:8000/admin/login",{
+            method:"POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+        } )
 
-        setIsLoading(true);
-        setTimeout(() => {
-        if (email === "ra@gmail.com" && password === "123") {
-            localStorage.setItem("adminToken", "admin-auth-token");
-            navigate("/admin/dashboard");
-        } else {
-            setError("Kredensial admin salah!");
-        }
+        const data=await response.json();
+
+        if(!response.ok){
+             throw new Error(data.message||"Login gagal silahkan cek email dan password anda");
+        };
+
+        if(data.token){localStorage.setItem("token",data.token)};
+        if(data.admin){localStorage.setItem("admin",JSON.stringify(data,admin))}
+
+        navigate("/admin/dashboard");
+       }catch(err){
+        setError(err.message);
+       }finally{
         setIsLoading(false);
-        }, 800);
+       }
     };
 
     return (
