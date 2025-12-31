@@ -20,6 +20,7 @@
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -36,7 +37,7 @@
         setStep(2);
     };
 
-    const handleRegister = (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
         if (!formData.email || !formData.password || !formData.konfirmasiPassword) {
         setError("Semua field di langkah 2 wajib diisi!");
@@ -50,9 +51,46 @@
         setError("Password minimal 6 karakter!");
         return;
         }
-        console.log("Pendaftaran berhasil! Data:", formData);
-        alert("Pendaftaran berhasil! Silakan login.");
-        navigate("/login"); // ✅ ARAH KE LOGIN (bukan dashboard)
+
+        setIsLoading(true);
+        setError("");
+
+        try {
+            // Pastikan URL ini sesuai dengan port Laravel Anda (biasanya 8000)
+            const response = await fetch("http://127.0.0.1:8000/api/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                body: JSON.stringify({
+                    name: formData.nama,
+                    email: formData.email,
+                    password: formData.password,
+                    password_confirmation: formData.konfirmasiPassword,
+                    phone: formData.telepon,
+                    location: formData.lokasi,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                // Menangani error validasi dari Laravel
+                if (data.errors) {
+                    const firstError = Object.values(data.errors)[0][0];
+                    throw new Error(firstError);
+                }
+                throw new Error(data.message || "Terjadi kesalahan saat mendaftar");
+            }
+
+            alert("Pendaftaran berhasil! Silakan login.");
+            navigate("/login");
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -258,6 +296,7 @@
                         <div className="flex gap-3">
                         <button
                             type="button"
+                            disabled={isLoading}
                             onClick={() => setStep(1)}
                             className="flex-1 border border-[#1E3A8A] text-[#1E3A8A] py-3 rounded-lg hover:bg-[#1E3A8A] hover:text-white transition font-medium"
                         >
@@ -265,9 +304,10 @@
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 bg-[#1E3A8A] text-white py-3 rounded-lg hover:bg-[#162e68] transition font-medium"
+                            disabled={isLoading}
+                            className={`flex-1 bg-[#1E3A8A] text-white py-3 rounded-lg hover:bg-[#162e68] transition font-medium ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
-                            Daftar
+                            {isLoading ? "Memproses..." : "Daftar"}
                         </button>
                         </div>
                     </form>

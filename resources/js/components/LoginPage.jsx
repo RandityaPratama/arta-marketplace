@@ -9,11 +9,39 @@
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        console.log("Login berhasil! Email:", email);
-        navigate("/dashboard");
+        setIsLoading(true);
+        setError("");
+
+        try {
+            const response = await fetch("http://127.0.0.1:8000/api/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Login gagal. Periksa email dan password Anda.");
+            }
+
+            if (data.token) localStorage.setItem("token", data.token);
+            if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+
+            navigate("/dashboard");
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -45,6 +73,12 @@
                     <h1 className="text-center underline font-extrabold text-2xl text-[#1E3A8A]">
                     Masuk
                     </h1>
+
+                    {error && (
+                    <div className="p-2 bg-red-50 text-red-700 text-xs rounded-lg text-center">
+                        {error}
+                    </div>
+                    )}
 
                     <form onSubmit={handleLogin}>
                     {/* Email Field */}
@@ -115,19 +149,24 @@
                     {/* Submit Button — ✅ Tambahkan mt-6 */}
                     <button 
                         type="submit"
-                        className="w-full bg-[#1E3A8A] text-white py-3 rounded-lg flex justify-center items-center gap-2 hover:bg-[#162e68] transition font-medium mt-6"
+                        disabled={isLoading}
+                        className={`w-full bg-[#1E3A8A] text-white py-3 rounded-lg flex justify-center items-center gap-2 hover:bg-[#162e68] transition font-medium mt-6 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
-                        <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2.5}
-                        stroke="white"
-                        className="w-5 h-5"
-                        >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h13m0 0l-4-4m4 4l-4 4" />
-                        </svg>
-                        Masuk
+                        {isLoading ? "Memproses..." : (
+                            <>
+                                <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2.5}
+                                stroke="white"
+                                className="w-5 h-5"
+                                >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h13m0 0l-4-4m4 4l-4 4" />
+                                </svg>
+                                Masuk
+                            </>
+                        )}
                     </button>
                     </form>
                 </div>
