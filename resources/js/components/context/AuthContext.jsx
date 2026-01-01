@@ -1,4 +1,3 @@
-// context/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,7 +12,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Helper function untuk fetch dengan token
+  
   const fetchWithAuth = async (url, options = {}) => {
     const token = localStorage.getItem('token');
     
@@ -31,8 +30,7 @@ export const AuthProvider = ({ children }) => {
       ...options,
       headers,
     });
-    
-    // Handle 401 Unauthorized
+        
     if (response.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -44,7 +42,7 @@ export const AuthProvider = ({ children }) => {
     return response;
   };
 
-  // Check user authentication status
+  
   const checkAuth = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -59,7 +57,7 @@ export const AuthProvider = ({ children }) => {
       if (result.success && result.data?.user) {
         setUser(result.data.user);
       } else {
-        // Token tidak valid
+       
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }
@@ -76,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-  // Login function - menggunakan fetch seperti yang sudah ada
+  
   const login = async (credentials) => {
     try {
       const response = await fetch(`${API_URL}/login`, {
@@ -98,7 +96,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (result.success && result.data?.token) {
-        // Simpan token dan user data
+        
         localStorage.setItem('token', result.data.token);
         if (result.data.user) {
           localStorage.setItem('user', JSON.stringify(result.data.user));
@@ -123,7 +121,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Register function
+  
   const register = async (userData) => {
     try {
       const response = await fetch(`${API_URL}/register`, {
@@ -138,7 +136,7 @@ export const AuthProvider = ({ children }) => {
       const result = await response.json();
 
       if (result.success && result.data?.token) {
-        // Auto login setelah register
+        
         localStorage.setItem('token', result.data.token);
         if (result.data.user) {
           localStorage.setItem('user', JSON.stringify(result.data.user));
@@ -164,7 +162,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout function
+
   const logout = async () => {
     try {
       await fetchWithAuth(`${API_URL}/logout`, {
@@ -173,12 +171,12 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Clear storage
+
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       setUser(null);
       
-      // Redirect ke login
+
       navigate('/login');
     }
   };

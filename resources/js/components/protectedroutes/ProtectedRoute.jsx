@@ -1,8 +1,6 @@
-// components/ProtectedRoute.js
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import React from 'react';
-
 const ProtectedRoute = ({ requireAuth = true, redirectTo = '/login' }) => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -19,6 +17,7 @@ const ProtectedRoute = ({ requireAuth = true, redirectTo = '/login' }) => {
   }
 
   if (!requireAuth && isAuthenticated) {
+
     return <Navigate to="/dashboard" replace />;
   }
 

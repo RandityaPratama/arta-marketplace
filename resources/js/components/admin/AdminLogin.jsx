@@ -3,6 +3,7 @@
     import { useNavigate } from "react-router-dom";
     import { LogIn, Mail, Eye, EyeOff, Lock } from "lucide-react";
     import Background from "../Background";
+    import { useAdminAuth } from "./admincontext/AdminAuthContext";
 
     export default function AdminLogin() {
     const navigate = useNavigate();
@@ -11,36 +12,22 @@
     const [showPassword, setShowPassword] = useState(false); // ✅ State toggle
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const { adminLogin } = useAdminAuth();
+
 
     const handleLogin = async (e) => {
-        e.preventDefault();
-        setError("");
+    e.preventDefault();
+    setError("");
 
-       try{
-        const response= await fetch("http://127.0.0.1:8000/admin/login",{
-            method:"POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-            },
-            body: JSON.stringify({ email, password }),
-        } )
-
-        const result=await response.json();
-
-        if(!response.ok){
-             throw new Error(result.data.message||"Login gagal silahkan cek email dan password anda");
-        };
-
-        if(result.data.token){localStorage.setItem("token",result.data.token)};
-        if(result.data.admin){localStorage.setItem("admin",JSON.stringify(result.data.admin))}
-        
+    const result = await adminLogin({ email, password });
+    
+    if (result.success) {
         navigate("/admin/dashboard");
-       }catch(err){
-        setError(err.message);
-       }finally{
-        setIsLoading(false);
-       }
+    } else {
+        setError(result.message || "Login admin gagal. Periksa kredensial Anda.");
+    }
+    
+    setIsLoading(false);
     };
 
     return (

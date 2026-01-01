@@ -2,94 +2,126 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+// Context Providers
 import { FavoriteProvider } from "./components/context/FavoriteContext";
 import { ChatProvider } from "./components/context/ChatContext";
 import { ReportProvider } from "./components/context/ReportContext";
 import { ProductProvider } from "./components/context/ProductContext";
 import { AuthProvider } from './components/context/AuthContext';
+import { AdminAuthProvider } from "./components/admin/admincontext/AdminAuthContext";
+
+// Route Guards
 import ProtectedRoute from "./components/protectedroutes/ProtectedRoute";
+import AdminProtectedRoute from "./components/admin/protectedroutes/AdminProtectedRoute";
 
-    // Users Import
-    import LandingPage from "./components/LandingPage";
-    import SignupPage from "./components/SignupPage";
-    import LoginPage from "./components/LoginPage";
-    import Dashboard from "./components/Dashboard"
-    import SellPage from "./components/SellPage"
-    import FavoritePage from "./components/FavoritePage"
-    import ProductDetailPage from "./components/ProductDetailPage"
-    import Profile from "./components/Profile"
-    import DetailSeller from "./components/DetailSeller"
-    import NotFoundPage from "./components/NotFoundPage"
-    import ChatPage from "./components/ChatPage"
-    import ChatRoom from "./components/ChatRoom"
-    import NotificationPage from "./components/NotificationPage"
-    import PurchaseHistoryPage from "./components/PurchaseHistoryPage";
-    import DiskonPage from "./components/DiskonPage";
-    import PopularPage from "./components/PopularPage";
-    import ForgotPasswordPage from "./components/ForgotPasswordPage";
+// User Components
+import LandingPage from "./components/LandingPage";
+import SignupPage from "./components/SignupPage";
+import LoginPage from "./components/LoginPage";
+import Dashboard from "./components/Dashboard";
+import SellPage from "./components/SellPage";
+import FavoritePage from "./components/FavoritePage";
+import ProductDetailPage from "./components/ProductDetailPage";
+import Profile from "./components/Profile";
+import DetailSeller from "./components/DetailSeller";
+import NotFoundPage from "./components/NotFoundPage";
+import ChatPage from "./components/ChatPage";
+import ChatRoom from "./components/ChatRoom";
+import NotificationPage from "./components/NotificationPage";
+import PurchaseHistoryPage from "./components/PurchaseHistoryPage";
+import DiskonPage from "./components/DiskonPage";
+import PopularPage from "./components/PopularPage";
+import ForgotPasswordPage from "./components/ForgotPasswordPage";
 
-    // Admin Import
-    import AdminDashboard from "./components/admin/AdminDashboard";
-    import AdminUsers from "./components/admin/AdminUsers";
-    import AdminProducts from "./components/admin/AdminProducts";
-    import AdminReports from "./components/admin/AdminReports";
-    import AdminUserProfile from "./components/admin/AdminUserProfile";
-    import AdminSettings from "./components/admin/AdminSettings";
-    import AdminLogin from "./components/admin/AdminLogin";
-    import AdminActivity from "./components/admin/AdminActivity";
+// Admin Components
+import AdminLogin from "./components/admin/AdminLogin";
+import AdminDashboard from "./components/admin/AdminDashboard";
+import AdminUsers from "./components/admin/AdminUsers";
+import AdminProducts from "./components/admin/AdminProducts";
+import AdminReports from "./components/admin/AdminReports";
+import AdminUserProfile from "./components/admin/AdminUserProfile";
+import AdminSettings from "./components/admin/AdminSettings";
+import AdminActivity from "./components/admin/AdminActivity";
 
-
-
-    ReactDOM.createRoot(document.getElementById("app")).render(
-    <React.StrictMode>
+ReactDOM.createRoot(document.getElementById("app")).render(
+  <React.StrictMode>
     <BrowserRouter>
-        <AuthProvider>
-        <FavoriteProvider>
+      {/* GLOBAL PROVIDERS (untuk semua user dan admin) */}
+      <FavoriteProvider>
         <ChatProvider>
-        <ReportProvider>
-        <ProductProvider>
+          <ReportProvider>
+            <ProductProvider>
+              <Routes>
+                
+                {/* ========== USER ROUTES ========== */}
+                <Route element={
+                  <AuthProvider>
+                    {/* PUBLIC ROUTES - tidak butuh login */}
+                    <ProtectedRoute requireAuth={false} />
+                  </AuthProvider>
+                }>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/forgot" element={<ForgotPasswordPage />} />
+                </Route>
 
-        <Routes>
-            {/* Halaman User */}
-            <Route element={<ProtectedRoute requireAuth={false} />}>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />           
-            </Route>
+                <Route element={
+                  <AuthProvider>
+                    {/* PROTECTED USER ROUTES - butuh login user */}
+                    <ProtectedRoute requireAuth={true} />
+                  </AuthProvider>
+                }>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/sell" element={<SellPage />} />
+                  <Route path="/favorite" element={<FavoritePage />} />
+                  <Route path="/product/:id" element={<ProductDetailPage />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/detailSeller/:id" element={<DetailSeller />} />
+                  <Route path="/chat" element={<ChatPage />} />
+                  <Route path="/chatroom/:id" element={<ChatRoom />} />
+                  <Route path="/notif" element={<NotificationPage />} />
+                  <Route path="/history" element={<PurchaseHistoryPage />} />
+                  <Route path="/diskon" element={<DiskonPage />} />
+                  <Route path="/popular" element={<PopularPage />} />
+                </Route>
 
-            <Route element={<ProtectedRoute requireAuth={true} />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/sell" element={<SellPage />} />
-            <Route path="/favorite" element={<FavoritePage />} />
-            <Route path="/product/:id" element={<ProductDetailPage />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/detailSeller/:id" element={<DetailSeller />} />
-            <Route path="/*" element={<NotFoundPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/chatroom/:id" element={<ChatRoom />} />
-            <Route path="/notif" element={<NotificationPage />} />
-            <Route path="/history" element={<PurchaseHistoryPage />} />
-            <Route path="/diskon" element={<DiskonPage />} />
-            <Route path="/popular" element={<PopularPage />} />
-            <Route path="/forgot" element={<ForgotPasswordPage />} />
-            </Route>
+                {/* ========== ADMIN ROUTES ========== */}
+                <Route path="/admin" element={
+                  <AdminAuthProvider>
+                    {/* ADMIN LOGIN PAGE - tidak butuh login */}
+                    <AdminLogin />
+                  </AdminAuthProvider>
+                } />
 
-            {/* Halaman Admin */}
-            <Route path="/admin" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/products" element={<AdminProducts />} />
-            <Route path="/admin/reports" element={<AdminReports />} />
-            <Route path="/admin/user/:userId" element={<AdminUserProfile />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
-            <Route path="/admin/activity" element={<AdminActivity />} />
-        </Routes>
+                <Route element={
+                  <AdminAuthProvider>
+                    {/* PROTECTED ADMIN ROUTES - butuh login admin */}
+                    <AdminProtectedRoute requireAuth={true} />
+                  </AdminAuthProvider>
+                }>
+                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/users" element={<AdminUsers />} />
+                  <Route path="/admin/products" element={<AdminProducts />} />
+                  <Route path="/admin/reports" element={<AdminReports />} />
+                  <Route path="/admin/user/:userId" element={<AdminUserProfile />} />
+                  <Route path="/admin/settings" element={<AdminSettings />} />
+                  <Route path="/admin/activity" element={<AdminActivity />} />
+                </Route>
 
-        </ProductProvider>
-        </ReportProvider>
+                {/* ========== 404 PAGE ========== */}
+                <Route path="/*" element={
+                  <AuthProvider>
+                    <NotFoundPage />
+                  </AuthProvider>
+                } />
+
+              </Routes>
+            </ProductProvider>
+          </ReportProvider>
         </ChatProvider>
-        </FavoriteProvider>
-        </AuthProvider>
+      </FavoriteProvider>
     </BrowserRouter>
-    </React.StrictMode>
+  </React.StrictMode>
 );
