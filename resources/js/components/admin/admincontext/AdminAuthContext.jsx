@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API_URL = import.meta.env.REACT_APP_API_URL || 'http://127.0.0.1:8000/api';
+const API_URL = import.meta.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
 
 const AdminAuthContext = createContext(null);
 
@@ -51,7 +51,7 @@ export const AdminAuthProvider = ({ children }) => {
       if (result.success && result.data?.token) {
         
         localStorage.setItem('admin_token', result.data.token);
-        localStorage.setItem('admin_user', JSON.stringify(result.data.user));
+        localStorage.setItem('admin_user', JSON.stringify(result.data.admin));
         setAdmin(result.data.user);
         
         return { 

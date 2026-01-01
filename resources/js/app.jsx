@@ -47,81 +47,68 @@ import AdminActivity from "./components/admin/AdminActivity";
 ReactDOM.createRoot(document.getElementById("app")).render(
   <React.StrictMode>
     <BrowserRouter>
-      {/* GLOBAL PROVIDERS (untuk semua user dan admin) */}
-      <FavoriteProvider>
-        <ChatProvider>
-          <ReportProvider>
-            <ProductProvider>
-              <Routes>
-                
-                {/* ========== USER ROUTES ========== */}
-                <Route element={
-                  <AuthProvider>
-                    {/* PUBLIC ROUTES - tidak butuh login */}
-                    <ProtectedRoute requireAuth={false} />
-                  </AuthProvider>
-                }>
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
-                  <Route path="/forgot" element={<ForgotPasswordPage />} />
-                </Route>
+      {/* ADMIN AUTH PROVIDER DI LEVEL PALING ATAS */}
+      <AdminAuthProvider>
+        <FavoriteProvider>
+          <ChatProvider>
+            <ReportProvider>
+              <ProductProvider>
+                <AuthProvider> {/* AuthProvider untuk user juga di root */}
+                  <Routes>
+                    
+                    {/* ========== PUBLIC USER ROUTES ========== */}
+                    <Route element={<ProtectedRoute requireAuth={false} />}>
+                      <Route path="/" element={<LandingPage />} />
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route path="/signup" element={<SignupPage />} />
+                      <Route path="/forgot" element={<ForgotPasswordPage />} />
+                    </Route>
 
-                <Route element={
-                  <AuthProvider>
-                    {/* PROTECTED USER ROUTES - butuh login user */}
-                    <ProtectedRoute requireAuth={true} />
-                  </AuthProvider>
-                }>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/sell" element={<SellPage />} />
-                  <Route path="/favorite" element={<FavoritePage />} />
-                  <Route path="/product/:id" element={<ProductDetailPage />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/detailSeller/:id" element={<DetailSeller />} />
-                  <Route path="/chat" element={<ChatPage />} />
-                  <Route path="/chatroom/:id" element={<ChatRoom />} />
-                  <Route path="/notif" element={<NotificationPage />} />
-                  <Route path="/history" element={<PurchaseHistoryPage />} />
-                  <Route path="/diskon" element={<DiskonPage />} />
-                  <Route path="/popular" element={<PopularPage />} />
-                </Route>
+                    {/* ========== PROTECTED USER ROUTES ========== */}
+                    <Route element={<ProtectedRoute requireAuth={true} />}>
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/sell" element={<SellPage />} />
+                      <Route path="/favorite" element={<FavoritePage />} />
+                      <Route path="/product/:id" element={<ProductDetailPage />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/detailSeller/:id" element={<DetailSeller />} />
+                      <Route path="/chat" element={<ChatPage />} />
+                      <Route path="/chatroom/:id" element={<ChatRoom />} />
+                      <Route path="/notif" element={<NotificationPage />} />
+                      <Route path="/history" element={<PurchaseHistoryPage />} />
+                      <Route path="/diskon" element={<DiskonPage />} />
+                      <Route path="/popular" element={<PopularPage />} />
+                    </Route>
 
-                {/* ========== ADMIN ROUTES ========== */}
-                <Route path="/admin" element={
-                  <AdminAuthProvider>
-                    {/* ADMIN LOGIN PAGE - tidak butuh login */}
-                    <AdminLogin />
-                  </AdminAuthProvider>
-                } />
+                    {/* ========== ADMIN ROUTES ========== */}
+                    {/* ADMIN LOGIN - tanpa protection karena untuk login */}
+                    <Route path="/admin" element={
+                      <AdminProtectedRoute requireAuth={false}>
+                        <AdminLogin />
+                      </AdminProtectedRoute>
+                    } />
 
-                <Route element={
-                  <AdminAuthProvider>
-                    {/* PROTECTED ADMIN ROUTES - butuh login admin */}
-                    <AdminProtectedRoute requireAuth={true} />
-                  </AdminAuthProvider>
-                }>
-                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                  <Route path="/admin/users" element={<AdminUsers />} />
-                  <Route path="/admin/products" element={<AdminProducts />} />
-                  <Route path="/admin/reports" element={<AdminReports />} />
-                  <Route path="/admin/user/:userId" element={<AdminUserProfile />} />
-                  <Route path="/admin/settings" element={<AdminSettings />} />
-                  <Route path="/admin/activity" element={<AdminActivity />} />
-                </Route>
+                    {/* PROTECTED ADMIN ROUTES */}
+                    <Route element={<AdminProtectedRoute requireAuth={true} />}>
+                      <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                      <Route path="/admin/users" element={<AdminUsers />} />
+                      <Route path="/admin/products" element={<AdminProducts />} />
+                      <Route path="/admin/reports" element={<AdminReports />} />
+                      <Route path="/admin/user/:userId" element={<AdminUserProfile />} />
+                      <Route path="/admin/settings" element={<AdminSettings />} />
+                      <Route path="/admin/activity" element={<AdminActivity />} />
+                    </Route>
 
-                {/* ========== 404 PAGE ========== */}
-                <Route path="/*" element={
-                  <AuthProvider>
-                    <NotFoundPage />
-                  </AuthProvider>
-                } />
+                    {/* ========== 404 PAGE ========== */}
+                    <Route path="/*" element={<NotFoundPage />} />
 
-              </Routes>
-            </ProductProvider>
-          </ReportProvider>
-        </ChatProvider>
-      </FavoriteProvider>
+                  </Routes>
+                </AuthProvider>
+              </ProductProvider>
+            </ReportProvider>
+          </ChatProvider>
+        </FavoriteProvider>
+      </AdminAuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

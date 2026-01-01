@@ -27,7 +27,7 @@ export default function LoginPage() {
         throw new Error(result.message || "Login gagal. Periksa email dan password Anda.");
       }
       
-      navigate("/dashboard");
+      navigate("/admin/dashboard");
     } catch (err) {
       setError(err.message);
     } finally {

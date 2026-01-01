@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAdminAuth } from '../admincontext/AdminAuthContext';
-
-const AdminProtectedRoute = ({ requireAuth = true, redirectTo = '/admin/login' }) => {
+import React from 'react';
+const AdminProtectedRoute = ({ requireAuth = true, redirectTo = '/admin' }) => {
   const { isAdminAuthenticated, loading } = useAdminAuth();
 
   if (loading) {
