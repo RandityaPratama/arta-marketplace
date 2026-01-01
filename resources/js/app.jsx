@@ -6,6 +6,8 @@ import { FavoriteProvider } from "./components/context/FavoriteContext";
 import { ChatProvider } from "./components/context/ChatContext";
 import { ReportProvider } from "./components/context/ReportContext";
 import { ProductProvider } from "./components/context/ProductContext";
+import { AuthProvider } from './components/context/AuthContext';
+import ProtectedRoute from "./components/protectedroutes/ProtectedRoute";
 
     // Users Import
     import LandingPage from "./components/LandingPage";
@@ -41,6 +43,7 @@ import { ProductProvider } from "./components/context/ProductContext";
     ReactDOM.createRoot(document.getElementById("app")).render(
     <React.StrictMode>
     <BrowserRouter>
+        <AuthProvider>
         <FavoriteProvider>
         <ChatProvider>
         <ReportProvider>
@@ -48,9 +51,13 @@ import { ProductProvider } from "./components/context/ProductContext";
 
         <Routes>
             {/* Halaman User */}
+            <Route element={<ProtectedRoute requireAuth={false} />}>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/signup" element={<SignupPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />           
+            </Route>
+
+            <Route element={<ProtectedRoute requireAuth={true} />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/sell" element={<SellPage />} />
             <Route path="/favorite" element={<FavoritePage />} />
@@ -65,7 +72,7 @@ import { ProductProvider } from "./components/context/ProductContext";
             <Route path="/diskon" element={<DiskonPage />} />
             <Route path="/popular" element={<PopularPage />} />
             <Route path="/forgot" element={<ForgotPasswordPage />} />
-            
+            </Route>
 
             {/* Halaman Admin */}
             <Route path="/admin" element={<AdminLogin />} />
@@ -82,6 +89,7 @@ import { ProductProvider } from "./components/context/ProductContext";
         </ReportProvider>
         </ChatProvider>
         </FavoriteProvider>
+        </AuthProvider>
     </BrowserRouter>
     </React.StrictMode>
 );
