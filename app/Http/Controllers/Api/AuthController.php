@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -119,26 +120,59 @@ class AuthController extends Controller
 
     /**
      * Logout user (revoke current token)
-     */
-    public function logout(Request $request)
-    {
-        try {
-            // Hapus token yang sedang digunakan
-            $request->user()->currentAccessToken()->delete();
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Logout berhasil'
+     */   
+
+public function logout(Request $request)
+{
+    try {
+        $user = $request->user();
+        $token = $user?->currentAccessToken();
+
+        Log::info('Logout attempt', [
+            'user_id' => $user?->id,
+            'has_token' => (bool) $token,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        if (!$user || !$token) {
+            Log::warning('Logout failed: user or token not found', [
+                'user_id' => $user?->id
             ]);
-            
-        } catch (\Exception $e) {
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal logout',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'Token tidak ditemukan'
+            ], 401);
         }
+
+        $token->delete();
+
+        Log::info('Logout success', [
+            'user_id' => $user->id,
+            'token_id' => $token->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logout berhasil'
+        ]);
+
+    } catch (\Exception $e) {
+
+        Log::error('Logout error', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal logout',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 
     /**
      * Get authenticated user profile

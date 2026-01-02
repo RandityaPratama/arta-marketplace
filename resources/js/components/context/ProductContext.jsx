@@ -1,6 +1,8 @@
     // src/components/context/ProductContext.js
     import React, { createContext, useContext, useState } from "react";
 
+    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+
     const ProductContext = createContext();
 
     // ✅ Data dummy awal - produk campuran (milikmu + orang lain)
@@ -130,17 +132,34 @@
     const [products, setProducts] = useState(initialProducts);
 
     // ✅ Tambah produk baru
-    const addProduct = (productData) => {
-        const newProduct = {
-        ...productData,
-        id: Date.now(),
-        sellerName: "Randitya Pratama", // ✅ Selalu jadi produk milikmu
-        sellerId: "user-1", // ✅ ID user saat ini
-        publishedDate: new Date().toLocaleDateString("id-ID"),
-        status: "menunggu"
-        };
-        setProducts(prev => [...prev, newProduct]);
-        return newProduct.id;
+    const addProduct = async (productData) => {
+        const token = localStorage.getItem('token');
+        
+        try {
+            const response = await fetch(`${API_URL}/add-products`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json',
+                    // Content-Type tidak perlu diset manual saat mengirim FormData
+                },
+                body: productData // Mengirim FormData ke backend
+            });          
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Gagal menambahkan produk');
+            }
+
+            // Opsional: Fetch ulang semua produk atau tambahkan manual ke state
+            // Untuk sementara kita return result agar komponen pemanggil tahu sukses
+            return result;
+
+        } catch (error) {
+            console.error("Error adding product:", error);
+            throw error;
+        }
     };
 
     // ✅ Update produk yang ada

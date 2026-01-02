@@ -23,6 +23,7 @@ export default function SellPage() {
   });
 
   const [images, setImages] = useState([]);
+  const [imageFiles, setImageFiles] = useState([]); // ✅ State untuk menyimpan file asli
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
   const [categories] = useState(["Elektronik", "Fashion", "Furnitur", "Hobi", "Rumah Tangga"]);
 
@@ -63,13 +64,15 @@ export default function SellPage() {
     }
     const newImages = files.map(file => URL.createObjectURL(file));
     setImages(prev => [...prev, ...newImages]);
+    setImageFiles(prev => [...prev, ...files]); // ✅ Simpan file asli untuk diupload
   };
 
   const handleRemoveImage = (index) => {
     setImages(prev => prev.filter((_, i) => i !== index));
+    setImageFiles(prev => prev.filter((_, i) => i !== index)); // ✅ Hapus file asli juga
   };
 
-  const handleSave = () => {
+  const handleSave = async () => { // ✅ Ubah jadi async
     if (!formData.name || !formData.category || !formData.location || !formData.description) {
       setNotification({ show: true, message: "Nama, kategori, lokasi, dan deskripsi wajib diisi!", type: "error" });
       return;
@@ -89,26 +92,39 @@ export default function SellPage() {
       ? calculateDiscountedPrice() 
       : formData.price;
 
-    const newProduct = {
-      ...formData,
-      price: finalPrice,
-      onDiscount: !!formData.originalPrice && !!formData.discount && parseInt(formData.discount) > 0,
-      images: images,
-      uploadedAt: new Date().toLocaleString("id-ID"),
-    };
+    // ✅ Bungkus data ke dalam FormData
+    const data = new FormData();
+    data.append("name", formData.name);
+    data.append("category", formData.category);
+    data.append("price", finalPrice);
+    
+    if (formData.originalPrice) data.append("original_price", formData.originalPrice);
+    if (formData.discount) data.append("discount", formData.discount);
+    
+    data.append("location", formData.location);
+    data.append("condition", formData.condition);
+    data.append("description", formData.description);
 
-    addProduct(newProduct);
-
-    setNotification({ 
-      show: true, 
-      message: "Produk berhasil dikirim! Menunggu persetujuan admin.", 
-      type: "success" 
+    // ✅ Append gambar-gambar asli
+    imageFiles.forEach((file) => {
+      data.append("images[]", file);
     });
 
-    // ✅ Redirect dengan state
-    setTimeout(() => {
-      navigate("/profile", { state: { fromSellPage: true } });
-    }, 2000);
+    try {
+      await addProduct(data); // ✅ Kirim FormData ke Context
+
+      setNotification({ 
+        show: true, 
+        message: "Produk berhasil dikirim! Menunggu persetujuan admin.", 
+        type: "success" 
+      });
+
+      setTimeout(() => {
+        navigate("/profile", { state: { fromSellPage: true } });
+      }, 2000);
+    } catch (error) {
+      setNotification({ show: true, message: "Gagal mengunggah produk: " + error.message, type: "error" });
+    }
   };
 
   useEffect(() => {
