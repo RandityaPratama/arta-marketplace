@@ -1,7 +1,6 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useState, useContext, useMemo, useCallback } from 'react';
 
-const API_URL = import.meta.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'; // Gunakan VITE jika pakai Vite
 
 const AdminAuthContext = createContext(null);
 
@@ -14,6 +13,8 @@ export const useAdminAuth = () => {
 };
 
 export const AdminAuthProvider = ({ children }) => {
+  const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
   const [admin, setAdmin] = useState(() => {
     try {
       const storedAdmin = localStorage.getItem('admin_user');
@@ -22,13 +23,17 @@ export const AdminAuthProvider = ({ children }) => {
       return null;
     }
   });
-  
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+   
 
-  
-  const adminLogin = async (credentials) => {
+  const adminLogout = useCallback(() => {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_user');
+    setAdmin(null);
+  }, []);
+
+  const adminLogin = useCallback(async (credentials) => {
     setLoading(true);
+    setAuthError("");
     try {
       const response = await fetch(`${API_URL}/admin/login`, {
         method: 'POST',
@@ -42,90 +47,39 @@ export const AdminAuthProvider = ({ children }) => {
       const result = await response.json();
 
       if (!response.ok) {
-        return { 
-          success: false, 
-          message: result.message || 'Login admin gagal' 
-        };
+        const msg = result.message || 'Email atau password salah';
+        setAuthError(msg); // <--- SET ERROR DI SINI
+        return { success: false, message: msg };
       }
 
       if (result.success && result.data?.token) {
-        
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         localStorage.setItem('admin_token', result.data.token);
         localStorage.setItem('admin_user', JSON.stringify(result.data.admin));
-        setAdmin(result.data.user);
+        setAdmin(result.data.admin);
         
-        return { 
-          success: true, 
-          data: result.data 
-        };
+        return { success: true };
       }
       
-      return { 
-        success: false, 
-        message: result.message || 'Login admin gagal' 
-      };
+      return { success: false, message: 'Login admin gagal' };
     } catch (error) {
-      return { 
-        success: false, 
-        message: error.message || 'Terjadi kesalahan jaringan' 
-      };
+      return { success: false, message: 'Terjadi kesalahan jaringan' };
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
- 
-  const adminLogout = () => {
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('admin_user');
-    setAdmin(null);
-    navigate('/admin/login');
-  };
-
- 
-  const isAdminAuthenticated = !!admin && !!localStorage.getItem('admin_token');
-
- 
-  const getAdminToken = () => {
-    return localStorage.getItem('admin_token');
-  };
-
- 
-  const adminFetch = async (url, options = {}) => {
-    const token = getAdminToken();
-    
-    const headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      ...options.headers,
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await fetch(`${API_URL}${url}`, {
-      ...options,
-      headers,
-    });
-    
-    if (response.status === 401) {
-      adminLogout();
-      throw new Error('Unauthorized');
-    }
-    
-    return response;
-  };
-
-  const value = {
+  // Gunakan useMemo agar object value tidak dianggap "baru" setiap kali render
+  const value = useMemo(() => ({
     admin,
     loading,
-    isAdminAuthenticated,
+    isAdminAuthenticated: !!admin,
     adminLogin,
     adminLogout,
-    getAdminToken,
-    adminFetch
-  };
+    authError,    // <--- KIRIM KE VALUE
+    setAuthError, // <--- KIRIM KE VALUE UNTUK RESET MANUAL
+  }), [admin, loading, adminLogin, adminLogout,authError]);
 
   return (
     <AdminAuthContext.Provider value={value}>

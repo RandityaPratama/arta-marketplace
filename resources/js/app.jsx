@@ -82,11 +82,10 @@ ReactDOM.createRoot(document.getElementById("app")).render(
 
                     {/* ========== ADMIN ROUTES ========== */}
                     {/* ADMIN LOGIN - tanpa protection karena untuk login */}
-                    <Route path="/admin" element={
-                      <AdminProtectedRoute requireAuth={false}>
-                        <AdminLogin />
-                      </AdminProtectedRoute>
-                    } />
+                    {/* ADMIN LOGIN */}
+                    <Route element={<AdminProtectedRoute requireAuth={false} />}>
+                    <Route path="/admin" element={<AdminLogin />} />
+                    </Route>
 
                     {/* PROTECTED ADMIN ROUTES */}
                     <Route element={<AdminProtectedRoute requireAuth={true} />}>

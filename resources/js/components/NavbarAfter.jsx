@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Bell, MessageCircle, Heart, User, Tag, Pencil } from "lucide-react";
+import { useAuth } from "./context/AuthContext";
 
 export default function NavbarAfter() {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ export default function NavbarAfter() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const profileRef = useRef(null);
   const notificationRef = useRef(null);
+  const {logout}=useAuth();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -23,10 +25,10 @@ export default function NavbarAfter() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/");
+  const handleLogout = async () => {
+  await logout();
   };
+
 
   // ✅ Data notifikasi sesuai gambar Anda
   const notifications = [

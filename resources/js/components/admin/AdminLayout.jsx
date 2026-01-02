@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { LogOut, Users, Package, Flag, BarChart3, Settings, User, Activity } from "lucide-react";
+import { useAdminAuth } from "./admincontext/AdminAuthContext";
 
 export default function AdminLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [adminName, setAdminName] = useState("Admin");
+  const { adminLogout } = useAdminAuth();
 
   useEffect(() => {
     const saved = localStorage.getItem("admin_profile");
@@ -30,10 +32,8 @@ export default function AdminLayout({ children }) {
     { name: "Pengaturan", icon: Settings, path: "/admin/settings" },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("admin_profile");
-    navigate("/admin");
+  const handleLogout = async () => {
+    await adminLogout();
   };
 
   return (

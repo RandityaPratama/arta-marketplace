@@ -1,8 +1,8 @@
-    // components/SignupPage.js
-    import React, { useState } from "react";
+import React, { useState } from "react";
     import { useNavigate } from "react-router-dom";
     import { User, Phone, MapPin, Mail, Lock, Eye, EyeOff } from "lucide-react";
     import Background from "./Background";
+    import { AuthProvider, useAuth } from "./context/AuthContext";
 
     export default function SignupPage() {
     const navigate = useNavigate();
@@ -21,6 +21,7 @@
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const {register} = useAuth();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -54,43 +55,31 @@
 
         setIsLoading(true);
         setError("");
+        try{
+            const name= formData.nama;
+        const email= formData.email;
+        const password= formData.password;
+        const password_confirmation= formData.konfirmasiPassword;
+        const phone= formData.telepon;
+        const location= formData.lokasi;
 
-        try {
-            // Pastikan URL ini sesuai dengan port Laravel Anda (biasanya 8000)
-            const response = await fetch("http://127.0.0.1:8000/api/register", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                },
-                body: JSON.stringify({
-                    name: formData.nama,
-                    email: formData.email,
-                    password: formData.password,
-                    password_confirmation: formData.konfirmasiPassword,
-                    phone: formData.telepon,
-                    location: formData.lokasi,
-                }),
-            });
+        const result = await register({ name,email,password,password_confirmation,phone,location })
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                // Menangani error validasi dari Laravel
-                if (data.errors) {
-                    const firstError = Object.values(data.errors)[0][0];
-                    throw new Error(firstError);
-                }
-                throw new Error(data.message || "Terjadi kesalahan saat mendaftar");
-            }
-
-            alert("Pendaftaran berhasil! Silakan login.");
-            navigate("/login");
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setIsLoading(false);
+        if (!result.success) {
+        throw new Error(result.message);
         }
+
+        alert("Pendaftaran berhasil! Silakan login.");
+        navigate("/login");
+        
+        }
+
+        catch(err){
+            setError(err.message);
+        }
+        finally{
+            setIsLoading(false)}
+       
     };
 
     return (

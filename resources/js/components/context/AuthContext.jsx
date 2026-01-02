@@ -1,3 +1,6 @@
+    // components/SignupPage.js
+    
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -96,6 +99,9 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (result.success && result.data?.token) {
+
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_user');        
         
         localStorage.setItem('token', result.data.token);
         if (result.data.user) {
@@ -135,14 +141,8 @@ export const AuthProvider = ({ children }) => {
 
       const result = await response.json();
 
-      if (result.success && result.data?.token) {
-        
-        localStorage.setItem('token', result.data.token);
-        if (result.data.user) {
-          localStorage.setItem('user', JSON.stringify(result.data.user));
-          setUser(result.data.user);
-        }
-        
+      if (result.success) {
+                                
         return { 
           success: true, 
           data: result.data 
