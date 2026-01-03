@@ -87,6 +87,8 @@ class UserAuthController extends Controller
             ], 422);
         }
 
+        
+
         // Cek kredensial
         $user = User::where('email', $request->email)->first();
 
@@ -95,6 +97,14 @@ class UserAuthController extends Controller
                 'success' => false,
                 'message' => 'Email atau password salah'
             ], 401);
+        }
+
+        // Cek status aktif user
+        if (!$user->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun dinonaktifkan'
+            ], 403);
         }
 
         // Buat/Hapus token lama (optional: untuk single device login)

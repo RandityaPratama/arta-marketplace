@@ -20,7 +20,7 @@ class IsUserMiddleware
         }
 
        
-        if (property_exists($request->user(), 'is_active') && !$request->user()->is_active) {
+        if (!$request->user()->is_active) {
             return response()->json([
                 'success' => false,
                 'message' => 'Akun dinonaktifkan'
