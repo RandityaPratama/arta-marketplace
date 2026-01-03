@@ -1,16 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\Admin\AuthController;
+use App\Http\Controllers\Api\Admin\AdminAuthController;
+use App\Http\Controllers\Api\Admin\AdminProductController;
 
-// ✅ PUBLIC ADMIN ROUTES (tanpa middleware)
-Route::post('/login', [AuthController::class, 'login']);
 
-// ✅ PROTECTED ADMIN ROUTES (dengan middleware)
-Route::middleware(['auth:admin-api', 'admin'])->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/profile', [AuthController::class, 'profile']);
-    Route::get('/dashboard', function () {
-        return response()->json(['message' => 'Admin Dashboard']);
-    });
+Route::post('/login', [AdminAuthController::class, 'login']);
+
+Route::middleware(['auth:sanctum', 'isAdmin'])->group(function () {
+    Route::post('/logout', [AdminAuthController::class, 'logout']);
+    Route::get('/me', [AdminAuthController::class, 'me']);  
+    Route::get('/products', [AdminProductController::class, 'getAllProducts']);    
+    Route::put('/products/{id}/status', [AdminProductController::class, 'updateStatus']);
 });

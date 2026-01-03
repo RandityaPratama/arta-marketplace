@@ -1,18 +1,18 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\User\UserAuthController;
+use App\Http\Controllers\Api\User\UserProductController;
 
 // Public routes
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [UserAuthController::class, 'register']);
+Route::post('/login', [UserAuthController::class, 'login']);
 
   
 // Protected routes (memerlukan token)
-Route::middleware('auth:sanctum')->group(function () {
-     Route::post('/logout', [AuthController::class, 'logout']);  
-    Route::get('/me', [AuthController::class, 'me']);
-    Route::post('/refresh', [AuthController::class, 'refresh']);
-    Route::post('/add-products', [UserController::class, 'addProduct']);
+Route::middleware('auth:sanctum', 'isUser')->group(function () {
+     Route::post('/logout', [UserAuthController::class, 'logout']);  
+    Route::get('/me', [UserAuthController::class, 'me']);
+    Route::post('/refresh', [UserAuthController::class, 'refresh']);
+    Route::post('/add-products', [UserProductController::class, 'addProduct']);
 });

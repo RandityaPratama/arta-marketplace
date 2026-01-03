@@ -1,6 +1,6 @@
-import React, { createContext, useState, useContext, useMemo, useCallback } from 'react';
+import React, { createContext, useState, useContext, useMemo, useCallback, useEffect } from 'react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'; // Gunakan VITE jika pakai Vite
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'; // Gunakan VITE jika pakai Vite
 
 const AdminAuthContext = createContext(null);
 
@@ -13,7 +13,7 @@ export const useAdminAuth = () => {
 };
 
 export const AdminAuthProvider = ({ children }) => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState("");
   const [admin, setAdmin] = useState(() => {
     try {
@@ -30,6 +30,40 @@ export const AdminAuthProvider = ({ children }) => {
     localStorage.removeItem('admin_user');
     setAdmin(null);
   }, []);
+
+  // ✅ Cek validitas token ke server saat aplikasi dimuat
+  useEffect(() => {
+    const verifyToken = async () => {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+       
+        const response = await fetch(`${API_URL}/admin/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Token invalid');
+        }
+        
+        await response.json();
+      } catch (error) {
+        console.log(error);
+        adminLogout();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    verifyToken();
+  }, [adminLogout]);
 
   const adminLogin = useCallback(async (credentials) => {
     setLoading(true);
@@ -48,7 +82,7 @@ export const AdminAuthProvider = ({ children }) => {
 
       if (!response.ok) {
         const msg = result.message || 'Email atau password salah';
-        setAuthError(msg); // <--- SET ERROR DI SINI
+        setAuthError(msg); 
         return { success: false, message: msg };
       }
 
@@ -70,15 +104,15 @@ export const AdminAuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Gunakan useMemo agar object value tidak dianggap "baru" setiap kali render
+  
   const value = useMemo(() => ({
     admin,
     loading,
     isAdminAuthenticated: !!admin,
     adminLogin,
     adminLogout,
-    authError,    // <--- KIRIM KE VALUE
-    setAuthError, // <--- KIRIM KE VALUE UNTUK RESET MANUAL
+    authError,    
+    setAuthError, 
   }), [admin, loading, adminLogin, adminLogout,authError]);
 
   return (

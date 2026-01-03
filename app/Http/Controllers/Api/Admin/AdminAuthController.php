@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 
-class AuthController extends Controller
+class AdminAuthController extends Controller
 {
     /**
      * Admin Login (ONLY - NO REGISTER)
@@ -118,13 +118,16 @@ class AuthController extends Controller
     /**
      * Get Admin Profile
      */
-    public function profile(Request $request)
+   public function me(Request $request)
     {
         $admin = $request->user();
+        $admin->makeHidden(['password', 'remember_token']);
         
         return response()->json([
             'success' => true,
-            'data' => $admin->makeHidden(['password', 'remember_token'])
+            'data' => [
+                'admin' => $admin
+            ]
         ]);
     }
 

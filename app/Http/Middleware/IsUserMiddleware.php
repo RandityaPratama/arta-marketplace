@@ -6,24 +6,24 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class AdminMiddleware
+class IsUserMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Cek apakah user adalah instance dari Admin model
-        if (!$request->user() || !($request->user() instanceof \App\Models\Admin)) {
+       
+        if (!$request->user() || !($request->user() instanceof \App\Models\User)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Akses ditolak. Hanya admin yang diizinkan.',
-                'error_code' => 'ADMIN_REQUIRED'
+                'message' => 'Akses ditolak. User tidak ditemukan.',
+                'error_code' => 'USER_REQUIRED'
             ], 403);
         }
 
-        // Cek apakah admin aktif (jika ada field is_active)
+       
         if (property_exists($request->user(), 'is_active') && !$request->user()->is_active) {
             return response()->json([
                 'success' => false,
-                'message' => 'Akun admin dinonaktifkan'
+                'message' => 'Akun dinonaktifkan'
             ], 403);
         }
 

@@ -26,6 +26,7 @@ export default function SellPage() {
   const [imageFiles, setImageFiles] = useState([]); // ✅ State untuk menyimpan file asli
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
   const [categories] = useState(["Elektronik", "Fashion", "Furnitur", "Hobi", "Rumah Tangga"]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!formData.category && categories.length > 0) {
@@ -88,6 +89,8 @@ export default function SellPage() {
       return;
     }
 
+    setIsSubmitting(true);
+
     const finalPrice = formData.originalPrice 
       ? calculateDiscountedPrice() 
       : formData.price;
@@ -124,6 +127,7 @@ export default function SellPage() {
       }, 2000);
     } catch (error) {
       setNotification({ show: true, message: "Gagal mengunggah produk: " + error.message, type: "error" });
+      setIsSubmitting(false);
     }
   };
 
@@ -376,19 +380,32 @@ export default function SellPage() {
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-[24px] py-[10px] bg-[#1E3A8A] text-white rounded-[10px] text-[15px] font-[500] hover:bg-[#162e68] transition flex items-center gap-[8px]"
+                  disabled={isSubmitting}
+                  className={`px-[24px] py-[10px] bg-[#1E3A8A] text-white rounded-[10px] text-[15px] font-[500] hover:bg-[#162e68] transition flex items-center gap-[8px] ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="white"
-                    className="w-5 h-5"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M15 12l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  Kirim untuk Review
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Memproses...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                        stroke="white"
+                        className="w-5 h-5"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M15 12l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      Kirim untuk Review
+                    </>
+                  )}
                 </button>
               </div>
             </div>

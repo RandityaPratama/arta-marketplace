@@ -3,8 +3,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom"; // ✅ Tambahkan useLocation
 import AdminLayout from "./AdminLayout";
 import Button from "../ui/Button";
+import { AdminProductProvider, useAdminProduct } from "./admincontext/AdminProductContext";
 
-export default function AdminProducts() {
+function AdminProductsContent() {
   const navigate = useNavigate();
   const location = useLocation(); // ✅ Ambil state dari navigasi
 
@@ -17,72 +18,42 @@ export default function AdminProducts() {
   };
 
   const [activeTab, setActiveTab] = useState(getDefaultTab);
+  const { products, loading, fetchProducts, approveProduct, rejectProduct, hideProduct } = useAdminProduct();
+  const [searchTerm, setSearchTerm] = useState("");
 
   // ✅ Opsional: update tab jika state berubah (misal navigasi ulang)
   useEffect(() => {
     setActiveTab(getDefaultTab());
   }, [location.state]);
 
-  const [products] = useState([
-    {
-      id: 1,
-      name: "Samsung S24 Ultra",
-      seller: "Randitya Pratama",
-      category: "Elektronik",
-      price: "12.000.000",
-      location: "Surabaya",
-      uploadedAt: "2 jam lalu",
-      status: "menunggu",
-    },
-    {
-      id: 2,
-      name: "iPhone 15 Pro",
-      seller: "Budi Santoso",
-      category: "Elektronik",
-      price: "15.500.000",
-      location: "Bandung",
-      uploadedAt: "1 minggu lalu",
-      status: "aktif",
-    },
-    {
-      id: 3,
-      name: "Kursi Gaming",
-      seller: "Dina Putri",
-      category: "Furnitur",
-      price: "2.300.000",
-      location: "Yogyakarta",
-      uploadedAt: "3 hari lalu",
-      status: "terjual",
-    },
-    {
-      id: 6,
-      name: "HP Android Rusak",
-      seller: "Fani",
-      category: "Elektronik",
-      price: "300.000",
-      location: "Bandung",
-      uploadedAt: "4 hari lalu",
-      status: "ditolak",
-    },
-  ]);
+  // ✅ Fetch data saat tab atau search berubah
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchProducts(activeTab, 1, searchTerm);
+    }, 500);
 
-  const handleApprove = (id) => {
-    alert(`Produk ID ${id} telah disetujui dan aktif!`);
+    return () => clearTimeout(delayDebounceFn);
+  }, [activeTab, searchTerm, fetchProducts]);
+
+  const handleApprove = async (id) => {
+    const result = await approveProduct(id);
+    if (result.success) alert("Produk berhasil disetujui!");
   };
 
-  const handleReject = (id) => {
+  const handleReject = async (id) => {
     const reason = prompt("Alasan penolakan:");
-    alert(`Produk ID ${id} ditolak. Alasan: ${reason || "-"}`);
+    if (reason) {
+      const result = await rejectProduct(id, reason);
+      if (result.success) alert("Produk berhasil ditolak.");
+    }
   };
 
-  const handleHide = (id) => {
-    alert(`Produk ID ${id} disembunyikan (tidak tampil di publik)!`);
+  const handleHide = async (id) => {
+    if (confirm("Sembunyikan produk ini?")) {
+      const result = await hideProduct(id);
+      if (result.success) alert("Produk berhasil disembunyikan.");
+    }
   };
-
-  const filteredProducts = products.filter(product => {
-    if (activeTab === "semua") return true;
-    return product.status === activeTab;
-  });
 
   const getStatusBadge = (status) => {
     const config = {
@@ -133,6 +104,8 @@ export default function AdminProducts() {
           <div className="flex gap-3">
             <input
               type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Cari produk..."
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
             />
@@ -163,7 +136,11 @@ export default function AdminProducts() {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          {filteredProducts.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12 text-gray-500">
+              Memuat data produk...
+            </div>
+          ) : products.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               Tidak ada produk dalam status ini.
             </div>
@@ -181,7 +158,7 @@ export default function AdminProducts() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredProducts.map((product) => (
+                {products.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900">{product.name}</div>
@@ -207,5 +184,13 @@ export default function AdminProducts() {
         </div>
       </div>
     </AdminLayout>
+  );
+}
+
+export default function AdminProducts() {
+  return (
+    <AdminProductProvider>
+      <AdminProductsContent />
+    </AdminProductProvider>
   );
 }
