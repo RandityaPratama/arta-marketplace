@@ -14,5 +14,6 @@ Route::middleware('auth:sanctum', 'isUser')->group(function () {
      Route::post('/logout', [UserAuthController::class, 'logout']);  
     Route::get('/me', [UserAuthController::class, 'me']);
     Route::post('/refresh', [UserAuthController::class, 'refresh']);
-    Route::post('/add-products', [UserProductController::class, 'addProduct']);
+    Route::post('/products', [UserProductController::class, 'addProduct']);
+    Route::get('/products', [UserProductController::class, 'getProducts']);
 });

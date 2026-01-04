@@ -25,11 +25,41 @@ export const AdminAuthProvider = ({ children }) => {
   });
    
 
-  const adminLogout = useCallback(() => {
+  const adminLogout = useCallback(async () => {
+
+   try{
+    const token = localStorage.getItem('admin_token');
+     const response = await fetch(`${API_URL}/admin/logout`,{
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      },
+    })
+
+    const result= await response.json();
+    if(!result.success){
+      const msg = 'Gagal logout admin';
+        setAuthError(msg); 
+        return { success: false, message: msg };
+    }
+    
+   }
+
+   catch(error){    
+        setAuthError(error); 
+        return { success: false, message: error };
+   }
+
+  finally
+  {
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
     setAdmin(null);
+    return { success: true };
+  }
   }, []);
+  
 
   // ✅ Cek validitas token ke server saat aplikasi dimuat
   useEffect(() => {
@@ -54,9 +84,9 @@ export const AdminAuthProvider = ({ children }) => {
         }
         
         await response.json();
-      } catch (error) {
+      } catch (error) {      
         console.log(error);
-        adminLogout();
+        await adminLogout();
       } finally {
         setLoading(false);
       }

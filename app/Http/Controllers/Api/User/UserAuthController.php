@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Activity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -43,6 +44,17 @@ class UserAuthController extends Controller
                 'phone' => $request->phone,
                 'location' => $request->location,
             ]);
+
+            // Catat aktivitas ke database
+            try {
+                Activity::create([
+                    'user_id' => $user->id,
+                    'action' => $user->name . ' mendaftar sebagai pengguna baru',
+                    'type' => 'pengguna',
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Gagal mencatat aktivitas registrasi user', ['error' => $e->getMessage()]);
+            }
 
             // Buat token untuk user menggunakan Sanctum
             $token = $user->createToken('auth_token')->plainTextToken;

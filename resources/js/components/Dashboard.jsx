@@ -137,7 +137,7 @@ export default function Dashboard() {
                   className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-[0px_4px_11px_rgba(0,0,0,0.07)] relative cursor-pointer"
                   onClick={() => {
                     // ✅ Navigasi cerdas: produk sendiri vs orang lain
-                    if (product.sellerId === "user-1") {
+                    if (product.is_mine) {
                       navigate(`/detailseller/${product.id}`);
                     } else {
                       navigate(`/product/${product.id}`);
@@ -169,7 +169,7 @@ export default function Dashboard() {
                   </Button>
 
                   {/* ✅ BADGE "IKLANKU" (sisi kanan - POSISI FLEKSIBEL) */}
-                  {product.sellerId === "user-1" && (
+                  {product.is_mine && (
                     <div 
                       className="absolute right-0 transform -translate-y-1/2 bg-[#1E3A8A] text-white text-[11px] font-[600] px-2 py-1.5 rounded-l-full z-10 whitespace-nowrap"
                       style={{ top: badgeVerticalPosition }}
@@ -178,7 +178,13 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  <div className="bg-gray-200 h-32 w-full"></div>
+                  <div className="bg-gray-200 h-32 w-full overflow-hidden">
+                    {product.images && product.images.length > 0 ? (
+                      <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Image</div>
+                    )}
+                  </div>
                   <div className="p-5">
                     <span className="inline-block bg-[#DDE7FF] text-[#1E3A8A] text-[13px] font-[500] px-2 py-1 rounded-full mb-2">
                       {product.category}

@@ -15,7 +15,7 @@ export default function AdminLogin() {
 
  const handleLogin = async (e) => {
     e.preventDefault();
-    // Kita tidak butuh setError lokal lagi
+        
     const result = await adminLogin({ email, password });
     
     if (result.success) {

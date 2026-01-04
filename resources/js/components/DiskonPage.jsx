@@ -96,7 +96,13 @@
                         </div>
                     )}
 
-                    <div className="bg-gray-200 h-32 w-full"></div>
+                    <div className="bg-gray-200 h-32 w-full overflow-hidden">
+                        {product.images && product.images.length > 0 ? (
+                            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Image</div>
+                        )}
+                    </div>
                     <div className="p-5">
                         <span className="inline-block bg-[#DDE7FF] text-[#1E3A8A] text-[13px] font-[500] px-2 py-1 rounded-full mb-2">
                         {product.category}

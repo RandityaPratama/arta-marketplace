@@ -93,8 +93,12 @@ export default function ProductDetailPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div>
-              <div className="bg-gray-200 h-[400px] w-full rounded-lg flex items-center justify-center">
-                <span className="text-gray-500">Gambar Produk</span>
+              <div className="bg-gray-200 h-[400px] w-full rounded-lg flex items-center justify-center overflow-hidden">
+                {product.images && product.images.length > 0 ? (
+                  <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-gray-500">Gambar Produk</span>
+                )}
               </div>
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Tentang Penjual</h3>

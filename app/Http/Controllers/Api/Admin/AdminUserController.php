@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Activity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class AdminUserController extends Controller
 {
@@ -81,18 +83,30 @@ class AdminUserController extends Controller
         ]);
     }
 
-    /**
-     * Mengubah status pengguna (Blokir / Aktifkan)
-     */
     public function updateStatus(Request $request, $id)
     {
         $user = User::find($id);
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'Pengguna tidak ditemukan'], 404);
         }
-
-        // Toggle status atau set berdasarkan input 'status' ("Aktif" / "Diblokir")
+        
         $isActive = $request->input('status') === 'Aktif';
+
+        // Catat aktivitas hanya jika admin memblokir pengguna (status menjadi tidak aktif)
+        if (!$isActive) {
+            try {
+                $adminName = $request->user()->name;
+                Activity::create([
+                    'user_id' => null,
+                    'admin_id' => $request->user()->id,
+                    'action' => "Admin {$adminName} memblokir pengguna {$user->name}",
+                    'type' => 'admin',
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Gagal mencatat aktivitas blokir user', ['error' => $e->getMessage()]);
+            }
+        }
+        
         $user->is_active = $isActive;
         $user->save();
 

@@ -1,142 +1,120 @@
     // src/components/context/ProductContext.js
-    import React, { createContext, useContext, useState } from "react";
+    import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+    // ✅ Dinamis: Menggunakan jalur custom '/product-images' untuk menghindari error 403/404 pada folder storage
+    const STORAGE_URL = API_URL.replace(/\/api\/?$/, '') + '/product-images';
 
     const ProductContext = createContext();
 
-    // ✅ Data dummy awal - produk campuran (milikmu + orang lain)
-    const initialProducts = [
-    // 🔸 PRODUK MILIKMU (sellerId: "user-1")
-    { 
-        id: 1, 
-        name: "Samsung S24 Ultra", 
-        category: "Elektronik", 
-        price: "10800000",
-        originalPrice: "12000000",
-        discount: "10",
-        onDiscount: true,
-        location: "Surabaya", 
-        sellerName: "Randitya Pratama",
-        publishedDate: "11/10/2025", 
-        condition: "Bekas Baik", 
-        description: "Produk ini dalam kondisi sangat baik, masih mulus dan berfungsi sempurna.", 
-        status: "menunggu",
-        sellerId: "user-1"
-    },
-    { 
-        id: 2, 
-        name: "iPhone 15 Pro", 
-        category: "Elektronik", 
-        price: "15500000", 
-        location: "Bandung", 
-        sellerName: "Randitya Pratama",
-        publishedDate: "12/10/2025", 
-        condition: "Baru", 
-        description: "iPhone terbaru dengan kamera terbaik.", 
-        status: "aktif",
-        sellerId: "user-1"
-    },
-    { 
-        id: 3, 
-        name: "Kursi Gaming", 
-        category: "Furnitur", 
-        price: "2300000", 
-        location: "Surabaya", 
-        sellerName: "Randitya Pratama",
-        publishedDate: "10/10/2025", 
-        condition: "Bekas Baik", 
-        description: "Kursi ergonomis dengan bahan kulit sintetis.", 
-        status: "terjual",
-        sellerId: "user-1"
-    },
-    { 
-        id: 4, 
-        name: "Adidas Adizero Evo SL", 
-        category: "Olahraga", 
-        price: "960000",
-        originalPrice: "1200000",
-        discount: "20",
-        onDiscount: true,
-        location: "Yogyakarta", 
-        sellerName: "Randitya Pratama",
-        publishedDate: "09/10/2025", 
-        condition: "Mulus", 
-        description: "Sepatu lari ringan dengan teknologi responsif.", 
-        status: "aktif",
-        sellerId: "user-1"
-    },
-
-    // 🔸 PRODUK ORANG LAIN (sellerId: "user-2", "user-3", dll)
-    { 
-        id: 5, 
-        name: "MacBook Air M2", 
-        category: "Elektronik", 
-        price: "18500000", 
-        location: "Jakarta", 
-        sellerName: "Budi Santoso",
-        publishedDate: "15/11/2025", 
-        condition: "Baru", 
-        description: "MacBook baru segel, garansi resmi 1 tahun.", 
-        status: "aktif",
-        sellerId: "user-2"
-    },
-    { 
-        id: 6, 
-        name: "Sepatu Nike Air Force 1", 
-        category: "Fashion", 
-        price: "1200000", 
-        originalPrice: "1500000",
-        discount: "20",
-        onDiscount: true,
-        location: "Bandung", 
-        sellerName: "Siti Rahayu",
-        publishedDate: "20/11/2025", 
-        condition: "Mulus", 
-        description: "Sepatu original, belum pernah dipakai.", 
-        status: "aktif",
-        sellerId: "user-3"
-    },
-    { 
-        id: 7, 
-        name: "Meja Belajar Minimalis", 
-        category: "Furnitur", 
-        price: "850000", 
-        location: "Surabaya", 
-        sellerName: "Andi Wijaya",
-        publishedDate: "05/12/2025", 
-        condition: "Bekas Baik", 
-        description: "Meja kayu jati, masih kokoh dan kuat.", 
-        status: "aktif",
-        sellerId: "user-4"
-    },
-    { 
-        id: 8, 
-        name: "Kamera Canon EOS R50", 
-        category: "Elektronik", 
-        price: "12500000", 
-        originalPrice: "14000000",
-        discount: "11",
-        onDiscount: true,
-        location: "Yogyakarta", 
-        sellerName: "Dina Putri",
-        publishedDate: "10/12/2025", 
-        condition: "Baru", 
-        description: "Kamera mirrorless terbaru, lengkap dengan lensa kit.", 
-        status: "aktif",
-        sellerId: "user-5"
-    }
-    ];
-
     export function ProductProvider({ children }) {
-    const [products, setProducts] = useState(initialProducts);
+    const [products, setProducts] = useState([]);
+    const [myProducts, setMyProducts] = useState([]); // ✅ State khusus produk saya
+    const [pagination, setPagination] = useState(null); // ✅ State untuk pagination
+    const [loading, setLoading] = useState(true);
+
+    // ✅ Fetch produk dari API (menggantikan data dummy)
+    const fetchProducts = useCallback(async (search = '', category = '') => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (category && category !== 'Semua') params.append('category', category);
+
+            const headers = { 'Accept': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            // Asumsi endpoint adalah /products (sesuaikan dengan route di api.php)
+            const response = await fetch(`${API_URL}/products?${params.toString()}`, {
+                method: 'GET',
+                headers
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                // Mapping data dari API (snake_case) ke format Frontend (camelCase)
+                const mappedData = result.data.map(item => {
+                    // ✅ Parsing aman untuk images (jaga-jaga jika masih string)
+                    let itemImages = item.images;
+                    if (typeof itemImages === 'string') {
+                        try { itemImages = JSON.parse(itemImages); } catch (e) { itemImages = []; }
+                    }
+                    if (!Array.isArray(itemImages)) itemImages = [];
+
+                    return {
+                        ...item,
+                        originalPrice: item.original_price,
+                        sellerName: item.seller_name,
+                        sellerId: item.seller_id,
+                        publishedDate: item.published_at,
+                        onDiscount: !!item.discount,
+                        is_mine: !!item.is_mine,
+                        images: itemImages.map(path => `${STORAGE_URL}/${path}`) // ✅ Convert path relatif ke URL lengkap
+                    };
+                });
+                setProducts(mappedData);
+                setPagination(result.pagination); // ✅ Simpan data pagination dari controller
+            }
+        } catch (err) {
+            console.error("Gagal mengambil produk:", err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // ✅ Fetch khusus produk saya (untuk halaman Profil)
+    const fetchMyProducts = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const response = await fetch(`${API_URL}/products?mine=true`, {
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                const mappedData = result.data.map(item => {
+                    // ✅ Parsing aman untuk images
+                    let itemImages = item.images;
+                    if (typeof itemImages === 'string') {
+                        try { itemImages = JSON.parse(itemImages); } catch (e) { itemImages = []; }
+                    }
+                    if (!Array.isArray(itemImages)) itemImages = [];
+
+                    return {
+                        ...item,
+                        originalPrice: item.original_price,
+                        sellerName: item.seller_name,
+                        sellerId: item.seller_id,
+                        publishedDate: item.published_at,
+                        onDiscount: !!item.discount,
+                        is_mine: true,
+                        images: itemImages.map(path => `${STORAGE_URL}/${path}`) // ✅ Convert path relatif ke URL lengkap
+                    };
+                });
+                setMyProducts(mappedData);
+            }
+        } catch (err) {
+            console.error("Gagal mengambil produk saya:", err);
+        }
+    }, []);
+
+    // Load produk saat pertama kali render
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
 
     // ✅ Tambah produk baru
     const addProduct = async (productData) => {
         const token = localStorage.getItem('token');
         
         try {
-            const response = await fetch(`${API_URL}/add-products`, {
+            const response = await fetch(`${API_URL}/products`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -154,6 +132,8 @@
 
             // Opsional: Fetch ulang semua produk atau tambahkan manual ke state
             // Untuk sementara kita return result agar komponen pemanggil tahu sukses
+            fetchProducts(); // Refresh list agar produk baru muncul
+            fetchMyProducts(); // ✅ Refresh list produk saya juga
             return result;
 
         } catch (error) {
@@ -185,18 +165,28 @@
 
     // ✅ Ambil produk milik user saat ini
     const getUserProducts = () => {
-        return products.filter(product => product.sellerId === "user-1");
+        return myProducts; // ✅ Return dari state khusus, bukan filter dari feed utama
     };
 
+    // ✅ Ambil produk untuk feed marketplace (Hanya yang statusnya aktif)
+    const getMarketplaceProducts = () => {
+        return products.filter(product => product.status === 'aktif');
+    };
+   
     return (
         <ProductContext.Provider 
         value={{ 
             products, 
+            pagination,
+            loading,
+            fetchProducts,
+            fetchMyProducts,
             addProduct, 
             updateProduct, 
             deleteProduct, 
             getProductById,
-            getUserProducts
+            getUserProducts,
+            getMarketplaceProducts
         }}
         >
         {children}

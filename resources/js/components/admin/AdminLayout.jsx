@@ -10,6 +10,7 @@ export default function AdminLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [adminName, setAdminName] = useState("Admin");
   const { adminLogout } = useAdminAuth();
+  const [errorLogout,setErrorLogout] = useState("");
 
   useEffect(() => {
     const saved = localStorage.getItem("admin_profile");
@@ -33,7 +34,28 @@ export default function AdminLayout({ children }) {
   ];
 
   const handleLogout = async () => {
-    await adminLogout();
+    try{    
+
+    const response = await adminLogout();
+
+    if(!response.ok){
+      setErrorLogout(response.message);
+      console.log(errorLogout);
+      return;}
+      
+    }
+
+    catch(error){
+      setErrorLogout(error);
+      console.log(errorLogout);
+      return;
+    }
+
+    finally{
+      localStorage.removeItem("admin_token");
+      localStorage.removeItem("admin_user");
+      navigate("/admin", { replace: true });
+    }
   };
 
   return (

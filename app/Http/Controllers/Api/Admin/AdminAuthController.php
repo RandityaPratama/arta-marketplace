@@ -97,23 +97,72 @@ class AdminAuthController extends Controller
 
     /**
      * Admin Logout
-     */
-    public function logout(Request $request)
-    {
+     */   
+
+public function logout(Request $request)
+{
+    try {       
         $admin = $request->user();
-        
-        Log::channel('admin')->info('Admin logout', [
+
+        // 🔒 Pastikan yang logout BENAR-BENAR admin
+        if (! $admin || ! ($admin instanceof Admin)) {
+            Log::warning('Admin logout failed: not admin', [
+                'user' => $admin
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        $token = $admin->currentAccessToken();
+
+        Log::channel('admin')->info('Admin logout attempt', [
             'admin_id' => $admin->id,
-            'email' => $admin->email
+            'email' => $admin->email,
+            'has_token' => (bool) $token,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ]);
+
+        if (! $token) {
+            Log::warning('Admin logout failed: token not found', [
+                'admin_id' => $admin->id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Token tidak ditemukan'
+            ], 401);
+        }
 
         $request->user()->currentAccessToken()->delete();
 
+        Log::channel('admin')->info('Admin logout success', [
+            'admin_id' => $admin->id,
+            'token_id' => $token->id,
+        ]);
+
         return response()->json([
             'success' => true,
-            'message' => 'Logout berhasil'
+            'message' => 'Logout admin berhasil'
         ]);
+
+    } catch (\Throwable $e) {
+
+        Log::channel('admin')->error('Admin logout error', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal logout admin'
+        ], 500);
     }
+}
+
 
     /**
      * Get Admin Profile

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Activity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -89,6 +90,27 @@ class AdminProductController extends Controller
         $product->save();
 
         Log::info("Admin updated product status", ['product_id' => $id, 'status' => $request->status]);
+
+        // Catat aktivitas admin ke database
+        try {
+            $adminName = $request->user()->name;
+            $actionText = "Admin {$adminName} mengubah status produk {$product->name} menjadi {$request->status}";
+
+            if ($request->status === 'aktif') {
+                $actionText = "Admin {$adminName} menyetujui produk {$product->name}";
+            } elseif ($request->status === 'ditolak') {
+                $actionText = "Admin {$adminName} menolak produk {$product->name}";
+            }
+
+            Activity::create([
+                'user_id' => null, // Null karena admin berada di tabel terpisah
+                'admin_id' => $request->user()->id,
+                'action' => $actionText,
+                'type' => 'admin',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal mencatat aktivitas admin', ['error' => $e->getMessage()]);
+        }
 
         return response()->json(['success' => true, 'message' => 'Status produk berhasil diperbarui']);
     }

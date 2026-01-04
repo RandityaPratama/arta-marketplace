@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Activity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -85,6 +86,17 @@ class UserProductController extends Controller
             'status' => 'menunggu',
         ]);
 
+        // Catat aktivitas ke database
+        try {
+            Activity::create([
+                'user_id' => $request->user()->id,
+                'action' => $request->user()->name . ' mengunggah produk baru',
+                'type' => 'produk',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal mencatat aktivitas upload produk', ['error' => $e->getMessage()]);
+        }
+
         Log::info('Product successfully created', [
             'product_id' => $product->id,
             'user_id' => $request->user()->id,
@@ -113,4 +125,92 @@ class UserProductController extends Controller
     }
 }
 
+    /**
+     * Mengambil daftar produk (Marketplace Feed)
+     * - Menampilkan produk aktif dari semua user
+     * - Menampilkan semua produk (termasuk non-aktif) milik user yang sedang login
+     * - Memberikan flag 'is_mine' untuk membedakan
+     */
+    public function getProducts(Request $request)
+    {
+        $user = $request->user();
+        
+        $query = Product::with('user');
+
+        // ✅ MODE 1: Produk Saya (untuk halaman Profil)
+        if ($request->has('mine') && $request->mine == 'true') {
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+            $query->where('user_id', $user->id);
+        } 
+        // ✅ MODE 2: Marketplace Feed (Produk orang lain + Produk saya)
+        else if ($user) {
+            $query->where(function($q) use ($user) {
+                $q->where('status', 'aktif')
+                  ->orWhere('user_id', $user->id);
+            });
+        } else {
+            $query->where('status', 'aktif');
+        }
+
+        // Filter Pencarian
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter Kategori
+        if ($request->has('category') && $request->category != '' && $request->category != 'Semua') {
+            $query->where('category', $request->category);
+        }
+
+        // ✅ Pagination: Tampilkan lebih banyak (50) jika mode 'mine' agar profil lebih lengkap
+        $perPage = ($request->has('mine') && $request->mine == 'true') ? 50 : 20;
+        $products = $query->latest()->paginate($perPage);
+
+        $formattedProducts = $products->getCollection()->map(function ($product) use ($user) {
+            $isMine = $user ? $product->user_id === $user->id : false;
+            
+            // ✅ Pastikan images adalah array (handle jika database mengembalikan string JSON)
+            $images = $product->images;
+            if (is_string($images)) {
+                $images = json_decode($images, true);
+            }
+            if (!is_array($images)) $images = [];
+
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'category' => $product->category,
+                'price' => $product->price,
+                'original_price' => $product->original_price,
+                'discount' => $product->discount,
+                'location' => $product->location,
+                'condition' => $product->condition,
+                'description' => $product->description,
+                'images' => $images, 
+                'status' => $product->status,
+                'seller_name' => $product->user ? $product->user->name : 'Unknown',
+                'seller_id' => $product->user_id,
+                'is_mine' => $isMine,
+                'published_at' => $product->created_at->format('d/m/Y'),
+                'created_at_human' => $product->created_at->diffForHumans(),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $formattedProducts,
+            'pagination' => [
+                'total' => $products->total(),
+                'per_page' => $products->perPage(),
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+            ]
+        ]);
+    }
 }
