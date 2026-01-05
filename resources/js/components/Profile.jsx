@@ -6,6 +6,8 @@
     import Background from "../components/Background";
     import Footer from "./Footer";
     import { useProducts } from "../components/context/ProductContext";
+import { useProfile } from "../components/context/ProfileContext";
+import { useAuth } from "../components/context/AuthContext";
     import { User, Mail, Phone, MapPin, Calendar } from "lucide-react";
 
     const formatPrice = (priceStr) => {
@@ -19,8 +21,35 @@
     const navigate = useNavigate();
     const location = useLocation(); // ✅
     const { getUserProducts, fetchMyProducts } = useProducts();
+    const { user, updateProfile, getJoinDate, loading: profileLoading } = useProfile();
+    const { isAuthenticated, loading: authLoading } = useAuth();
     const products = getUserProducts();
     
+    // 🔍 DEBUG: Cek data user di Console Browser (F12)
+    console.log("Profile Page User Data:", user);
+
+    // ✅ Redirect ke login jika tidak terautentikasi
+    useEffect(() => {
+        if (!authLoading && !isAuthenticated) {
+            navigate('/login');
+        }
+    }, [authLoading, isAuthenticated, navigate]);
+
+    // ✅ Tampilkan Loading Spinner jika sedang memuat data user
+    if (authLoading) {
+        return (
+            <>
+                <NavbarAfter />
+                <Background>
+                    <div className="flex items-center justify-center min-h-screen">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3A8A]"></div>
+                    </div>
+                </Background>
+                <Footer />
+            </>
+        );
+    }
+
     // ✅ Ambil data terbaru saat halaman profil dibuka
     useEffect(() => {
         fetchMyProducts();
@@ -30,9 +59,14 @@
     const initialTab = location.state?.fromSellPage ? "menunggu" : "aktif";
     const [activeTab, setActiveTab] = useState(initialTab);
     
-    const [userName, setUserName] = useState("Randitya Pratama");
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [newName, setNewName] = useState(userName);
+    const [editFormData, setEditFormData] = useState({
+        name: '',
+        phone: '',
+        location: ''
+    });
+    const [notification, setNotification] = useState({ show: false, message: "", type: "" });
+
 
     const getStatusBadge = (status) => {
         switch (status) {
@@ -67,21 +101,40 @@
 
     const currentProducts = getProductsByTab();
 
+    // Buka modal edit dan isi dengan data user saat ini
     const handleEditProfile = () => {
+        if (user) {
+            setEditFormData({
+                name: user.name || '',
+                phone: user.phone || '',
+                location: user.location || ''
+            });
+        }
         setIsEditModalOpen(true);
-        setNewName(userName);
     };
 
-    const handleSaveName = () => {
-        if (newName.trim()) {
-        setUserName(newName.trim());
-        setIsEditModalOpen(false);
+    const handleEditInputChange = (e) => {
+        const { name, value } = e.target;
+        setEditFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSaveProfile = async () => {
+        if (!editFormData.name.trim()) {
+            setNotification({ show: true, message: "Nama tidak boleh kosong", type: "error" });
+            return;
+        }
+
+        const result = await updateProfile(editFormData);
+        
+        setNotification({ show: true, message: result.message, type: result.success ? "success" : "error" });
+
+        if (result.success) {
+            setIsEditModalOpen(false);
         }
     };
 
     const handleCancelEdit = () => {
         setIsEditModalOpen(false);
-        setNewName(userName);
     };
 
     // ✅ Reset state setelah beberapa detik (opsional)
@@ -94,6 +147,15 @@
         return () => clearTimeout(timer);
         }
     }, [location.state, navigate]);
+
+    useEffect(() => {
+        if (notification.show) {
+            const timer = setTimeout(() => {
+                setNotification({ show: false, message: "", type: "" });
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [notification.show]);
 
     return (
         <>
@@ -109,23 +171,23 @@
                         <User size={32} className="text-[#1E3A8A]" strokeWidth={1.5} />
                     </div>
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-800">{userName}</h2>
+                        <h2 className="text-lg font-semibold text-gray-800">{user?.name || 'Pengguna'}</h2>
                         <div className="space-y-1 text-sm text-gray-600">
                         <div className="flex items-center gap-2">
                             <Mail size={16} className="text-gray-500" strokeWidth={1.5} />
-                            <span>randityapratama@gmail.com</span>
+                            <span>{user?.email || '-'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Phone size={16} className="text-gray-500" strokeWidth={1.5} />
-                            <span>+62 813-888-111</span>
+                            <span>{user?.phone || 'No. HP belum diatur'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <MapPin size={16} className="text-gray-500" strokeWidth={1.5} />
-                            <span>Surabaya</span>
+                            <span>{user?.location || 'Lokasi belum diatur'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Calendar size={16} className="text-gray-500" strokeWidth={1.5} />
-                            <span>Bergabung sejak 12 Jan 2025</span>
+                            <span>Bergabung sejak {getJoinDate()}</span>
                         </div>
                         </div>
                     </div>
@@ -281,12 +343,37 @@
                     Nama Lengkap
                 </label>
                 <input
-                    type="text"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
+                    type="text"                                        
+                    name="name"
+                    value={editFormData.name}
+                    onChange={handleEditInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
                     placeholder="Masukkan nama lengkap"
                 />
+                </div>
+
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">No. Telepon</label>
+                    <input
+                        type="tel"
+                        name="phone"
+                        value={editFormData.phone}
+                        onChange={handleEditInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+                        placeholder="Contoh: 08123456789"
+                    />
+                </div>
+
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Lokasi</label>
+                    <input
+                        type="text"
+                        name="location"
+                        value={editFormData.location}
+                        onChange={handleEditInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+                        placeholder="Contoh: Surabaya"
+                    />
                 </div>
 
                 <div className="flex gap-3">
@@ -300,14 +387,25 @@
                 </Button>
                 <Button
                     variant="primary"
-                    size="md"
-                    onClick={handleSaveName}
-                    className="flex-1"
+                    size="md"                                        
+                    onClick={handleSaveProfile}
+                    disabled={profileLoading}
+                    className="flex-1 flex items-center justify-center"
                 >
-                    Simpan
+                    {profileLoading ? 'Menyimpan...' : 'Simpan'}
                 </Button>
                 </div>
             </div>
+            </div>
+        )}
+
+        {notification.show && (
+            <div 
+                className="fixed top-4 right-4 z-50 max-w-xs p-4 rounded-lg shadow-lg text-white animate-fade-in"
+                style={{ backgroundColor: notification.type === "success" ? "#10B981" : "#EF4444" }}
+                onClick={() => setNotification({ show: false, message: "", type: "" })}
+            >
+                <p className="text-sm">{notification.message}</p>
             </div>
         )}
         

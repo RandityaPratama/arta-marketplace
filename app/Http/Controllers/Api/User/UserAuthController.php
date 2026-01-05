@@ -59,14 +59,19 @@ class UserAuthController extends Controller
             // Buat token untuk user menggunakan Sanctum
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            // Sembunyikan password dari response
-            $user->makeHidden(['password', 'remember_token']);
-
             return response()->json([
                 'success' => true,
                 'message' => 'Registrasi berhasil',
                 'data' => [
-                    'user' => $user,
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'phone' => $user->phone,
+                        'location' => $user->location,
+                        'created_at' => $user->created_at,
+                        'is_active' => $user->is_active,
+                    ],
                     'token' => $token,
                     'token_type' => 'Bearer'
                 ]
@@ -125,14 +130,19 @@ class UserAuthController extends Controller
         // Buat token baru
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        // Sembunyikan sensitive data
-        $user->makeHidden(['password', 'remember_token']);
-
         return response()->json([
             'success' => true,
             'message' => 'Login berhasil',
             'data' => [
-                'user' => $user,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'location' => $user->location,
+                    'created_at' => $user->created_at,
+                    'is_active' => $user->is_active,
+                ],
                 'token' => $token,
                 'token_type' => 'Bearer',
                 'expires_in' => config('sanctum.expiration') // jika ada config
@@ -199,15 +209,22 @@ public function logout(Request $request)
     /**
      * Get authenticated user profile
      */
-    public function me(Request $request)
+    public function profile(Request $request)
     {
         $user = $request->user();
-        $user->makeHidden(['password', 'remember_token']);
         
         return response()->json([
             'success' => true,
             'data' => [
-                'user' => $user
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'location' => $user->location,
+                    'created_at' => $user->created_at,
+                    'is_active' => $user->is_active,
+                ]
             ]
         ]);
     }

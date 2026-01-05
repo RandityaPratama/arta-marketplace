@@ -1,5 +1,5 @@
 // src/components/Dashboard.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { Bell, Plus, Heart, User } from "lucide-react";
@@ -21,7 +21,14 @@ const formatPrice = (priceStr) => {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { favorites, toggleFavorite, isFavorited } = useFavorites();
-  const { products } = useProducts();
+  const { products, fetchProducts } = useProducts();
+
+  // ✅ Fetch data terbaru setiap kali Dashboard dibuka
+  useEffect(() => {
+    if (fetchProducts) {
+      fetchProducts();
+    }
+  }, [fetchProducts]);
 
   const [categories] = useState([
     "Semua", "Elektronik", "Fashion", "Furnitur", "Hobi", "Rumah Tangga"

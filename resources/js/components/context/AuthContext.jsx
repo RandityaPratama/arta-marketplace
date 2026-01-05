@@ -1,17 +1,23 @@
-    // components/SignupPage.js
-    
-
+// components/context/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API_URL = import.meta.env.REACT_APP_API_URL || 'http://127.0.0.1:8000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 
 const AuthContext = createContext({});
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  // ✅ 1. Inisialisasi user dari localStorage agar data langsung ada (tidak null saat refresh)
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    try {
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -54,11 +60,13 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const response = await fetchWithAuth(`${API_URL}/me`);
+      const response = await fetchWithAuth(`${API_URL}/profile`, { method: 'GET' });
       const result = await response.json();
       
       if (result.success && result.data?.user) {
         setUser(result.data.user);
+        // ✅ 2. Simpan data terbaru ke localStorage agar sinkron
+        localStorage.setItem('user', JSON.stringify(result.data.user));
       } else {
        
         localStorage.removeItem('token');

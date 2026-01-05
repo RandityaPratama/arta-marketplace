@@ -10,6 +10,7 @@ import { ReportProvider } from "./components/context/ReportContext";
 import { ProductProvider } from "./components/context/ProductContext";
 import { AuthProvider } from './components/context/AuthContext';
 import { AdminAuthProvider } from "./components/admin/admincontext/AdminAuthContext";
+import { ProfileProvider } from "./components/context/ProfileContext";
 
 // Route Guards
 import ProtectedRoute from "./components/protectedroutes/ProtectedRoute";
@@ -53,7 +54,8 @@ ReactDOM.createRoot(document.getElementById("app")).render(
           <ChatProvider>
             <ReportProvider>
               <ProductProvider>
-                <AuthProvider> {/* AuthProvider untuk user juga di root */}
+                <AuthProvider> {/* AuthProvider harus membungkus ProfileProvider */}
+                  <ProfileProvider>
                   <Routes>
                     
                     {/* ========== PUBLIC USER ROUTES ========== */}
@@ -102,6 +104,7 @@ ReactDOM.createRoot(document.getElementById("app")).render(
                     <Route path="/*" element={<NotFoundPage />} />
 
                   </Routes>
+                  </ProfileProvider>
                 </AuthProvider>
               </ProductProvider>
             </ReportProvider>
