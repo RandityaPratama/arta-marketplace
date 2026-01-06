@@ -154,8 +154,32 @@
     };
 
     // ✅ Hapus produk
-    const deleteProduct = (productId) => {
-        setProducts(prev => prev.filter(product => product.id !== productId));
+    const deleteProduct = async (productId) => {
+        const token = localStorage.getItem('token');
+        try {
+            const response = await fetch(`${API_URL}/products/${productId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.message || 'Gagal menghapus produk');
+            }
+
+            // Update state lokal
+            setProducts(prev => prev.filter(product => product.id !== productId));
+            setMyProducts(prev => prev.filter(product => product.id !== productId));
+            
+            return result;
+        } catch (error) {
+            console.error("Error deleting product:", error);
+            throw error;
+        }
     };
 
     // ✅ Ambil produk berdasarkan ID

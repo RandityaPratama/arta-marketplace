@@ -44,7 +44,7 @@ class UserProfileController extends Controller
             try {
                 Activity::create([
                     'user_id' => $user->id,
-                    'action' => 'Memperbarui profil akun',
+                    'action' => $user->name . ' memperbarui profil',
                     'type' => 'pengguna',
                 ]);
             } catch (\Exception $e) {

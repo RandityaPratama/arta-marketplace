@@ -19,6 +19,7 @@
 
     // ✅ State untuk modal
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
     if (!product) {
@@ -96,20 +97,22 @@
     };
 
     // ✅ Konfirmasi hapus
-    const handleConfirmDelete = () => {
-        deleteProduct(product.id);
-        setIsDeleteModalOpen(false);
-        
-        setNotification({ 
-        show: true, 
-        message: "Produk berhasil dihapus!", 
-        type: "success" 
-        });
-        
-        // Redirect ke profil setelah 1.5 detik
-        setTimeout(() => {
-        navigate("/profile");
-        }, 1500);
+    const handleConfirmDelete = async () => {
+        setIsDeleting(true);
+        try {
+            await deleteProduct(product.id);
+            setIsDeleteModalOpen(false);
+            // Redirect akan terjadi otomatis karena product menjadi undefined di context
+            navigate("/profile");
+        } catch (error) {
+            setIsDeleting(false);
+            setIsDeleteModalOpen(false);
+            setNotification({ 
+                show: true, 
+                message: "Gagal menghapus produk: " + (error.message || "Terjadi kesalahan"), 
+                type: "error" 
+            });
+        }
     };
 
     const toggleStatus = () => {
@@ -480,9 +483,10 @@
                         variant="danger"
                         size="md"
                         onClick={handleConfirmDelete}
+                        disabled={isDeleting}
                         className="flex-1 bg-red-600 text-white hover:bg-red-700 border-red-600"
                     >
-                        Hapus
+                        {isDeleting ? "Menghapus..." : "Hapus"}
                     </Button>
                     </div>
                 </div>

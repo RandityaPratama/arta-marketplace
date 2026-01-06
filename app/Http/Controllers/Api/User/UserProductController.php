@@ -213,4 +213,55 @@ class UserProductController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Menghapus produk (Delete)
+     */
+    public function deleteProduct(Request $request, $id)
+    {
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Produk tidak ditemukan'
+            ], 404);
+        }
+
+        // Pastikan user adalah pemilik produk
+        if ($product->user_id !== $request->user()->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized action.'
+            ], 403);
+        }
+
+        try {
+            $productName = $product->name;
+            $product->delete();
+
+            // Catat aktivitas
+            try {
+                Activity::create([
+                    'user_id' => $request->user()->id,
+                    'action' => $request->user()->name . ' menghapus produk ' . $productName,
+                    'type' => 'produk',
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Gagal mencatat aktivitas hapus produk', ['error' => $e->getMessage()]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Produk berhasil dihapus'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Delete product error', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus produk'
+            ], 500);
+        }
+    }
 }

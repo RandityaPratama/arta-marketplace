@@ -21,6 +21,7 @@ Route::middleware('auth:sanctum', 'isUser')->group(function () {
     Route::post('/refresh', [UserAuthController::class, 'refresh']);
     Route::post('/products', [UserProductController::class, 'addProduct']);
     Route::get('/products', [UserProductController::class, 'getProducts']);
+    Route::delete('/products/{id}', [UserProductController::class, 'deleteProduct']);
     Route::get('/favorites', [UserFavoriteController::class, 'index']);
     Route::post('/favorites/toggle', [UserFavoriteController::class, 'toggle']);
 });
