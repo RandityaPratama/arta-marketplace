@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\AdminProductController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
+use App\Http\Controllers\Api\Admin\AdminSettingsController;
 
 
 Route::post('/login', [AdminAuthController::class, 'login']);
@@ -18,4 +19,11 @@ Route::middleware(['auth:sanctum', 'isAdmin'])->group(function () {
     Route::get('/users', [AdminUserController::class, 'index']);
     Route::get('/users/{id}', [AdminUserController::class, 'show']);
     Route::put('/users/{id}/status', [AdminUserController::class, 'updateStatus']);
+
+    // Routes Pengaturan Platform
+    Route::get('/settings', [AdminSettingsController::class, 'index']);
+    Route::post('/settings/categories', [AdminSettingsController::class, 'storeCategory']);
+    Route::delete('/settings/categories/{id}', [AdminSettingsController::class, 'destroyCategory']);
+    Route::post('/settings/report-reasons', [AdminSettingsController::class, 'storeReportReason']);
+    Route::delete('/settings/report-reasons/{id}', [AdminSettingsController::class, 'destroyReportReason']);
 });

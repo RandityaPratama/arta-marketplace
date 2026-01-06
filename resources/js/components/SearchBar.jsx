@@ -10,17 +10,13 @@
     Package 
     } from "lucide-react";
 
+    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+
     export default function SearchBar({ onSearch, onCategoryChange }) {
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("Semua kategori");
-    const [categories, setCategories] = useState([
-        "Semua kategori",
-        "Elektronik",
-        "Rumah Tangga",
-        "Olahraga",
-        "Furnitur"
-    ]);
+    const [categories, setCategories] = useState(["Semua kategori"]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     // ✅ Mapping kategori ke ikon
@@ -41,26 +37,20 @@
         }
     };
 
-    // ✅ Baca kategori dari localStorage (pengaturan admin)
+    // ✅ Fetch kategori dari API Database
     useEffect(() => {
-        const savedSettings = localStorage.getItem("admin_settings");
-        if (savedSettings) {
-        try {
-            const settings = JSON.parse(savedSettings);
-            if (Array.isArray(settings.productCategories)) {
-            const validCategories = settings.productCategories.filter(cat => 
-                ["Elektronik", "Rumah Tangga", "Olahraga", "Furnitur"].includes(cat)
-            );
-            const newCategories = [
-                "Semua kategori",
-                ...new Set([...validCategories, "Elektronik", "Rumah Tangga", "Olahraga", "Furnitur"])
-            ];
-            setCategories(newCategories);
+        const fetchCategories = async () => {
+            try {
+                const response = await fetch(`${API_URL}/categories`);
+                const result = await response.json();
+                if (result.success) {
+                    setCategories(["Semua kategori", ...result.data.map(c => c.name)]);
+                }
+            } catch (e) {
+                console.error("Gagal mengambil kategori", e);
             }
-        } catch (e) {
-            console.warn("Error reading admin settings");
-        }
-        }
+        };
+        fetchCategories();
     }, []);
 
     const handleSearch = (e) => {

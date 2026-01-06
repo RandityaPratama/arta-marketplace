@@ -7,6 +7,8 @@ import Footer from "./Footer";
 import Background from "../components/Background";
 import { useProducts } from "../components/context/ProductContext";
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+
 export default function SellPage() {
   const navigate = useNavigate();
   const { addProduct } = useProducts();
@@ -25,12 +27,28 @@ export default function SellPage() {
   const [images, setImages] = useState([]);
   const [imageFiles, setImageFiles] = useState([]); // ✅ State untuk menyimpan file asli
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
-  const [categories] = useState(["Elektronik", "Fashion", "Furnitur", "Hobi", "Rumah Tangga"]);
+  const [categories, setCategories] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // ✅ Fetch Kategori dari API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`${API_URL}/categories`);
+        const result = await response.json();
+        if (result.success) {
+          setCategories(result.data);
+        }
+      } catch (error) {
+        console.error("Gagal mengambil kategori:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     if (!formData.category && categories.length > 0) {
-      setFormData(prev => ({ ...prev, category: categories[0] }));
+      setFormData(prev => ({ ...prev, category: categories[0].name }));
     }
   }, [categories]);
 
@@ -231,9 +249,9 @@ export default function SellPage() {
                     onChange={handleInputChange}
                     className="w-full px-[16px] py-[10px] text-[15px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] focus:border-[#1E3A8A] transition"
                   >
-                    {categories.map((cat, index) => (
-                      <option key={index} value={cat}>
-                        {cat}
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.name}>
+                        {cat.name}
                       </option>
                     ))}
                   </select>

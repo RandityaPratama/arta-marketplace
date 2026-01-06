@@ -10,6 +10,8 @@ import Background from "../components/Background";
 import { useFavorites } from "../components/context/FavoriteContext";
 import { useProducts } from "../components/context/ProductContext";
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+
 // ✅ Fungsi format harga: 12000000 → "12.000.000"
 const formatPrice = (priceStr) => {
   if (!priceStr) return "";
@@ -30,9 +32,24 @@ export default function Dashboard() {
     }
   }, [fetchProducts]);
 
-  const [categories] = useState([
-    "Semua", "Elektronik", "Fashion", "Furnitur", "Hobi", "Rumah Tangga"
-  ]);
+  const [categories, setCategories] = useState(["Semua"]);
+
+  // ✅ Fetch Kategori dari API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`${API_URL}/categories`);
+        const result = await response.json();
+        if (result.success) {
+          setCategories(["Semua", ...result.data.map(c => c.name)]);
+        }
+      } catch (error) {
+        console.error("Gagal mengambil kategori:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   const [selectedCategory, setSelectedCategory] = useState("Semua");
 
   // ✅ POSISI VERTIKAL FLEKSIBEL - BISA DIUBAH SESUAI KEBUTUHAN
@@ -41,7 +58,7 @@ export default function Dashboard() {
   const filteredProducts = products
     .filter(product => product.status === "aktif")
     .filter(product => 
-      selectedCategory === "Semua" || product.category === selectedCategory
+      selectedCategory === "Semua" || selectedCategory === "Semua kategori" || product.category === selectedCategory
     );
 
   const totalProducts = filteredProducts.length;
@@ -51,7 +68,7 @@ export default function Dashboard() {
       <NavbarAfter />
       <Background>
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6  md:px-8 lg:px-12 py-8">
-          <SearchBar />
+          <SearchBar onCategoryChange={setSelectedCategory} />
 
           {/* Promo Banners */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">

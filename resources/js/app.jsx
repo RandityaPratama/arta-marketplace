@@ -11,6 +11,9 @@ import { ProductProvider } from "./components/context/ProductContext";
 import { AuthProvider } from './components/context/AuthContext';
 import { AdminAuthProvider } from "./components/admin/admincontext/AdminAuthContext";
 import { ProfileProvider } from "./components/context/ProfileContext";
+import { AdminSettingProvider } from "./components/admin/admincontext/AdminSettingContext";
+import { AdminUserProvider } from "./components/admin/admincontext/AdminUserContext";
+import { AdminProductProvider } from "./components/admin/admincontext/AdminProductContext";
 
 // Route Guards
 import ProtectedRoute from "./components/protectedroutes/ProtectedRoute";
@@ -50,12 +53,16 @@ ReactDOM.createRoot(document.getElementById("app")).render(
     <BrowserRouter>
       {/* ADMIN AUTH PROVIDER DI LEVEL PALING ATAS */}
       <AdminAuthProvider>
-        <FavoriteProvider>
+        <AdminUserProvider>
+          <AdminProductProvider>
+            <AdminSettingProvider>
+        
           <ChatProvider>
             <ReportProvider>
               <ProductProvider>
                 <AuthProvider> {/* AuthProvider harus membungkus ProfileProvider */}
                   <ProfileProvider>
+                    <FavoriteProvider>
                   <Routes>
                     
                     {/* ========== PUBLIC USER ROUTES ========== */}
@@ -104,12 +111,15 @@ ReactDOM.createRoot(document.getElementById("app")).render(
                     <Route path="/*" element={<NotFoundPage />} />
 
                   </Routes>
+                  </FavoriteProvider>
                   </ProfileProvider>
                 </AuthProvider>
               </ProductProvider>
             </ReportProvider>
-          </ChatProvider>
-        </FavoriteProvider>
+          </ChatProvider>        
+            </AdminSettingProvider>
+          </AdminProductProvider>
+        </AdminUserProvider>
       </AdminAuthProvider>
     </BrowserRouter>
   </React.StrictMode>
