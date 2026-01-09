@@ -264,4 +264,62 @@ class UserProductController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Memperbarui produk (Update)
+     * Menangani edit info produk dan ubah status (Aktif/Terjual)
+     */
+    public function update(Request $request, $id)
+    {
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Produk tidak ditemukan'
+            ], 404);
+        }
+
+        // Pastikan user adalah pemilik produk
+        if ($product->user_id !== $request->user()->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized action.'
+            ], 403);
+        }
+
+        // Validasi input (gunakan 'sometimes' agar tidak wajib mengirim semua field)
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|required|string|max:255',
+            'category' => 'sometimes|required|string',
+            'price' => 'sometimes|required|numeric',
+            'original_price' => 'nullable|numeric',
+            'discount' => 'nullable|integer',
+            'location' => 'sometimes|required|string',
+            'condition' => 'sometimes|required|string',
+            'description' => 'sometimes|required|string',
+            'status' => 'sometimes|string|in:aktif,terjual,menunggu,ditolak',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $product->update($request->except(['images', 'user_id'])); // Images biasanya dihandle endpoint terpisah atau logic khusus
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Produk berhasil diperbarui',
+                'data' => $product
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Update product error', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui produk'
+            ], 500);
+        }
+    }
 }

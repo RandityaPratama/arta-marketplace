@@ -104,6 +104,40 @@
         }
     }, []);
 
+    // ✅ Fetch Produk Populer (Berdasarkan jumlah favorit)
+    const fetchPopularProducts = useCallback(async () => {
+        try {
+            const response = await fetch(`${API_URL}/popular-products`);
+            const result = await response.json();
+            
+            if (result.success) {
+                return result.data.map(item => {
+                    // Parsing aman untuk images
+                    let itemImages = item.images;
+                    if (typeof itemImages === 'string') {
+                        try { itemImages = JSON.parse(itemImages); } catch (e) { itemImages = []; }
+                    }
+                    if (!Array.isArray(itemImages)) itemImages = [];
+
+                    return {
+                        ...item,
+                        originalPrice: item.original_price,
+                        sellerName: item.seller_name,
+                        sellerId: item.seller_id,
+                        publishedDate: item.published_at,
+                        onDiscount: !!item.discount,
+                        is_mine: false,
+                        images: itemImages.map(path => `${STORAGE_URL}/${path}`)
+                    };
+                });
+            }
+            return [];
+        } catch (err) {
+            console.error("Gagal mengambil produk populer:", err);
+            return [];
+        }
+    }, []);
+
     // Load produk saat pertama kali render
     useEffect(() => {
         fetchProducts();
@@ -204,6 +238,7 @@
             pagination,
             loading,
             fetchProducts,
+            fetchPopularProducts,
             fetchMyProducts,
             addProduct, 
             updateProduct, 

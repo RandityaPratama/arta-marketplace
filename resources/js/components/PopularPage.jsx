@@ -1,5 +1,5 @@
     // src/components/PopularPage.js
-    import React from "react";
+    import React, { useState, useEffect } from "react";
     import { useNavigate } from "react-router-dom";
     import Button from "../components/ui/Button";
     import { Heart } from "lucide-react";
@@ -20,13 +20,19 @@
     export default function PopularPage() {
     const navigate = useNavigate();
     const { favorites, toggleFavorite, isFavorited } = useFavorites();
-    const { products } = useProducts();
+    const { fetchPopularProducts } = useProducts();
+    const [popularProducts, setPopularProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // ✅ PRODUK POPULER: MINIMAL 10 LIKE, URUTAN DESCENDING
-    const popularProducts = products
-        .filter(p => p.status === "aktif" && (p.favoriteCount || 0) >= 10)
-        .sort((a, b) => (b.favoriteCount || 0) - (a.favoriteCount || 0))
-        .slice(0, 12);
+    // ✅ Fetch data real dari database via API
+    useEffect(() => {
+        const loadData = async () => {
+            const data = await fetchPopularProducts();
+            setPopularProducts(data);
+            setLoading(false);
+        };
+        loadData();
+    }, [fetchPopularProducts]);
 
     return (
         <>
@@ -48,9 +54,11 @@
 
             {/* Produk masuk halaman popular itu urut dari yang paling banyak muncul paling atas */}
 
-            {popularProducts.length === 0 ? (
+            {loading ? (
+                <div className="text-center py-12 text-gray-500">Memuat produk populer...</div>
+            ) : popularProducts.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                Tidak ada produk yang memenuhi syarat popularitas.
+                Belum ada produk yang difavoritkan.
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

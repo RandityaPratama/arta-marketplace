@@ -1,5 +1,7 @@
 // components/context/ReportContext.js
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useCallback } from "react";
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 
 const ReportContext = createContext();
 
@@ -12,33 +14,105 @@ export const useReports = () => {
 };
 
 export const ReportProvider = ({ children }) => {
-  // ✅ Data dummy: laporan awal
-  const [reports, setReports] = useState([
-    {
-      id: 1712345678,
-      type: "iklan",
-      productId: 1,
-      productName: "Samsung S24 Ultra",
-      sellerName: "Randitya Pratama",
-      reason: "Harga tidak sesuai pasar",
-      status: "Menunggu",
-      reportedAt: "22 Des 2025, 10:30"
+  const [reports, setReports] = useState([]);
+  const [reportReasons, setReportReasons] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const getToken = () => localStorage.getItem('token');
+
+  // Fetch report reasons dari database
+  const fetchReportReasons = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_URL}/report-reasons`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        setReportReasons(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching report reasons:", error);
     }
-  ]);
+  }, []);
 
-  // ❌ Hapus localStorage
+  // Submit report ke backend
+  const submitReport = useCallback(async (productId, reportReasonId) => {
+    const token = getToken();
+    if (!token) {
+      throw new Error("Anda harus login terlebih dahulu");
+    }
 
-  const submitReport = (reportData) => {
-    const newReport = {
-      ...reportData,
-      id: Date.now(),
-      reportedAt: new Date().toLocaleString("id-ID"),
-    };
-    setReports(prev => [newReport, ...prev]);
-  };
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/reports`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          report_reason_id: reportReasonId
+        })
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Gagal mengirim laporan');
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch user's own reports
+  const fetchMyReports = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/my-reports`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        setReports(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   return (
-    <ReportContext.Provider value={{ reports, submitReport }}>
+    <ReportContext.Provider value={{ 
+      reports, 
+      reportReasons,
+      loading,
+      submitReport,
+      fetchReportReasons,
+      fetchMyReports
+    }}>
       {children}
     </ReportContext.Provider>
   );

@@ -1,5 +1,5 @@
 // components/ChatPage.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import NavbarAfter from "./NavbarAfter";
@@ -9,8 +9,33 @@ import { useChat } from "../components/context/ChatContext";
 
 export default function ChatPage() {
   const navigate = useNavigate();
-  const { conversations } = useChat();
+  const { 
+    conversations, 
+    fetchConversations, 
+    loading,
+    subscribeToAllConversations,
+    unsubscribeFromAllConversations
+  } = useChat();
   const [activeTab, setActiveTab] = useState("incoming");
+
+  // ✅ Fetch data terbaru saat halaman dibuka
+  useEffect(() => {
+    fetchConversations();
+  }, [fetchConversations]);
+
+  // ✅ Subscribe ke semua conversations untuk real-time updates
+  useEffect(() => {
+    if (conversations.length > 0) {
+      console.log('📡 ChatPage: Subscribing to all conversations');
+      subscribeToAllConversations();
+    }
+
+    // Cleanup: unsubscribe saat keluar dari ChatPage
+    return () => {
+      console.log('📡 ChatPage: Unsubscribing from all conversations');
+      unsubscribeFromAllConversations();
+    };
+  }, [conversations.length, subscribeToAllConversations, unsubscribeFromAllConversations]);
 
   // ✅ "Pesan Pembeli" = chat di mana Anda adalah PENJUAL
   const incomingChats = conversations.filter(c => c.participantType === "seller");
@@ -19,6 +44,33 @@ export default function ChatPage() {
   const outgoingChats = conversations.filter(c => c.participantType === "buyer");
 
   const currentChats = activeTab === "incoming" ? incomingChats : outgoingChats;
+
+  // ✅ Helper untuk memformat waktu (Time Ago)
+  const formatTime = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 60) return "Baru saja";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit lalu`;
+    if (diffInSeconds < 86400 && date.getDate() === now.getDate()) return `${Math.floor(diffInSeconds / 3600)} jam lalu`;
+    if (diffInSeconds < 172800) return "Kemarin";
+    
+    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  };
+
+  if (loading && conversations.length === 0) {
+    return (
+      <>
+        <NavbarAfter />
+        <Background>
+          <div className="flex items-center justify-center h-screen text-gray-500">Memuat pesan...</div>
+        </Background>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
@@ -60,12 +112,16 @@ export default function ChatPage() {
             <div className="space-y-4">
               {currentChats.map((chat) => (
                 <div
-                  key={chat.id}
+                  key={`chat-${chat.id}-${chat.lastMessageAt || chat.createdAt}`}
                   className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
                   onClick={() => navigate(`/chatroom/${chat.id}`)}
                 >
-                  <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
-                    <span className="text-xs text-gray-500">Foto</span>
+                  <div className="w-16 h-16 bg-gray-200 rounded overflow-hidden flex items-center justify-center">
+                    {chat.product.images && chat.product.images.length > 0 ? (
+                      <img src={chat.product.images[0]} alt={chat.product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs text-gray-500">Foto</span>
+                    )}
                   </div>
                   
                   <div className="flex-1 min-w-0">
@@ -75,7 +131,9 @@ export default function ChatPage() {
                           ? `${chat.buyerName} • ${chat.product.name}`
                           : `${chat.sellerName} • ${chat.product.name}`}
                       </h3>
-                      <span className="text-xs text-gray-500">Sekarang</span>
+                      <span className="text-xs text-gray-500">
+                        {formatTime(chat.lastMessageAt)}
+                      </span>
                     </div>
                     <p className="text-sm text-gray-600 truncate">{chat.lastMessage}</p>
                     <p className="text-xs text-gray-500 mt-1">

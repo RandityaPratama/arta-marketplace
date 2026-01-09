@@ -4,108 +4,182 @@ import { useNavigate } from "react-router-dom";
 import AdminLayout from "./AdminLayout";
 import Button from "../ui/Button";
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const STORAGE_URL = API_URL.replace(/\/api\/?$/, '');
+
 export default function AdminReports() {
   const [activeTab, setActiveTab] = useState("iklan");
   const [adReports, setAdReports] = useState([]);
   const [purchaseReports, setPurchaseReports] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // ✅ Baca laporan dari localStorage
+  const getToken = () => localStorage.getItem('adminToken');
+
+  // ✅ Fetch laporan iklan dari database
   useEffect(() => {
-    const saved = localStorage.getItem("product_reports");
-    if (saved) {
-      const reports = JSON.parse(saved);
-      const adReportsFromStorage = reports
-        .filter(r => r.type === "iklan")
-        .map(r => ({
-          id: r.id,
-          product: r.productName,
-          reporter: "Pengguna",
-          reportedDate: r.reportedAt,
-          reason: r.reason,
-          status: r.status || "Menunggu",
-          productImage: "https://via.placeholder.com/60x60?text=Product",
-          sellerId: r.sellerId || 100 // ✅ Simpan ID penjual
-        }));
-      setAdReports(adReportsFromStorage);
+    fetchAdReports();
+  }, [statusFilter, searchQuery]);
 
-      const purchaseReportsFromStorage = reports
-        .filter(r => r.type === "pembelian")
-        .map(r => ({
-          id: r.id,
-          product: r.productName,
-          buyer: r.buyer || "Pembeli",
-          seller: r.sellerName || "Penjual",
-          reportedDate: r.reportedAt,
-          reason: r.reason,
-          evidenceImages: r.evidenceImages || [],
-          status: r.status || "Menunggu",
-          purchaseDate: r.purchaseDate || "1 Jan 2025",
-          productImage: "https://via.placeholder.com/60x60?text=Product",
-          sellerId: r.sellerId || 100 // ✅ Simpan ID penjual
+  const fetchAdReports = async () => {
+    const token = getToken();
+    if (!token) return;
+
+    setLoading(true);
+    try {
+      let url = `${API_URL}/admin/reports?`;
+      if (statusFilter !== "all") {
+        url += `status=${statusFilter}&`;
+      }
+      if (searchQuery) {
+        url += `search=${encodeURIComponent(searchQuery)}&`;
+      }
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        const formattedReports = result.data.map(report => ({
+          id: report.id,
+          product: report.product.name,
+          productId: report.product.id,
+          reporter: report.reporter.name,
+          reporterEmail: report.reporter.email,
+          seller: report.seller.name,
+          sellerId: report.seller.id,
+          reportedDate: new Date(report.created_at).toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          }),
+          reason: report.reason,
+          status: report.status === 'pending' ? 'Menunggu' :
+                  report.status === 'in_progress' ? 'Diproses' :
+                  report.status === 'resolved' ? 'Selesai' : 'Ditolak',
+          statusRaw: report.status,
+          productImage: report.product.images && report.product.images.length > 0
+            ? `${STORAGE_URL}/${report.product.images[0]}`
+            : "https://via.placeholder.com/60x60?text=No+Image",
+          adminNotes: report.admin_notes,
+          handledBy: report.handler?.name,
+          handledAt: report.handled_at
         }));
-      setPurchaseReports(purchaseReportsFromStorage);
+        setAdReports(formattedReports);
+      }
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
   // ✅ Fungsi untuk laporan iklan
-  const handleHideAd = (reportId) => {
-    if (window.confirm("Hapus iklan ini secara permanen?")) {
-      alert("Iklan telah dihapus!");
-      setAdReports(prev => 
-        prev.map(report => 
-          report.id === reportId 
-            ? { ...report, status: "Selesai" }
-            : report
-        )
-      );
+  const handleHideAd = async (reportId) => {
+    if (!window.confirm("Hapus iklan ini secara permanen?")) return;
+
+    const token = getToken();
+    try {
+      const response = await fetch(`${API_URL}/admin/reports/${reportId}/product`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        alert("Iklan telah dihapus!");
+        fetchAdReports(); // Refresh data
+      } else {
+        alert(result.message || "Gagal menghapus iklan");
+      }
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      alert("Terjadi kesalahan saat menghapus iklan");
     }
   };
 
-  const handleBanSellerFromAd = (reportId) => {
-    if (window.confirm("Ban akun penjual ini secara permanen?")) {
-      alert("Akun penjual telah di-ban!");
-      setAdReports(prev => 
-        prev.map(report => 
-          report.id === reportId 
-            ? { ...report, status: "Selesai" }
-            : report
-        )
-      );
+  const handleBanSellerFromAd = async (reportId) => {
+    if (!window.confirm("Ban akun penjual ini secara permanen?")) return;
+
+    // TODO: Implement ban seller API
+    alert("Fitur ban akun akan segera tersedia");
+  };
+
+  const handleProcessAd = async (reportId) => {
+    const token = getToken();
+    try {
+      const response = await fetch(`${API_URL}/admin/reports/${reportId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'in_progress',
+          admin_notes: 'Laporan sedang ditinjau'
+        })
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        fetchAdReports(); // Refresh data
+      } else {
+        alert(result.message || "Gagal memproses laporan");
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Terjadi kesalahan saat memproses laporan");
     }
   };
 
-  const handleProcessAd = (reportId) => {
-    setAdReports(prev => 
-      prev.map(report => 
-        report.id === reportId 
-          ? { ...report, status: "Diproses" }
-          : report
-      )
-    );
+  const handleResolveAd = async (reportId) => {
+    const token = getToken();
+    try {
+      const response = await fetch(`${API_URL}/admin/reports/${reportId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'resolved',
+          admin_notes: 'Laporan telah diselesaikan'
+        })
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        fetchAdReports(); // Refresh data
+      } else {
+        alert(result.message || "Gagal menyelesaikan laporan");
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Terjadi kesalahan saat menyelesaikan laporan");
+    }
   };
 
-  // ✅ Fungsi untuk laporan pembelian
+  // ✅ Fungsi untuk laporan pembelian (placeholder - belum diimplementasi)
   const handleBanSellerFromPurchase = (reportId) => {
-    if (window.confirm("Ban akun penjual ini secara permanen?")) {
-      alert("Akun penjual telah di-ban!");
-      setPurchaseReports(prev => 
-        prev.map(report => 
-          report.id === reportId 
-            ? { ...report, status: "Selesai" }
-            : report
-        )
-      );
-    }
+    alert("Fitur laporan pembelian akan segera tersedia");
   };
 
   const handleProcessPurchase = (reportId) => {
-    setPurchaseReports(prev => 
-      prev.map(report => 
-        report.id === reportId 
-          ? { ...report, status: "Diproses" }
-          : report
-      )
-    );
+    alert("Fitur laporan pembelian akan segera tersedia");
+  };
+
+  const handleResolvePurchase = (reportId) => {
+    alert("Fitur laporan pembelian akan segera tersedia");
   };
 
   const currentReports = activeTab === "iklan" ? adReports : purchaseReports;
@@ -115,6 +189,30 @@ export default function AdminReports() {
     <AdminLayout active="Laporan">
       <div>
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Laporan Pelanggaran</h2>
+
+        {/* Filter & Search */}
+        <div className="flex flex-wrap gap-4 mb-6">
+          <div className="flex-1 min-w-[200px]">
+            <input
+              type="text"
+              placeholder="Cari produk, pelapor, atau penjual..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+          >
+            <option value="all">Semua Status</option>
+            <option value="pending">Menunggu</option>
+            <option value="in_progress">Diproses</option>
+            <option value="resolved">Selesai</option>
+            <option value="rejected">Ditolak</option>
+          </select>
+        </div>
 
         <div className="flex border-b border-gray-200 mb-6">
           <button
@@ -139,8 +237,15 @@ export default function AdminReports() {
           </button>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <table className="w-full">
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">Memuat laporan...</div>
+        ) : currentReports.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            {activeTab === "iklan" ? "Belum ada laporan iklan" : "Belum ada laporan pembelian"}
+          </div>
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
@@ -310,6 +415,7 @@ export default function AdminReports() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </AdminLayout>
   );

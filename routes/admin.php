@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\AdminProductController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
 use App\Http\Controllers\Api\Admin\AdminSettingsController;
+use App\Http\Controllers\Api\Admin\AdminReportController;
 
 
 Route::post('/login', [AdminAuthController::class, 'login']);
@@ -26,4 +27,10 @@ Route::middleware(['auth:sanctum', 'isAdmin'])->group(function () {
     Route::delete('/settings/categories/{id}', [AdminSettingsController::class, 'destroyCategory']);
     Route::post('/settings/report-reasons', [AdminSettingsController::class, 'storeReportReason']);
     Route::delete('/settings/report-reasons/{id}', [AdminSettingsController::class, 'destroyReportReason']);
+    
+    // Report routes
+    Route::get('/reports', [AdminReportController::class, 'index']);
+    Route::get('/reports/{id}', [AdminReportController::class, 'show']);
+    Route::put('/reports/{id}/status', [AdminReportController::class, 'updateStatus']);
+    Route::delete('/reports/{id}/product', [AdminReportController::class, 'deleteProduct']);
 });

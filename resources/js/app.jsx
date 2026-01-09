@@ -3,6 +3,9 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+// Import Laravel Echo setup untuk real-time broadcasting
+import './bootstrap';
+
 // Context Providers
 import { FavoriteProvider } from "./components/context/FavoriteContext";
 import { ChatProvider } from "./components/context/ChatContext";

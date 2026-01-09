@@ -50,4 +50,37 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Relationship: User has many sent messages
+     */
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    /**
+     * Relationship: User has many conversations as buyer
+     */
+    public function buyerConversations()
+    {
+        return $this->hasMany(Conversation::class, 'buyer_id');
+    }
+
+    /**
+     * Relationship: User has many conversations as seller
+     */
+    public function sellerConversations()
+    {
+        return $this->hasMany(Conversation::class, 'seller_id');
+    }
+
+    /**
+     * Get all conversations for this user (as buyer or seller)
+     */
+    public function conversations()
+    {
+        return Conversation::where('buyer_id', $this->id)
+            ->orWhere('seller_id', $this->id);
+    }
 }

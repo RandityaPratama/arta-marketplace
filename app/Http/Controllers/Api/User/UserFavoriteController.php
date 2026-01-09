@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Favorites;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class UserFavoriteController extends Controller
 {
@@ -54,5 +55,40 @@ class UserFavoriteController extends Controller
             ]);
             return response()->json(['status' => 'added', 'product_id' => $productId]);
         }
+    }
+
+    /**
+     * Get popular products based on favorite count.
+     */
+    public function popular()
+    {
+        // 1. Hitung jumlah favorit per produk dari tabel favorites
+        $popular = DB::table('favorites')
+            ->select('product_id', DB::raw('count(*) as total'))
+            ->groupBy('product_id')
+            ->orderByDesc('total')
+            ->limit(12)
+            ->get();
+
+        if ($popular->isEmpty()) {
+            return response()->json(['success' => true, 'data' => []]);
+        }
+
+        $popularMap = $popular->pluck('total', 'product_id');
+        $productIds = $popular->pluck('product_id');
+
+        // 2. Ambil detail produk berdasarkan ID yang ditemukan
+        $products = DB::table('products')
+            ->whereIn('id', $productIds)
+            ->where('status', 'aktif')
+            ->get();
+
+        // 3. Gabungkan data produk dengan jumlah favoritnya
+        $result = $products->map(function ($product) use ($popularMap) {
+            $product->favoriteCount = $popularMap[$product->id] ?? 0;
+            return $product;
+        })->sortByDesc('favoriteCount')->values();
+
+        return response()->json(['success' => true, 'data' => $result]);
     }
 }

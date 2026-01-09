@@ -34,4 +34,12 @@ class Product extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Relationship: Product has many conversations
+     */
+    public function conversations()
+    {
+        return $this->hasMany(Conversation::class);
+    }
 }

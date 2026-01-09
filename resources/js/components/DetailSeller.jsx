@@ -22,6 +22,16 @@
     const [isDeleting, setIsDeleting] = useState(false);
     const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
+    // ✅ Auto-hide notification (Dipindahkan ke atas sebelum return)
+    useEffect(() => {
+        if (notification.show) {
+        const timer = setTimeout(() => {
+            setNotification({ show: false, message: "", type: "" });
+        }, 3000);
+        return () => clearTimeout(timer);
+        }
+    }, [notification.show]);
+
     if (!product) {
         navigate("/profile");
         return null;
@@ -153,16 +163,6 @@
         }
     };
 
-    // ✅ Auto-hide notification
-    useEffect(() => {
-        if (notification.show) {
-        const timer = setTimeout(() => {
-            setNotification({ show: false, message: "", type: "" });
-        }, 3000);
-        return () => clearTimeout(timer);
-        }
-    }, [notification.show]);
-
     return (
         <>
         <NavbarAfter />
@@ -196,7 +196,7 @@
                         </svg>
                     </div>
                     <div className="flex-1">
-                        <h4 className="font-semibold text-gray-800 text-sm">Randitya Pratama</h4>
+                        <h4 className="font-semibold text-gray-800 text-sm">{product.sellerName}</h4>
                         <p className="text-xs text-gray-600">{product.location}</p>
                     </div>
                     </div>

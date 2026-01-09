@@ -1,5 +1,5 @@
 // src/components/ProductDetailPage.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Button from "../components/ui/Button";
 import NavbarAfter from "./NavbarAfter";
@@ -18,13 +18,6 @@ const formatPrice = (priceStr) => {
   return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
 
-const REPORT_REASONS = [
-  "Harga tidak sesuai pasar",
-  "Menjual barang palsu",
-  "Postingan duplikat",
-  "Menjual barang terlarang"
-];
-
 export default function ProductDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -33,47 +26,56 @@ export default function ProductDetailPage() {
   
   const { favorites, toggleFavorite } = useFavorites();
   const { startChatAsBuyer } = useChat();
-  const { submitReport } = useReports();
+  const { reportReasons, submitReport, fetchReportReasons, loading } = useReports();
   const isFavorited = favorites.has(parseInt(id));
 
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [selectedReason, setSelectedReason] = useState("");
+  const [selectedReasonId, setSelectedReasonId] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
+
+  // Fetch report reasons saat modal dibuka
+  useEffect(() => {
+    if (isReportModalOpen && reportReasons.length === 0) {
+      fetchReportReasons();
+    }
+  }, [isReportModalOpen, reportReasons.length, fetchReportReasons]);
 
   if (!product) {
     navigate("/");
     return null;
   }
 
-  const handleContactSeller = () => {
-    const message = `Halo, saya tertarik dengan produk "${product.name}". Apakah masih tersedia?`;
-    const chatId = startChatAsBuyer(product.id, product, product.sellerName, message);
-    navigate(`/chatroom/${chatId}`);
+  const handleContactSeller = async () => {
+    try {
+      const conversationId = await startChatAsBuyer(product.id);
+      navigate(`/chatroom/${conversationId}`);
+    } catch (error) {
+      setNotification({ 
+        show: true, 
+        message: error.message || "Gagal menghubungi penjual.", 
+        type: "error" 
+      });
+    }
   };
 
   const openReportModal = () => {
     setIsReportModalOpen(true);
-    setSelectedReason("");
+    setSelectedReasonId(null);
   };
 
-  const submitReportForm = () => {
-    if (!selectedReason) {
+  const submitReportForm = async () => {
+    if (!selectedReasonId) {
       setNotification({ show: true, message: "Silakan pilih alasan!", type: "error" });
       return;
     }
 
-    const reportData = {
-      type: "iklan",
-      productId: product.id,
-      productName: product.name,
-      sellerName: product.sellerName,
-      reason: selectedReason,
-      status: "Menunggu"
-    };
-
-    submitReport(reportData);
-    setIsReportModalOpen(false);
-    setNotification({ show: true, message: "Laporan berhasil dikirim!", type: "success" });
+    try {
+      await submitReport(product.id, selectedReasonId);
+      setIsReportModalOpen(false);
+      setNotification({ show: true, message: "Laporan berhasil dikirim!", type: "success" });
+    } catch (error) {
+      setNotification({ show: true, message: error.message || "Gagal mengirim laporan", type: "error" });
+    }
   };
 
   return (
@@ -201,30 +203,36 @@ export default function ProductDetailPage() {
               <p className="text-sm text-gray-600 mb-4">Pilih alasan pelanggaran:</p>
 
               <div className="space-y-3 mb-6">
-                {REPORT_REASONS.map((reason, index) => (
-                  <div
-                    key={index}
-                    className={`p-3 border rounded-lg cursor-pointer ${
-                      selectedReason === reason
-                        ? "border-[#1E3A8A] bg-[#F0F7FF]"
-                        : "border-gray-300 hover:bg-gray-50"
-                    }`}
-                    onClick={() => setSelectedReason(reason)}
-                  >
-                    <div className="flex items-center">
-                      <div className={`w-5 h-5 rounded-full border mr-3 ${
-                        selectedReason === reason ? "bg-[#1E3A8A] border-[#1E3A8A]" : "border-gray-400"
-                      } flex items-center justify-center`}>
-                        {selectedReason === reason && (
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-3 h-3">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
+                {loading && reportReasons.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500">Memuat alasan laporan...</div>
+                ) : reportReasons.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500">Tidak ada alasan laporan tersedia</div>
+                ) : (
+                  reportReasons.map((reason) => (
+                    <div
+                      key={reason.id}
+                      className={`p-3 border rounded-lg cursor-pointer ${
+                        selectedReasonId === reason.id
+                          ? "border-[#1E3A8A] bg-[#F0F7FF]"
+                          : "border-gray-300 hover:bg-gray-50"
+                      }`}
+                      onClick={() => setSelectedReasonId(reason.id)}
+                    >
+                      <div className="flex items-center">
+                        <div className={`w-5 h-5 rounded-full border mr-3 ${
+                          selectedReasonId === reason.id ? "bg-[#1E3A8A] border-[#1E3A8A]" : "border-gray-400"
+                        } flex items-center justify-center`}>
+                          {selectedReasonId === reason.id && (
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-3 h-3">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className="text-gray-800">{reason.reason}</span>
                       </div>
-                      <span className="text-gray-800">{reason}</span>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               <div className="flex gap-3">
@@ -240,9 +248,10 @@ export default function ProductDetailPage() {
                   variant="danger"
                   size="md"
                   onClick={submitReportForm}
-                  className="flex-1 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
+                  disabled={loading}
+                  className="flex-1 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Kirim Laporan
+                  {loading ? "Mengirim..." : "Kirim Laporan"}
                 </Button>
               </div>
             </div>
