@@ -213,4 +213,46 @@ class AdminReportController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Block seller (set is_active = false)
+     */
+    public function blockSeller($id)
+    {
+        try {
+            $report = Report::findOrFail($id);
+            $seller = \App\Models\User::findOrFail($report->seller_id);
+
+            // Blokir seller
+            $seller->is_active = false;
+            $seller->save();
+
+            // Update report status
+            $report->update([
+                'status' => 'resolved',
+                'admin_notes' => 'Penjual telah diblokir oleh admin',
+                'handled_by' => auth()->id(),
+                'handled_at' => now(),
+            ]);
+
+            // Log activity
+            \App\Models\Activity::create([
+                'user_id' => null,
+                'admin_id' => auth()->id(),
+                'action' => "Admin memblokir penjual {$seller->name} dari laporan #{$report->id}",
+                'type' => 'admin',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Penjual berhasil diblokir'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memblokir penjual',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

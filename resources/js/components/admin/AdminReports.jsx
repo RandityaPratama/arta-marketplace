@@ -5,17 +5,18 @@ import AdminLayout from "./AdminLayout";
 import Button from "../ui/Button";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-const STORAGE_URL = API_URL.replace(/\/api\/?$/, '');
+const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
 
 export default function AdminReports() {
   const [activeTab, setActiveTab] = useState("iklan");
   const [adReports, setAdReports] = useState([]);
   const [purchaseReports, setPurchaseReports] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const getToken = () => localStorage.getItem('adminToken');
+  const getToken = () => localStorage.getItem('admin_token');
 
   // ✅ Fetch laporan iklan dari database
   useEffect(() => {
@@ -24,9 +25,19 @@ export default function AdminReports() {
 
   const fetchAdReports = async () => {
     const token = getToken();
-    if (!token) return;
+    
+    console.log('🔍 Checking token:', token ? `Token ada (${token.substring(0, 20)}...)` : 'Token TIDAK ada');
+    
+    if (!token) {
+      console.error('❌ Admin token tidak ditemukan.');
+      setError('Sesi Anda telah berakhir. Silakan login kembali.');
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
+    setError(null);
+    
     try {
       let url = `${API_URL}/admin/reports?`;
       if (statusFilter !== "all") {
@@ -36,44 +47,85 @@ export default function AdminReports() {
         url += `search=${encodeURIComponent(searchQuery)}&`;
       }
 
+      console.log('📡 Fetching reports from:', url);
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
         }
       });
+
+      console.log('📥 Response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        
+        try {
+          const errorData = await response.json();
+          console.error('❌ Error response:', errorData);
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          const errorText = await response.text();
+          console.error('❌ Error text:', errorText);
+        }
+        
+        // Jika 401, kemungkinan token invalid
+        if (response.status === 401) {
+          setError('Sesi Anda telah berakhir. Silakan login kembali.');
+        } else {
+          setError(errorMessage);
+        }
+        return;
+      }
+
       const result = await response.json();
+      console.log('📦 API Response:', result);
 
       if (result.success) {
-        const formattedReports = result.data.map(report => ({
-          id: report.id,
-          product: report.product.name,
-          productId: report.product.id,
-          reporter: report.reporter.name,
-          reporterEmail: report.reporter.email,
-          seller: report.seller.name,
-          sellerId: report.seller.id,
-          reportedDate: new Date(report.created_at).toLocaleDateString('id-ID', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-          }),
-          reason: report.reason,
-          status: report.status === 'pending' ? 'Menunggu' :
-                  report.status === 'in_progress' ? 'Diproses' :
-                  report.status === 'resolved' ? 'Selesai' : 'Ditolak',
-          statusRaw: report.status,
-          productImage: report.product.images && report.product.images.length > 0
+        console.log('✅ Reports loaded successfully:', result.data.length, 'reports');
+        
+        const formattedReports = result.data.map(report => {
+          const imageUrl = report.product.images && report.product.images.length > 0
             ? `${STORAGE_URL}/${report.product.images[0]}`
-            : "https://via.placeholder.com/60x60?text=No+Image",
-          adminNotes: report.admin_notes,
-          handledBy: report.handler?.name,
-          handledAt: report.handled_at
-        }));
+            : "https://via.placeholder.com/60x60?text=No+Image";
+          
+          console.log('🖼️ Product image URL:', imageUrl);
+          
+          return {
+            id: report.id,
+            product: report.product.name,
+            productId: report.product.id,
+            reporter: report.reporter.name,
+            reporterEmail: report.reporter.email,
+            seller: report.seller.name,
+            sellerId: report.seller.id,
+            reportedDate: new Date(report.created_at).toLocaleDateString('id-ID', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric'
+            }),
+            reason: report.reason,
+            status: report.status === 'pending' ? 'Menunggu' :
+                    report.status === 'in_progress' ? 'Diproses' :
+                    report.status === 'resolved' ? 'Selesai' : 'Ditolak',
+            statusRaw: report.status,
+            productImage: imageUrl,
+            adminNotes: report.admin_notes,
+            handledBy: report.handler?.name,
+            handledAt: report.handled_at
+          };
+        });
+        
         setAdReports(formattedReports);
+        console.log('✅ Formatted reports:', formattedReports);
+      } else {
+        console.error('❌ API returned error:', result.message);
+        setError(result.message || 'Gagal memuat laporan');
       }
     } catch (error) {
-      console.error("Error fetching reports:", error);
+      console.error('💥 Fetch error:', error);
+      setError(`Terjadi kesalahan: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -106,11 +158,30 @@ export default function AdminReports() {
     }
   };
 
-  const handleBanSellerFromAd = async (reportId) => {
-    if (!window.confirm("Ban akun penjual ini secara permanen?")) return;
+  const handleBlockSeller = async (reportId) => {
+    if (!window.confirm("Blokir akun penjual ini? Penjual tidak akan bisa login lagi.")) return;
 
-    // TODO: Implement ban seller API
-    alert("Fitur ban akun akan segera tersedia");
+    const token = getToken();
+    try {
+      const response = await fetch(`${API_URL}/admin/reports/${reportId}/block-seller`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        alert("Penjual berhasil diblokir!");
+        fetchAdReports(); // Refresh data
+      } else {
+        alert(result.message || "Gagal memblokir penjual");
+      }
+    } catch (error) {
+      console.error("Error blocking seller:", error);
+      alert("Terjadi kesalahan saat memblokir penjual");
+    }
   };
 
   const handleProcessAd = async (reportId) => {
@@ -166,6 +237,34 @@ export default function AdminReports() {
     } catch (error) {
       console.error("Error updating status:", error);
       alert("Terjadi kesalahan saat menyelesaikan laporan");
+    }
+  };
+
+  const handleRejectAd = async (reportId) => {
+    const token = getToken();
+    try {
+      const response = await fetch(`${API_URL}/admin/reports/${reportId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'rejected',
+          admin_notes: 'Laporan ditolak oleh admin'
+        })
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        fetchAdReports(); // Refresh data
+      } else {
+        alert(result.message || "Gagal menolak laporan");
+      }
+    } catch (error) {
+      console.error("Error rejecting report:", error);
+      alert("Terjadi kesalahan saat menolak laporan");
     }
   };
 
@@ -237,11 +336,33 @@ export default function AdminReports() {
           </button>
         </div>
 
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center gap-2 text-red-800">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span className="font-medium">{error}</span>
+            </div>
+          </div>
+        )}
+
         {loading ? (
-          <div className="text-center py-12 text-gray-500">Memuat laporan...</div>
+          <div className="text-center py-12 text-gray-500">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1E3A8A] mb-4"></div>
+            <p>Memuat laporan...</p>
+          </div>
         ) : currentReports.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
-            {activeTab === "iklan" ? "Belum ada laporan iklan" : "Belum ada laporan pembelian"}
+            <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <p className="text-lg font-medium">
+              {activeTab === "iklan" ? "Belum ada laporan iklan" : "Belum ada laporan pembelian"}
+            </p>
+            <p className="text-sm mt-2">
+              {activeTab === "iklan" ? "Laporan dari user akan muncul di sini" : "Fitur laporan pembelian akan segera tersedia"}
+            </p>
           </div>
         ) : (
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
@@ -328,7 +449,8 @@ export default function AdminReports() {
                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                       report.status === "Menunggu" ? "bg-yellow-100 text-yellow-800" :
                       report.status === "Diproses" ? "bg-blue-100 text-blue-800" :
-                      "bg-green-100 text-green-800"
+                      report.status === "Selesai" ? "bg-green-100 text-green-800" :
+                      "bg-red-100 text-red-800"
                     }`}>
                       {report.status}
                     </span>
@@ -336,43 +458,63 @@ export default function AdminReports() {
                   <td className="px-4 py-4">
                     <div className="flex flex-wrap gap-1.5">
                       {isAdTab ? (
-                        // ✅ Laporan Iklan: Hapus Iklan + Ban Akun
+                        // ✅ Laporan Iklan: Hapus Iklan + Blokir Akun
                         <>
                           <Button
                             variant="danger"
                             size="sm"
                             onClick={() => handleHideAd(report.id)}
-                            className="text-[11px] px-2 py-1 h-7 "
+                            className="text-[11px] px-2 py-1 h-7"
                           >
                             Hapus Iklan
                           </Button>
                           <Button
                             variant="danger"
                             size="sm"
-                            onClick={() => handleBanSellerFromAd(report.id)}
-                            className="text-[11px] px-2 py-1 h-7 "
+                            onClick={() => handleBlockSeller(report.id)}
+                            className="text-[11px] px-2 py-1 h-7"
                           >
-                            Ban Akun
+                            Blokir Akun
                           </Button>
                           {report.status === "Menunggu" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleProcessAd(report.id)}
-                              className="text-[11px] px-2 py-1 h-7"
-                            >
-                              Proses
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleProcessAd(report.id)}
+                                className="text-[11px] px-2 py-1 h-7"
+                              >
+                                Proses
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRejectAd(report.id)}
+                                className="text-[11px] px-2 py-1 h-7 border-gray-300 text-gray-600 hover:bg-gray-50"
+                              >
+                                Tolak
+                              </Button>
+                            </>
                           )}
                           {report.status === "Diproses" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleResolveAd(report.id)}
-                              className="text-[11px] px-2 py-1 h-7"
-                            >
-                              Selesai
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleResolveAd(report.id)}
+                                className="text-[11px] px-2 py-1 h-7"
+                              >
+                                Selesai
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRejectAd(report.id)}
+                                className="text-[11px] px-2 py-1 h-7 border-gray-300 text-gray-600 hover:bg-gray-50"
+                              >
+                                Tolak
+                              </Button>
+                            </>
                           )}
                         </>
                       ) : (

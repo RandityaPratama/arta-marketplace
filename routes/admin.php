@@ -33,4 +33,5 @@ Route::middleware(['auth:sanctum', 'isAdmin'])->group(function () {
     Route::get('/reports/{id}', [AdminReportController::class, 'show']);
     Route::put('/reports/{id}/status', [AdminReportController::class, 'updateStatus']);
     Route::delete('/reports/{id}/product', [AdminReportController::class, 'deleteProduct']);
+    Route::post('/reports/{id}/block-seller', [AdminReportController::class, 'blockSeller']);
 });
