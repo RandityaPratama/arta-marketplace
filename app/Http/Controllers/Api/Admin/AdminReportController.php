@@ -16,7 +16,12 @@ class AdminReportController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Report::with(['reporter', 'product', 'seller', 'reportReason', 'handler']);
+            $query = Report::with(['reporter', 'product', 'seller', 'reportReason', 'handler', 'transaction']);
+
+            // Filter by type (iklan / transaksi)
+            if ($request->has('type') && $request->type) {
+                $query->where('report_type', $request->type);
+            }
 
             // Filter by status
             if ($request->has('status') && $request->status != 'all') {
@@ -35,6 +40,9 @@ class AdminReportController extends Controller
                     })
                     ->orWhereHas('seller', function($q2) use ($search) {
                         $q2->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('transaction', function($q2) use ($search) {
+                        $q2->where('order_id', 'like', "%{$search}%");
                     });
                 });
             }
@@ -45,23 +53,30 @@ class AdminReportController extends Controller
             $formattedReports = $reports->map(function($report) {
                 return [
                     'id' => $report->id,
-                    'reporter' => [
+                    'report_type' => $report->report_type,
+                    'reporter' => $report->reporter ? [
                         'id' => $report->reporter->id,
                         'name' => $report->reporter->name,
                         'email' => $report->reporter->email,
-                    ],
-                    'product' => [
+                    ] : null,
+                    'product' => $report->product ? [
                         'id' => $report->product->id,
                         'name' => $report->product->name,
                         'price' => $report->product->price,
                         'images' => $report->product->images,
-                    ],
-                    'seller' => [
+                    ] : null,
+                    'seller' => $report->seller ? [
                         'id' => $report->seller->id,
                         'name' => $report->seller->name,
                         'email' => $report->seller->email,
-                    ],
-                    'reason' => $report->reportReason->reason,
+                    ] : null,
+                    'transaction' => $report->transaction ? [
+                        'id' => $report->transaction->id,
+                        'order_id' => $report->transaction->order_id,
+                        'amount' => $report->transaction->amount,
+                        'status' => $report->transaction->status,
+                    ] : null,
+                    'reason' => $report->reportReason ? $report->reportReason->reason : 'Unknown',
                     'status' => $report->status,
                     'admin_notes' => $report->admin_notes,
                     'handler' => $report->handler ? [
@@ -92,32 +107,39 @@ class AdminReportController extends Controller
     public function show($id)
     {
         try {
-            $report = Report::with(['reporter', 'product', 'seller', 'reportReason', 'handler'])
+            $report = Report::with(['reporter', 'product', 'seller', 'reportReason', 'handler', 'transaction'])
                 ->findOrFail($id);
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'id' => $report->id,
-                    'reporter' => [
+                    'report_type' => $report->report_type,
+                    'reporter' => $report->reporter ? [
                         'id' => $report->reporter->id,
                         'name' => $report->reporter->name,
                         'email' => $report->reporter->email,
-                    ],
-                    'product' => [
+                    ] : null,
+                    'product' => $report->product ? [
                         'id' => $report->product->id,
                         'name' => $report->product->name,
                         'price' => $report->product->price,
                         'description' => $report->product->description,
                         'images' => $report->product->images,
                         'status' => $report->product->status,
-                    ],
-                    'seller' => [
+                    ] : null,
+                    'seller' => $report->seller ? [
                         'id' => $report->seller->id,
                         'name' => $report->seller->name,
                         'email' => $report->seller->email,
-                    ],
-                    'reason' => $report->reportReason->reason,
+                    ] : null,
+                    'transaction' => $report->transaction ? [
+                        'id' => $report->transaction->id,
+                        'order_id' => $report->transaction->order_id,
+                        'amount' => $report->transaction->amount,
+                        'status' => $report->transaction->status,
+                    ] : null,
+                    'reason' => $report->reportReason ? $report->reportReason->reason : 'Unknown',
                     'status' => $report->status,
                     'admin_notes' => $report->admin_notes,
                     'handler' => $report->handler ? [

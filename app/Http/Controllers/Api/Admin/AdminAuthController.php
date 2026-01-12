@@ -11,9 +11,7 @@ use Illuminate\Support\Facades\Log;
 
 class AdminAuthController extends Controller
 {
-    /**
-     * Admin Login (ONLY - NO REGISTER)
-     */
+   
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -29,10 +27,10 @@ class AdminAuthController extends Controller
             ], 422);
         }
 
-        // Cari admin berdasarkan email
+       
         $admin = Admin::where('email', $request->email)->first();
 
-        // Cek 1: Admin exists
+       
         if (!$admin) {
             Log::channel('admin')->warning('Admin login attempt - email not found', [
                 'email' => $request->email,
@@ -45,7 +43,7 @@ class AdminAuthController extends Controller
             ], 401);
         }
 
-        // Cek 2: Password correct
+       
         if (!Hash::check($request->password, $admin->password)) {
             Log::channel('admin')->warning('Admin login attempt - wrong password', [
                 'admin_id' => $admin->id,
@@ -59,7 +57,7 @@ class AdminAuthController extends Controller
             ], 401);
         }
 
-        // Cek 3: Admin aktif (jika ada field is_active)
+       
         if (property_exists($admin, 'is_active') && !$admin->is_active) {
             return response()->json([
                 'success' => false,
@@ -67,16 +65,16 @@ class AdminAuthController extends Controller
             ], 403);
         }
 
-        // Update last login
+       
         $admin->update(['last_login_at' => now()]);
 
-        // Hapus token lama (optional)
+       
         $admin->tokens()->delete();
 
-        // Buat token baru
+       
         $token = $admin->createToken('admin_token', ['admin:*'])->plainTextToken;
 
-        // Log success
+       
         Log::channel('admin')->info('Admin login successful', [
             'admin_id' => $admin->id,
             'email' => $admin->email,
@@ -94,17 +92,14 @@ class AdminAuthController extends Controller
             ]
         ]);
     }
-
-    /**
-     * Admin Logout
-     */   
+   
 
 public function logout(Request $request)
 {
     try {       
         $admin = $request->user();
 
-        // 🔒 Pastikan yang logout BENAR-BENAR admin
+       
         if (! $admin || ! ($admin instanceof Admin)) {
             Log::warning('Admin logout failed: not admin', [
                 'user' => $admin
@@ -164,9 +159,6 @@ public function logout(Request $request)
 }
 
 
-    /**
-     * Get Admin Profile
-     */
    public function me(Request $request)
     {
         $admin = $request->user();
@@ -180,9 +172,6 @@ public function logout(Request $request)
         ]);
     }
 
-    /**
-     * Change Password
-     */
     public function changePassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -199,7 +188,6 @@ public function logout(Request $request)
 
         $admin = $request->user();
 
-        // Verify current password
         if (!Hash::check($request->current_password, $admin->password)) {
             return response()->json([
                 'success' => false,
@@ -207,12 +195,10 @@ public function logout(Request $request)
             ], 422);
         }
 
-        // Update password
         $admin->update([
             'password' => Hash::make($request->new_password)
         ]);
 
-        // Logout semua device
         $admin->tokens()->delete();
 
         Log::channel('admin')->info('Admin changed password', [
@@ -225,12 +211,8 @@ public function logout(Request $request)
         ]);
     }
     
-    /**
-     * Forgot Password (Opsional)
-     */
     public function forgotPassword(Request $request)
     {
-        // Admin hanya bisa reset password via CLI atau manual
         return response()->json([
             'success' => false,
             'message' => 'Reset password hanya bisa dilakukan via administrator system.'

@@ -32,7 +32,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'api/*',
             'admin/*', 
-            'sanctum/csrf-cookie'
+            'sanctum/csrf-cookie',
+            'api/midtrans/notification',
+            'midtrans/notification', // 👈 Tambahkan ini jika menggunakan solusi alternatif
         ]);
     })
    ->withExceptions(function (Exceptions $exceptions) {

@@ -8,9 +8,7 @@ use Illuminate\Http\JsonResponse;
 
 class UserCategoriesController extends Controller
 {
-    /**
-     * Mengambil daftar kategori untuk user
-     */
+    
     public function index(): JsonResponse
     {
         $categories = Category::orderBy('name')->get();

@@ -10,11 +10,9 @@
     import { useProducts } from "../components/context/ProductContext";
 
     // ✅ Fungsi format harga
-    const formatPrice = (priceStr) => {
-    if (!priceStr) return "";
-    const clean = priceStr.toString().replace(/\D/g, '');
-    if (!clean) return "";
-    return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    const formatPrice = (price) => {
+      if (price === undefined || price === null) return "";
+      return Number(price).toLocaleString('id-ID');
     };
 
     // ✅ POSISI VERTIKAL FLEKSIBEL

@@ -75,7 +75,7 @@
         let onDiscount = false;
 
         if (formData.originalPrice && formData.discount) {
-        final_PRICE = calculateDiscountedPrice();
+        finalPrice = calculateDiscountedPrice();
         onDiscount = true;
         }
 
@@ -136,11 +136,9 @@
         });
     };
 
-    const formatPrice = (priceStr) => {
-        if (!priceStr) return "";
-        const clean = priceStr.replace(/\D/g, '');
-        if (!clean) return "";
-        return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    const formatPrice = (price) => {
+        if (price === undefined || price === null) return "";
+        return Number(price).toLocaleString('id-ID');
     };
 
     const getStatusLabel = (status) => {

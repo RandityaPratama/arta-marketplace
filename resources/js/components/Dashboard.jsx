@@ -13,11 +13,9 @@ import { useProducts } from "../components/context/ProductContext";
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 
 // ✅ Fungsi format harga: 12000000 → "12.000.000"
-const formatPrice = (priceStr) => {
-  if (!priceStr) return "";
-  const clean = priceStr.toString().replace(/\D/g, '');
-  if (!clean) return "";
-  return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+const formatPrice = (price) => {
+  if (price === undefined || price === null) return "";
+  return Number(price).toLocaleString('id-ID');
 };
 
 export default function Dashboard() {

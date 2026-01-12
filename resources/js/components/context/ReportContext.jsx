@@ -1,4 +1,3 @@
-// components/context/ReportContext.js
 import React, { createContext, useContext, useState, useCallback } from "react";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
@@ -20,7 +19,6 @@ export const ReportProvider = ({ children }) => {
 
   const getToken = () => localStorage.getItem('token');
 
-  // Fetch report reasons dari database
   const fetchReportReasons = useCallback(async () => {
     const token = getToken();
     if (!token) return;
@@ -42,8 +40,7 @@ export const ReportProvider = ({ children }) => {
     }
   }, []);
 
-  // Submit report ke backend
-  const submitReport = useCallback(async (productId, reportReasonId) => {
+  const submitReport = useCallback(async (productId, reportReasonId, transactionId = null, reportType = 'iklan') => {
     const token = getToken();
     if (!token) {
       throw new Error("Anda harus login terlebih dahulu");
@@ -60,7 +57,9 @@ export const ReportProvider = ({ children }) => {
         },
         body: JSON.stringify({
           product_id: productId,
-          report_reason_id: reportReasonId
+          report_reason_id: reportReasonId,
+          transaction_id: transactionId,
+          report_type: reportType
         })
       });
 
@@ -79,7 +78,6 @@ export const ReportProvider = ({ children }) => {
     }
   }, []);
 
-  // Fetch user's own reports
   const fetchMyReports = useCallback(async () => {
     const token = getToken();
     if (!token) return;

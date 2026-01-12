@@ -17,9 +17,7 @@ use Illuminate\Support\Facades\DB;
 
 class UserChatController extends Controller
 {
-    /**
-     * Get all conversations for authenticated user
-     */
+ 
     public function getConversations(Request $request)
     {
         try {
@@ -34,7 +32,7 @@ class UserChatController extends Controller
                     $otherParticipant = $conversation->getOtherParticipant($user->id);
                     $participantType = $conversation->getParticipantType($user->id);
                     
-                    // ✅ Pastikan images di-decode jika string
+                    
                     $images = $conversation->product->images;
                     if (is_string($images)) {
                         $images = json_decode($images, true);

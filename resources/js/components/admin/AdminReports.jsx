@@ -1,4 +1,3 @@
-// components/admin/AdminReports.js
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "./AdminLayout";
@@ -18,18 +17,15 @@ export default function AdminReports() {
 
   const getToken = () => localStorage.getItem('admin_token');
 
-  // ✅ Fetch laporan iklan dari database
   useEffect(() => {
-    fetchAdReports();
-  }, [statusFilter, searchQuery]);
+    fetchReports();
+  }, [statusFilter, searchQuery, activeTab]);
 
-  const fetchAdReports = async () => {
+  const fetchReports = async () => {
     const token = getToken();
     
-    console.log('🔍 Checking token:', token ? `Token ada (${token.substring(0, 20)}...)` : 'Token TIDAK ada');
     
     if (!token) {
-      console.error('❌ Admin token tidak ditemukan.');
       setError('Sesi Anda telah berakhir. Silakan login kembali.');
       setLoading(false);
       return;
@@ -39,15 +35,15 @@ export default function AdminReports() {
     setError(null);
     
     try {
-      let url = `${API_URL}/admin/reports?`;
+      const type = activeTab === 'iklan' ? 'iklan' : 'transaksi';
+      let url = `${API_URL}/admin/reports?type=${type}&`;
+      
       if (statusFilter !== "all") {
         url += `status=${statusFilter}&`;
       }
       if (searchQuery) {
         url += `search=${encodeURIComponent(searchQuery)}&`;
       }
-
-      console.log('📡 Fetching reports from:', url);
 
       const response = await fetch(url, {
         headers: {
@@ -56,21 +52,16 @@ export default function AdminReports() {
         }
       });
 
-      console.log('📥 Response status:', response.status, response.statusText);
-
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         
         try {
           const errorData = await response.json();
-          console.error('❌ Error response:', errorData);
           errorMessage = errorData.message || errorMessage;
         } catch (e) {
           const errorText = await response.text();
-          console.error('❌ Error text:', errorText);
         }
         
-        // Jika 401, kemungkinan token invalid
         if (response.status === 401) {
           setError('Sesi Anda telah berakhir. Silakan login kembali.');
         } else {
@@ -80,17 +71,12 @@ export default function AdminReports() {
       }
 
       const result = await response.json();
-      console.log('📦 API Response:', result);
 
       if (result.success) {
-        console.log('✅ Reports loaded successfully:', result.data.length, 'reports');
-        
         const formattedReports = result.data.map(report => {
-          const imageUrl = report.product.images && report.product.images.length > 0
-            ? `${STORAGE_URL}/${report.product.images[0]}`
+          const imageUrl = report.product?.images && report.product.images.length > 0
+            ? `${STORAGE_URL}/${report.product.images[0]}` 
             : "https://via.placeholder.com/60x60?text=No+Image";
-          
-          console.log('🖼️ Product image URL:', imageUrl);
           
           return {
             id: report.id,
@@ -105,7 +91,7 @@ export default function AdminReports() {
               month: 'short',
               year: 'numeric'
             }),
-            reason: report.reason,
+            reason: report.report_reason?.reason || report.reason || '-',
             status: report.status === 'pending' ? 'Menunggu' :
                     report.status === 'in_progress' ? 'Diproses' :
                     report.status === 'resolved' ? 'Selesai' : 'Ditolak',
@@ -113,25 +99,29 @@ export default function AdminReports() {
             productImage: imageUrl,
             adminNotes: report.admin_notes,
             handledBy: report.handler?.name,
-            handledAt: report.handled_at
+            handledAt: report.handled_at,
+            transactionId: report.transaction_id,
+            buyer: report.reporter?.name,
+            purchaseDate: report.transaction ? new Date(report.transaction.created_at).toLocaleDateString('id-ID') : '-',
+            transactionStatus: report.transaction?.status || '-'
           };
         });
         
-        setAdReports(formattedReports);
-        console.log('✅ Formatted reports:', formattedReports);
+        if (activeTab === 'iklan') {
+          setAdReports(formattedReports);
+        } else {
+          setPurchaseReports(formattedReports);
+        }
       } else {
-        console.error('❌ API returned error:', result.message);
         setError(result.message || 'Gagal memuat laporan');
       }
     } catch (error) {
-      console.error('💥 Fetch error:', error);
       setError(`Terjadi kesalahan: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Fungsi untuk laporan iklan
   const handleHideAd = async (reportId) => {
     if (!window.confirm("Hapus iklan ini secara permanen?")) return;
 
@@ -148,7 +138,7 @@ export default function AdminReports() {
 
       if (result.success) {
         alert("Iklan telah dihapus!");
-        fetchAdReports(); // Refresh data
+        fetchReports();
       } else {
         alert(result.message || "Gagal menghapus iklan");
       }
@@ -174,7 +164,7 @@ export default function AdminReports() {
 
       if (result.success) {
         alert("Penjual berhasil diblokir!");
-        fetchAdReports(); // Refresh data
+        fetchReports();
       } else {
         alert(result.message || "Gagal memblokir penjual");
       }
@@ -184,7 +174,7 @@ export default function AdminReports() {
     }
   };
 
-  const handleProcessAd = async (reportId) => {
+  const handleProcessReport = async (reportId) => {
     const token = getToken();
     try {
       const response = await fetch(`${API_URL}/admin/reports/${reportId}/status`, {
@@ -202,7 +192,7 @@ export default function AdminReports() {
       const result = await response.json();
 
       if (result.success) {
-        fetchAdReports(); // Refresh data
+        fetchReports();
       } else {
         alert(result.message || "Gagal memproses laporan");
       }
@@ -212,7 +202,7 @@ export default function AdminReports() {
     }
   };
 
-  const handleResolveAd = async (reportId) => {
+  const handleResolveReport = async (reportId) => {
     const token = getToken();
     try {
       const response = await fetch(`${API_URL}/admin/reports/${reportId}/status`, {
@@ -230,7 +220,7 @@ export default function AdminReports() {
       const result = await response.json();
 
       if (result.success) {
-        fetchAdReports(); // Refresh data
+        fetchReports();
       } else {
         alert(result.message || "Gagal menyelesaikan laporan");
       }
@@ -240,7 +230,7 @@ export default function AdminReports() {
     }
   };
 
-  const handleRejectAd = async (reportId) => {
+  const handleRejectReport = async (reportId) => {
     const token = getToken();
     try {
       const response = await fetch(`${API_URL}/admin/reports/${reportId}/status`, {
@@ -258,7 +248,7 @@ export default function AdminReports() {
       const result = await response.json();
 
       if (result.success) {
-        fetchAdReports(); // Refresh data
+        fetchReports();
       } else {
         alert(result.message || "Gagal menolak laporan");
       }
@@ -266,19 +256,6 @@ export default function AdminReports() {
       console.error("Error rejecting report:", error);
       alert("Terjadi kesalahan saat menolak laporan");
     }
-  };
-
-  // ✅ Fungsi untuk laporan pembelian (placeholder - belum diimplementasi)
-  const handleBanSellerFromPurchase = (reportId) => {
-    alert("Fitur laporan pembelian akan segera tersedia");
-  };
-
-  const handleProcessPurchase = (reportId) => {
-    alert("Fitur laporan pembelian akan segera tersedia");
-  };
-
-  const handleResolvePurchase = (reportId) => {
-    alert("Fitur laporan pembelian akan segera tersedia");
   };
 
   const currentReports = activeTab === "iklan" ? adReports : purchaseReports;
@@ -289,7 +266,6 @@ export default function AdminReports() {
       <div>
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Laporan Pelanggaran</h2>
 
-        {/* Filter & Search */}
         <div className="flex flex-wrap gap-4 mb-6">
           <div className="flex-1 min-w-[200px]">
             <input
@@ -458,7 +434,6 @@ export default function AdminReports() {
                   <td className="px-4 py-4">
                     <div className="flex flex-wrap gap-1.5">
                       {isAdTab ? (
-                        // ✅ Laporan Iklan: Hapus Iklan + Blokir Akun
                         <>
                           <Button
                             variant="danger"
@@ -481,7 +456,7 @@ export default function AdminReports() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleProcessAd(report.id)}
+                                onClick={() => handleProcessReport(report.id)}
                                 className="text-[11px] px-2 py-1 h-7"
                               >
                                 Proses
@@ -489,7 +464,7 @@ export default function AdminReports() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleRejectAd(report.id)}
+                                onClick={() => handleRejectReport(report.id)}
                                 className="text-[11px] px-2 py-1 h-7 border-gray-300 text-gray-600 hover:bg-gray-50"
                               >
                                 Tolak
@@ -501,7 +476,7 @@ export default function AdminReports() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleResolveAd(report.id)}
+                                onClick={() => handleResolveReport(report.id)}
                                 className="text-[11px] px-2 py-1 h-7"
                               >
                                 Selesai
@@ -509,7 +484,7 @@ export default function AdminReports() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleRejectAd(report.id)}
+                                onClick={() => handleRejectReport(report.id)}
                                 className="text-[11px] px-2 py-1 h-7 border-gray-300 text-gray-600 hover:bg-gray-50"
                               >
                                 Tolak
@@ -518,12 +493,11 @@ export default function AdminReports() {
                           )}
                         </>
                       ) : (
-                        // ✅ Laporan Pembelian: Hanya Ban Akun
                         <>
                           <Button
                             variant="danger"
                             size="sm"
-                            onClick={() => handleBanSellerFromPurchase(report.id)}
+                            onClick={() => handleBlockSeller(report.id)}
                             className="text-[11px] px-2 py-1 h-7 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
                           >
                             Ban Akun
@@ -532,7 +506,7 @@ export default function AdminReports() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleProcessPurchase(report.id)}
+                              onClick={() => handleProcessReport(report.id)}
                               className="text-[11px] px-2 py-1 h-7"
                             >
                               Proses
@@ -542,7 +516,7 @@ export default function AdminReports() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleResolvePurchase(report.id)}
+                              onClick={() => handleResolveReport(report.id)}
                               className="text-[11px] px-2 py-1 h-7"
                             >
                               Selesai

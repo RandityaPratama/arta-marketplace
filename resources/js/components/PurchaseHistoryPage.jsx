@@ -1,4 +1,3 @@
-    // src/components/PurchaseHistoryPage.js
     import React, { useState, useEffect } from "react";
     import { useNavigate } from "react-router-dom";
     import Button from "../components/ui/Button";
@@ -7,99 +6,104 @@
     import Background from "../components/Background";
     import { useReports } from "../components/context/ReportContext";
 
-    // ✅ Fungsi format harga
-    const formatPrice = (priceStr) => {
-    if (!priceStr) return "";
-    const clean = priceStr.toString().replace(/\D/g, '');
-    if (!clean) return "";
-    return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
+
+    const formatPrice = (price) => {
+      if (price === undefined || price === null) return "";
+      return Number(price).toLocaleString('id-ID');
     };
 
     export default function PurchaseHistoryPage() {
     const navigate = useNavigate();
-    const { submitReport } = useReports();
+    const { submitReport, reportReasons, fetchReportReasons } = useReports();
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-    const [reportData, setReportData] = useState({ productId: null, productName: "" });
-    const [reportReason, setReportReason] = useState("");
-    const [evidenceImages, setEvidenceImages] = useState([]);
+    const [reportData, setReportData] = useState({ productId: null, productName: "", transactionId: null });
+    const [selectedReasonId, setSelectedReasonId] = useState(null);
     const [notification, setNotification] = useState({ show: false, message: "", type: "" });
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const [purchases] = useState([
-        {
-        id: 101,
-        productId: 2,
-        productName: "iPhone 15 Pro",
-        seller: "Siti Rahayu",
-        price: "15500000",
-        date: "12 Desember 2025",
-        status: "Diterima",
-        image: "https://via.placeholder.com/60x60?text=iPhone15",
-        },
-        {
-        id: 102,
-        productId: 3,
-        productName: "Kursi Gaming",
-        seller: "Andi Wijaya",
-        price: "2300000",
-        date: "10 Desember 2025",
-        status: "Dikirim",
-        image: "https://via.placeholder.com/60x60?text=Chair",
-        },
-        {
-        id: 103,
-        productId: 4,
-        productName: "Adidas Adizero Evo SL",
-        seller: "Dina Putri",
-        price: "1200000",
-        date: "8 Desember 2025",
-        status: "Diterima",
-        image: "https://via.placeholder.com/60x60?text=Shoes",
-        },
-    ]);
+  useEffect(() => {
+    const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
+    const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
+    
+    if (!clientKey) {
+      console.error("VITE_MIDTRANS_CLIENT_KEY tidak ditemukan. Pastikan Anda menambahkannya di file .env");
+      return;
+    }
 
-    const openReportModal = (productId, productName) => {
-        setReportData({ productId, productName });
-        setReportReason("");
-        setEvidenceImages([]);
+    if(document.querySelector(`script[src="${snapScript}"]`)) return;
+
+    const script = document.createElement('script');
+    script.src = snapScript;
+    script.setAttribute('data-client-key', clientKey);
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    }
+  }, []);
+
+  const fetchTransactions = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_URL}/transactions`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        setTransactions(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  // Fetch report reasons saat modal dibuka
+  useEffect(() => {
+    if (isReportModalOpen && reportReasons.length === 0) {
+      fetchReportReasons();
+    }
+  }, [isReportModalOpen, reportReasons.length, fetchReportReasons]);
+
+    const openReportModal = (productId, productName, transactionId) => {
+        setReportData({ productId, productName, transactionId });
+        setSelectedReasonId(null);
         setIsReportModalOpen(true);
     };
 
-    const handleEvidenceImageUpload = (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length + evidenceImages.length > 3) {
-        setNotification({ 
-            show: true, 
-            message: "Maksimal 3 foto bukti!", 
-            type: "error" 
-        });
-        return;
-        }
-        const newImages = files.map(file => URL.createObjectURL(file));
-        setEvidenceImages(prev => [...prev, ...newImages]);
-    };
-
-    const handleRemoveEvidenceImage = (index) => {
-        setEvidenceImages(prev => prev.filter((_, i) => i !== index));
-    };
-
-    const submitReportForm = () => {
-        if (!reportReason.trim()) {
-        setNotification({ show: true, message: "Alasan laporan wajib diisi!", type: "error" });
-        return;
-        }
-        if (evidenceImages.length === 0) {
-        setNotification({ show: true, message: "Harap unggah minimal 1 foto bukti!", type: "error" });
-        return;
+    const submitReportForm = async () => {
+        if (!selectedReasonId) {
+            setNotification({ show: true, message: "Silakan pilih alasan laporan!", type: "error" });
+            return;
         }
         
-        submitReport(reportData.productId, reportData.productName, reportReason, evidenceImages);
-        setIsReportModalOpen(false);
-        
-        setNotification({ 
-        show: true, 
-        message: "Laporan berhasil dikirim! Tim kami akan segera meninjau.", 
-        type: "success" 
-        });
+        try {
+            await submitReport(reportData.productId, selectedReasonId, reportData.transactionId, 'transaksi');
+            setIsReportModalOpen(false);
+            
+            setNotification({ 
+                show: true, 
+                message: "Laporan berhasil dikirim! Tim kami akan segera meninjau.", 
+                type: "success" 
+            });
+        } catch (error) {
+            setNotification({ show: true, message: error.message || "Gagal mengirim laporan", type: "error" });
+        }
     };
 
     useEffect(() => {
@@ -111,6 +115,46 @@
         }
     }, [notification.show]);
 
+  const handlePay = (snapToken) => {
+    if (window.snap) {
+      window.snap.pay(snapToken, {
+        onSuccess: function(result){
+          setNotification({ show: true, message: "Pembayaran Berhasil!", type: "success" });
+          fetchTransactions(); 
+        },
+        onPending: function(result){
+          setNotification({ show: true, message: "Menunggu Pembayaran...", type: "info" });
+          fetchTransactions();
+        },
+        onError: function(result){
+          setNotification({ show: true, message: "Pembayaran Gagal!", type: "error" });
+        },
+        onClose: function(){
+          setNotification({ show: true, message: "Popup ditutup", type: "info" });
+        }
+      });
+    } else {
+      setNotification({ show: true, message: "Sistem pembayaran belum siap. Refresh halaman.", type: "error" });
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'paid':
+      case 'settlement':
+      case 'capture':
+        return <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Berhasil</span>;
+      case 'pending':
+        return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">Menunggu Pembayaran</span>;
+      case 'deny':
+      case 'cancel':
+      case 'expire':
+        return <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Gagal / Kadaluarsa</span>;
+      default:
+        return <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs">{status}</span>;
+    }
+  };
+
     return (
         <>
         <NavbarAfter />
@@ -120,7 +164,7 @@
                 <div>
                 <h1 className="text-2xl font-bold text-gray-800">Riwayat Pembelian</h1>
                 <p className="text-sm text-gray-600 mt-1">
-                    {purchases.length} produk dibeli
+            {transactions.length} transaksi
                 </p>
                 </div>
                 <Button variant="primary" size="md" onClick={() => navigate(-1)}>
@@ -128,7 +172,9 @@
                 </Button>
             </div>
 
-            {purchases.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-12 text-gray-500">Memuat riwayat transaksi...</div>
+      ) : transactions.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                 Belum ada riwayat pembelian.
                 </div>
@@ -146,39 +192,52 @@
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                    {purchases.map((purchase) => (
-                        <tr key={purchase.id} className="hover:bg-gray-50">
+            {transactions.map((trx) => (
+              <tr key={trx.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center">
-                                <span className="text-xs font-medium">Foto</span>
+                    <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center overflow-hidden">
+                      {trx.product?.images && trx.product.images.length > 0 ? (
+                        <img src={`${STORAGE_URL}/${trx.product.images[0]}`} alt={trx.product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs font-medium text-gray-500">Foto</span>
+                      )}
                             </div>
                             <div>
-                                <div className="font-medium text-gray-900">{purchase.productName}</div>
-                                <span className="text-xs text-gray-500">ID: {purchase.productId}</span>
+                      <div className="font-medium text-gray-900">{trx.product?.name || 'Produk Dihapus'}</div>
+                      <span className="text-xs text-gray-500">Order ID: {trx.order_id}</span>
                             </div>
                             </div>
                         </td>
-                        <td className="px-6 py-4 text-gray-700">{purchase.seller}</td>
-                        <td className="px-6 py-4 font-medium">Rp. {formatPrice(purchase.price)}</td>
-                        <td className="px-6 py-4 text-gray-700">{purchase.date}</td>
+                <td className="px-6 py-4 text-gray-700">{trx.seller?.name || 'Unknown'}</td>
+                <td className="px-6 py-4 font-medium">Rp. {formatPrice(trx.amount)}</td>
+                <td className="px-6 py-4 text-gray-700">
+                  {new Date(trx.created_at).toLocaleDateString('id-ID', {
+                    day: 'numeric', month: 'long', year: 'numeric'
+                  })}
+                </td>
                         <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                            purchase.status === "Diterima" ? "bg-green-100 text-green-800" :
-                            "bg-blue-100 text-blue-800"
-                            }`}>
-                            {purchase.status}
-                            </span>
+                  {getStatusBadge(trx.status)}
                         </td>
                         <td className="px-6 py-4">
-                            <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => openReportModal(purchase.productId, purchase.productName)}
-                            className="border border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
-                            >
-                            Laporkan
-                            </Button>
+                  {trx.status === 'pending' ? (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handlePay(trx.snap_token)}
+                    >
+                      Bayar
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => openReportModal(trx.product_id, trx.product?.name, trx.id)}
+                      className="border border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
+                    >
+                      Laporkan
+                    </Button>
+                  )}
                         </td>
                         </tr>
                     ))}
@@ -198,58 +257,26 @@
                 
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Alasan Laporan <span className="text-red-500">*</span>
+                    Pilih Alasan Laporan <span className="text-red-500">*</span>
                     </label>
-                    <textarea
-                    value={reportReason}
-                    onChange={(e) => setReportReason(e.target.value)}
-                    placeholder="Contoh: Barang tidak sesuai deskripsi, penipuan, dll..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] resize-none"
-                    rows="3"
-                    />
-                </div>
-
-                {/* Area Upload Foto Bukti */}
-                <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Foto Bukti <span className="text-red-500">*</span>
-                    </label>
-                    <p className="text-xs text-gray-600 mb-2">Unggah maksimal 3 foto (chat, kondisi barang, dll)</p>
-                    
-                    <div className="flex flex-wrap gap-2">
-                    {evidenceImages.map((img, index) => (
-                        <div key={index} className="relative w-16 h-16 border-2 border-dashed border-[#1E3A8A] rounded-lg overflow-hidden">
-                        <img src={img} alt={`Bukti ${index + 1}`} className="w-full h-full object-cover" />
-                        <button
-                            onClick={() => handleRemoveEvidenceImage(index)}
-                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
-                        >
-                            ×
-                        </button>
-                        </div>
-                    ))}
-                    
-                    {evidenceImages.length < 3 && (
-                        <label className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="#1E3A8A"
-                            className="w-5 h-5"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6" />
-                        </svg>
-                        <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={handleEvidenceImageUpload}
-                            className="hidden"
-                        />
-                        </label>
-                    )}
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {reportReasons.length === 0 ? (
+                            <p className="text-sm text-gray-500">Memuat alasan...</p>
+                        ) : (
+                            reportReasons.map((reason) => (
+                                <div
+                                    key={reason.id}
+                                    className={`p-3 border rounded-lg cursor-pointer ${
+                                        selectedReasonId === reason.id
+                                        ? "border-[#1E3A8A] bg-[#F0F7FF]"
+                                        : "border-gray-300 hover:bg-gray-50"
+                                    }`}
+                                    onClick={() => setSelectedReasonId(reason.id)}
+                                >
+                                    <span className="text-gray-800 text-sm">{reason.reason}</span>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
 

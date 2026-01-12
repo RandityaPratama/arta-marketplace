@@ -8,12 +8,14 @@ use App\Http\Controllers\Api\User\UserFavoriteController;
 use App\Http\Controllers\Api\User\UserCategoriesController;
 use App\Http\Controllers\Api\User\UserChatController;
 use App\Http\Controllers\Api\User\UserReportController;
+use App\Http\Controllers\Api\User\UserPaymentController;
 
 // Public routes
 Route::post('/register', [UserAuthController::class, 'register']);
 Route::post('/login', [UserAuthController::class, 'login']);
 Route::get('/categories', [UserCategoriesController::class, 'index']);
 Route::get('/popular-products', [UserFavoriteController::class, 'popular']);
+Route::post('/midtrans/notification', [UserPaymentController::class, 'notificationHandler']);
 
   
 // Protected routes (memerlukan token)
@@ -42,4 +44,6 @@ Route::middleware('auth:sanctum', 'isUser')->group(function () {
     Route::get('/report-reasons', [UserReportController::class, 'getReportReasons']);
     Route::post('/reports', [UserReportController::class, 'store']);
     Route::get('/my-reports', [UserReportController::class, 'myReports']);
+    Route::post('/checkout', [UserPaymentController::class, 'checkout']);
+    Route::get('/transactions', [UserPaymentController::class, 'index']);
 });

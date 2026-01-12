@@ -13,7 +13,9 @@ class Report extends Model
         'reporter_id',
         'product_id',
         'seller_id',
+        'transaction_id',
         'report_reason_id',
+        'report_type',
         'status',
         'admin_notes',
         'handled_by',
@@ -62,5 +64,13 @@ class Report extends Model
     public function handler()
     {
         return $this->belongsTo(Admin::class, 'handled_by');
+    }
+
+    /**
+     * Relasi ke Transaction
+     */
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class);
     }
 }

@@ -8,12 +8,11 @@ use App\Models\ReportReason;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+
 
 class UserReportController extends Controller
 {
-    /**
-     * Get all report reasons
-     */
     public function getReportReasons()
     {
         try {
@@ -34,14 +33,12 @@ class UserReportController extends Controller
         }
     }
 
-    /**
-     * Submit a new report (laporan iklan)
-     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'product_id' => 'required|exists:products,id',
             'report_reason_id' => 'required|exists:report_reasons,id',
+            'transaction_id' => 'nullable|exists:transactions,id',
         ]);
 
         if ($validator->fails()) {
@@ -53,33 +50,42 @@ class UserReportController extends Controller
         }
 
         try {
-            // Get product to get seller_id
             $product = Product::findOrFail($request->product_id);
 
-            // Check if user already reported this product
-            $existingReport = Report::where('reporter_id', auth()->id())
+            $transactionId = $request->transaction_id;
+            $reportType = $transactionId ? 'transaksi' : 'iklan';
+
+            $existingReportQuery = Report::where('reporter_id', Auth::id())
                 ->where('product_id', $request->product_id)
                 ->where('status', '!=', 'resolved')
-                ->first();
+                ->where('status', '!=', 'rejected');
+
+            if ($transactionId) {
+                $existingReportQuery->where('transaction_id', $transactionId);
+            } else {
+                $existingReportQuery->where('report_type', 'iklan');
+            }
+
+            $existingReport = $existingReportQuery->first();
 
             if ($existingReport) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Anda sudah melaporkan produk ini sebelumnya'
+                    'message' => 'Anda sudah melaporkan ' . ($transactionId ? 'transaksi' : 'produk') . ' ini sebelumnya'
                 ], 400);
             }
 
-            // Create report
             $report = Report::create([
-                'reporter_id' => auth()->id(),
+                'reporter_id' => Auth::id(),
                 'product_id' => $request->product_id,
                 'seller_id' => $product->user_id,
                 'report_reason_id' => $request->report_reason_id,
+                'transaction_id' => $transactionId,
+                'report_type' => $reportType,
                 'status' => 'pending',
             ]);
 
-            // Load relationships
-            $report->load(['reporter', 'product', 'seller', 'reportReason']);
+            $report->load(['reporter', 'product', 'seller', 'reportReason', 'transaction']);
 
             return response()->json([
                 'success' => true,
@@ -95,14 +101,11 @@ class UserReportController extends Controller
         }
     }
 
-    /**
-     * Get user's own reports
-     */
     public function myReports()
     {
         try {
-            $reports = Report::with(['product', 'seller', 'reportReason'])
-                ->where('reporter_id', auth()->id())
+            $reports = Report::with(['product', 'seller', 'reportReason', 'transaction'])
+                ->where('reporter_id', Auth::id())
                 ->orderBy('created_at', 'desc')
                 ->get();
 

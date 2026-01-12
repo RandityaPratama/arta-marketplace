@@ -10,11 +10,9 @@ import { useProfile } from "../components/context/ProfileContext";
 import { useAuth } from "../components/context/AuthContext";
     import { User, Mail, Phone, MapPin, Calendar } from "lucide-react";
 
-    const formatPrice = (priceStr) => {
-    if (!priceStr) return "";
-    const clean = priceStr.toString().replace(/\D/g, '');
-    if (!clean) return "";
-    return clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    const formatPrice = (price) => {
+      if (price === undefined || price === null) return "";
+      return Number(price).toLocaleString('id-ID');
     };
 
     export default function ProfilePage() {
