@@ -104,6 +104,12 @@ class UserPaymentController extends Controller
                 'status' => 'pending',
             ]);
 
+            // Create notification for the seller
+            \App\Services\NotificationService::createTransactionNotification(
+                $product->user_id,
+                $product->name
+            );
+
             // 4. Siapkan Parameter untuk Midtrans Snap
             $params = [
                 'transaction_details' => [
@@ -224,6 +230,17 @@ class UserPaymentController extends Controller
                     $product = Product::find($trx->product_id);
                     if ($product) {
                         $product->update(['status' => 'terjual']);
+
+                        // Create notifications for successful payment
+                        \App\Services\NotificationService::createPaymentSuccessNotification(
+                            $trx->user_id,
+                            $product->name
+                        );
+
+                        \App\Services\NotificationService::createProductSoldNotification(
+                            $trx->seller_id,
+                            $product->name
+                        );
                     }
                 }
             }

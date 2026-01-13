@@ -1,8 +1,9 @@
 // src/components/NavbarAfter.js
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Bell, MessageCircle, Heart, User, Tag, Pencil } from "lucide-react";
+import { Bell, MessageCircle, Heart, User, Tag, Pencil, ShoppingCart, AlertCircle } from "lucide-react";
 import { useAuth } from "./context/AuthContext";
+import { useNotification } from "./context/NotificationContext";
 
 export default function NavbarAfter() {
   const navigate = useNavigate();
@@ -11,6 +12,44 @@ export default function NavbarAfter() {
   const profileRef = useRef(null);
   const notificationRef = useRef(null);
   const {logout}=useAuth();
+  const { notifications, unreadCount, markAsRead } = useNotification();
+
+  // Helper function to get icon based on notification type
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'chat':
+        return <MessageCircle size={18} className="text-green-600" />;
+      case 'like':
+        return <Heart size={18} className="text-red-500" />;
+      case 'offer':
+        return <Tag size={18} className="text-blue-500" />;
+      case 'transaction':
+        return <ShoppingCart size={18} className="text-purple-500" />;
+      case 'system':
+        return <AlertCircle size={18} className="text-orange-500" />;
+      default:
+        return <Pencil size={18} className="text-gray-500" />;
+    }
+  };
+
+  // Helper function to format relative time
+  const formatRelativeTime = (dateString) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 60) return `${diffInSeconds} detik lalu`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit lalu`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam lalu`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} hari lalu`;
+    return date.toLocaleDateString('id-ID');
+  };
+
+  const handleNotificationClick = async (link, id) => {
+    setIsNotificationOpen(false);
+    await markAsRead(id);
+    navigate(link || "/");
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -30,49 +69,7 @@ export default function NavbarAfter() {
   };
 
 
-  // ✅ Data notifikasi sesuai gambar Anda
-  const notifications = [
-    {
-      id: 1,
-      message: "Randitya mengirim pesan baru",
-      time: "2 menit lalu",
-      icon: <MessageCircle size={18} className="text-green-600" />,
-      read: false, // Belum dibaca → background biru muda + titik merah
-      type: "chat"
-    },
-    {
-      id: 2,
-      message: "Produk Anda disukai oleh 3 orang",
-      time: "1 jam lalu",
-      icon: <Heart size={18} className="text-red-500" />,
-      read: true,
-      type: "like"
-    },
-    {
-      id: 3,
-      message: "Produk Anda terjual!",
-      time: "2 hari lalu",
-      icon: <Tag size={18} className="text-blue-500" />,
-      read: true,
-      type: "sale"
-    },
-    {
-      id: 4,
-      message: "Pembaruan fitur chat tersedia!",
-      time: "3 hari lalu",
-      icon: <Pencil size={18} className="text-orange-500" />,
-      read: true,
-      type: "update"
-    },
-    {
-      id: 5,
-      message: "Budi menawar produk Anda",
-      time: "1 hari lalu",
-      icon: <MessageCircle size={18} className="text-green-600" />,
-      read: false,
-      type: "offer"
-    },
-  ];
+
 
   return (
     <nav className="bg-[#1E3A8A] text-white font-[Poppins] py-3">
@@ -116,8 +113,10 @@ export default function NavbarAfter() {
             >
               <Bell size={20} className="text-white" strokeWidth={1.8} />
               {/* ✅ Badge jumlah belum dibaca */}
-              {notifications.filter(n => !n.read).length > 0 && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-400 rounded-full"></span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
               )}
             </button>
 
@@ -135,28 +134,30 @@ export default function NavbarAfter() {
                       Tidak ada notifikasi baru.
                     </div>
                   ) : (
-                    notifications.map((notif) => (
-                      <div 
-                        key={notif.id} 
+                    notifications.slice(0, 5).map((notif) => (
+                      <div
+                        key={notif.id}
                         className={`px-4 py-3 cursor-pointer border-b border-gray-100 last:border-0 ${
-                          !notif.read ? "bg-blue-50" : "hover:bg-gray-50"
+                          !notif.is_read ? "bg-blue-50" : "hover:bg-gray-50"
                         }`}
+                        onClick={() => handleNotificationClick(notif.link, notif.id)}
                       >
                         <div className="flex items-start gap-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            !notif.read ? "bg-gray-100" : "bg-gray-100"
-                          } relative`}>
-                            {notif.icon}
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 relative`}>
+                            {getNotificationIcon(notif.type)}
                             {/* ✅ Titik merah kecil jika belum dibaca */}
-                            {!notif.read && (
+                            {!notif.is_read && (
                               <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
                             )}
                           </div>
                           <div className="flex-1">
-                            <p className={`text-sm ${!notif.read ? "font-medium" : ""}`}>
+                            {notif.title && (
+                              <p className="text-xs font-medium text-gray-500 mb-1">{notif.title}</p>
+                            )}
+                            <p className={`text-sm ${!notif.is_read ? "font-medium" : ""}`}>
                               {notif.message}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
+                            <p className="text-xs text-gray-500 mt-1">{formatRelativeTime(notif.created_at)}</p>
                           </div>
                         </div>
                       </div>

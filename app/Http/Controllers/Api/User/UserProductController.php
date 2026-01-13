@@ -130,12 +130,14 @@ class UserProductController extends Controller
      * - Menampilkan produk aktif dari semua user
      * - Menampilkan semua produk (termasuk non-aktif) milik user yang sedang login
      * - Memberikan flag 'is_mine' untuk membedakan
+     * - Menambahkan jumlah favorite untuk setiap produk
      */
     public function getProducts(Request $request)
     {
         $user = $request->user();
         
-        $query = Product::with('user');
+        // ✅ Tambahkan withCount untuk menghitung jumlah favorites
+        $query = Product::with('user')->withCount('favorites');
 
         // ✅ MODE 1: Produk Saya (untuk halaman Profil)
         if ($request->has('mine') && $request->mine == 'true') {
@@ -199,6 +201,7 @@ class UserProductController extends Controller
                 'is_mine' => $isMine,
                 'published_at' => $product->created_at->format('d/m/Y'),
                 'created_at_human' => $product->created_at->diffForHumans(),
+                'favorites_count' => $product->favorites_count ?? 0, // ✅ Tambahkan jumlah favorite
             ];
         });
 
@@ -263,6 +266,60 @@ class UserProductController extends Controller
                 'message' => 'Gagal menghapus produk'
             ], 500);
         }
+    }
+
+    /**
+     * Mengambil detail produk berdasarkan ID
+     * Menampilkan data lengkap termasuk jumlah favorites terbaru
+     */
+    public function getProductById(Request $request, $id)
+    {
+        $user = $request->user();
+        
+        // ✅ Ambil produk dengan relasi user dan hitung favorites
+        $product = Product::with('user')->withCount('favorites')->find($id);
+
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Produk tidak ditemukan'
+            ], 404);
+        }
+
+        // ✅ Cek apakah produk ini milik user yang sedang login
+        $isMine = $user ? $product->user_id === $user->id : false;
+
+        // ✅ Pastikan images adalah array
+        $images = $product->images;
+        if (is_string($images)) {
+            $images = json_decode($images, true);
+        }
+        if (!is_array($images)) $images = [];
+
+        $formattedProduct = [
+            'id' => $product->id,
+            'name' => $product->name,
+            'category' => $product->category,
+            'price' => $product->price,
+            'original_price' => $product->original_price,
+            'discount' => $product->discount,
+            'location' => $product->location,
+            'condition' => $product->condition,
+            'description' => $product->description,
+            'images' => $images,
+            'status' => $product->status,
+            'seller_name' => $product->user ? $product->user->name : 'Unknown',
+            'seller_id' => $product->user_id,
+            'is_mine' => $isMine,
+            'published_at' => $product->created_at->format('d/m/Y'),
+            'created_at_human' => $product->created_at->diffForHumans(),
+            'favorites_count' => $product->favorites_count ?? 0, // ✅ Jumlah favorites terbaru
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $formattedProduct
+        ]);
     }
 
     /**

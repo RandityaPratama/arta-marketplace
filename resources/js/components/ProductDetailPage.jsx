@@ -21,8 +21,9 @@ const formatPrice = (price) => {
 export default function ProductDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { getProductById } = useProducts();
-  const product = getProductById(parseInt(id));
+  const { getProductById, fetchProductById } = useProducts();
+  const [product, setProduct] = useState(null);
+  const [loadingProduct, setLoadingProduct] = useState(true);
   
   const { favorites, toggleFavorite } = useFavorites();
   const { startChatAsBuyer } = useChat();
@@ -33,6 +34,36 @@ export default function ProductDetailPage() {
   const [selectedReasonId, setSelectedReasonId] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
   const [loadingPayment, setLoadingPayment] = useState(false);
+
+  // ✅ Fetch product data dengan favorites count terbaru
+  useEffect(() => {
+    const loadProduct = async () => {
+      setLoadingProduct(true);
+      // Coba ambil dari cache dulu
+      let productData = getProductById(parseInt(id));
+      
+      // Jika tidak ada di cache atau perlu refresh, fetch dari API
+      if (!productData) {
+        productData = await fetchProductById(parseInt(id));
+      } else {
+        // Refresh data di background untuk update favorites count
+        fetchProductById(parseInt(id)).then(freshData => {
+          if (freshData) {
+            setProduct(freshData);
+          }
+        });
+      }
+      
+      setProduct(productData);
+      setLoadingProduct(false);
+      
+      if (!productData) {
+        navigate("/");
+      }
+    };
+    
+    loadProduct();
+  }, [id, getProductById, fetchProductById, navigate]);
 
   // Fetch report reasons saat modal dibuka
   useEffect(() => {
@@ -65,11 +96,24 @@ export default function ProductDetailPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!product) {
-      navigate("/");
-    }
-  }, [product, navigate]);
+  if (loadingProduct) {
+    return (
+      <>
+        <NavbarAfter />
+        <Background>
+          <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-8 py-8">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3A8A] mx-auto"></div>
+                <p className="mt-4 text-gray-600">Memuat produk...</p>
+              </div>
+            </div>
+          </div>
+        </Background>
+        <Footer />
+      </>
+    );
+  }
 
   if (!product) {
     return null;
@@ -287,6 +331,18 @@ export default function ProductDetailPage() {
                 <p className="text-gray-600">
                   {product.description}
                 </p>
+              </div>
+
+              {/* ✅ Tampilkan jumlah yang menyukai produk */}
+              <div className="pt-4 border-t border-gray-200">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-5 h-5 text-red-500">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                  </svg>
+                  <span className="text-sm">
+                    <span className="font-semibold text-gray-900">{product.favoritesCount || 0}</span> orang menyukai produk ini
+                  </span>
+                </div>
               </div>
             </div>
           </div>

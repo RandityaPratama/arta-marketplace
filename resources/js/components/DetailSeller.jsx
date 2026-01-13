@@ -426,7 +426,7 @@
                         <div className="flex items-center gap-2">
                         <Heart size={17} className="text-[#1E3A8A]" /> {/* ✅ IKON BIRU */}
                         <span className="text-sm text-gray-600">
-                            Disukai oleh <span className="font-medium">{product.favoriteCount || 0}</span> orang
+                            Disukai oleh <span className="font-medium">{product.favoritesCount || 0}</span> orang
                         </span>
                         </div>
                         

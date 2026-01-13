@@ -7,6 +7,7 @@ use App\Models\Report;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class AdminReportController extends Controller
 {
@@ -183,9 +184,16 @@ class AdminReportController extends Controller
             $report->update([
                 'status' => $request->status,
                 'admin_notes' => $request->admin_notes,
-                'handled_by' => auth()->id(),
+                'handled_by' => Auth::id(),
                 'handled_at' => now(),
             ]);
+
+            // Create notification for the reporter if status is resolved
+            if ($request->status === 'resolved' && $report->reporter) {
+                \App\Services\NotificationService::createReportResolvedNotification(
+                    $report->reporter->id
+                );
+            }
 
             $report->load(['reporter', 'product', 'seller', 'reportReason', 'handler']);
 
@@ -219,7 +227,7 @@ class AdminReportController extends Controller
             $report->update([
                 'status' => 'resolved',
                 'admin_notes' => 'Produk telah dihapus oleh admin',
-                'handled_by' => auth()->id(),
+                'handled_by' => Auth::id(),
                 'handled_at' => now(),
             ]);
 
@@ -253,14 +261,14 @@ class AdminReportController extends Controller
             $report->update([
                 'status' => 'resolved',
                 'admin_notes' => 'Penjual telah diblokir oleh admin',
-                'handled_by' => auth()->id(),
+                'handled_by' => Auth::id(),
                 'handled_at' => now(),
             ]);
 
             // Log activity
             \App\Models\Activity::create([
                 'user_id' => null,
-                'admin_id' => auth()->id(),
+                'admin_id' => Auth::id(),
                 'action' => "Admin memblokir penjual {$seller->name} dari laporan #{$report->id}",
                 'type' => 'admin',
             ]);

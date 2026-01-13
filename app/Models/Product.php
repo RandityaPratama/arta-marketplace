@@ -42,4 +42,12 @@ class Product extends Model
     {
         return $this->hasMany(Conversation::class);
     }
+
+    /**
+     * Relationship: Product has many favorites
+     */
+    public function favorites()
+    {
+        return $this->hasMany(Favorites::class, 'product_id');
+    }
 }

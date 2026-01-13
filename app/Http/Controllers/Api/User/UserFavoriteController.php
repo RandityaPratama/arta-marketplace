@@ -53,6 +53,19 @@ class UserFavoriteController extends Controller
                 'user_id' => $userId,
                 'product_id' => $productId,
             ]);
+
+            // Create notification for the seller
+            $product = \App\Models\Product::find($productId);
+            if ($product && $product->user_id != $userId) { // Don't notify if user favorites their own product
+                $user = Auth::user();
+                \App\Services\NotificationService::createLikeNotification(
+                    $product->user_id,
+                    $user->name,
+                    $product->name,
+                    $productId
+                );
+            }
+
             return response()->json(['status' => 'added', 'product_id' => $productId]);
         }
     }

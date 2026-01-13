@@ -12,6 +12,7 @@ import { ChatProvider } from "./components/context/ChatContext";
 import { ReportProvider } from "./components/context/ReportContext";
 import { ProductProvider } from "./components/context/ProductContext";
 import { AuthProvider } from './components/context/AuthContext';
+import { NotificationProvider } from './components/context/NotificationContext';
 import { AdminAuthProvider } from "./components/admin/admincontext/AdminAuthContext";
 import { ProfileProvider } from "./components/context/ProfileContext";
 import { AdminSettingProvider } from "./components/admin/admincontext/AdminSettingContext";
@@ -66,6 +67,7 @@ ReactDOM.createRoot(document.getElementById("app")).render(
                 <AuthProvider> {/* AuthProvider harus membungkus ProfileProvider */}
                   <ProfileProvider>
                     <FavoriteProvider>
+                      <NotificationProvider>
                   <Routes>
                     
                     {/* ========== PUBLIC USER ROUTES ========== */}
@@ -114,6 +116,7 @@ ReactDOM.createRoot(document.getElementById("app")).render(
                     <Route path="/*" element={<NotFoundPage />} />
 
                   </Routes>
+                      </NotificationProvider>
                   </FavoriteProvider>
                   </ProfileProvider>
                 </AuthProvider>

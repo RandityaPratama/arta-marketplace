@@ -1,75 +1,52 @@
-    // components/NotificationPage.js
-    import React, { useState } from "react";
-    import { useNavigate } from "react-router-dom";
-    import Button from "../components/ui/Button";
-    import NavbarAfter from "./NavbarAfter";
-    import Footer from "./Footer";
-    import Background from "../components/Background";
-    import { MessageCircle, Heart, Tag, Pencil } from "lucide-react";
+// components/NotificationPage.js
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Button from "../components/ui/Button";
+import NavbarAfter from "./NavbarAfter";
+import Footer from "./Footer";
+import Background from "../components/Background";
+import { MessageCircle, Heart, Tag, Pencil, ShoppingCart, AlertCircle } from "lucide-react";
+import { useNotification } from "./context/NotificationContext";
 
-    export default function NotificationPage() {
-    const navigate = useNavigate();
+export default function NotificationPage() {
+  const navigate = useNavigate();
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotification();
 
-    // ✅ Data notifikasi sesuai dropdown
-    const [notifications, setNotifications] = useState([
-        {
-        id: 1,
-        message: "Randitya mengirim pesan baru",
-        time: "2 menit lalu",
-        icon: <MessageCircle size={18} className="text-green-600" />,
-        read: false,
-        link: "/chat/1"
-        },
-        {
-        id: 2,
-        message: "Produk Anda disukai oleh 3 orang",
-        time: "1 jam lalu",
-        icon: <Heart size={18} className="text-red-500" />,
-        read: false,
-        link: "/favorite"
-        },
-        {
-        id: 3,
-        message: "Produk Anda terjual!",
-        time: "2 hari lalu",
-        icon: <Tag size={18} className="text-blue-500" />,
-        read: true,
-        link: "/profile"
-        },
-        {
-        id: 4,
-        message: "Pembaruan fitur chat tersedia!",
-        time: "3 hari lalu",
-        icon: <Pencil size={18} className="text-orange-500" />,
-        read: true,
-        link: "/"
-        },
-        {
-        id: 5,
-        message: "Budi menawar produk Anda",
-        time: "1 hari lalu",
-        icon: <MessageCircle size={18} className="text-green-600" />,
-        read: false,
-        link: "/chat/2"
-        }
-    ]);
+  // Helper function to get icon based on notification type
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'chat':
+        return <MessageCircle size={18} className="text-green-600" />;
+      case 'like':
+        return <Heart size={18} className="text-red-500" />;
+      case 'offer':
+        return <Tag size={18} className="text-blue-500" />;
+      case 'transaction':
+        return <ShoppingCart size={18} className="text-purple-500" />;
+      case 'system':
+        return <AlertCircle size={18} className="text-orange-500" />;
+      default:
+        return <Pencil size={18} className="text-gray-500" />;
+    }
+  };
 
-    const markAllAsRead = () => {
-        setNotifications(notifications.map(n => ({ ...n, read: true })));
-    };
+  // Helper function to format relative time
+  const formatRelativeTime = (dateString) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInSeconds = Math.floor((now - date) / 1000);
 
-    const markAsRead = (id) => {
-        setNotifications(notifications.map(n => 
-        n.id === id ? { ...n, read: true } : n
-        ));
-    };
+    if (diffInSeconds < 60) return `${diffInSeconds} detik lalu`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} menit lalu`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} jam lalu`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} hari lalu`;
+    return date.toLocaleDateString('id-ID');
+  };
 
-    const handleNotificationClick = (link, id) => {
-        markAsRead(id);
-        navigate(link);
-    };
-
-    const unreadCount = notifications.filter(n => !n.read).length;
+  const handleNotificationClick = async (link, id) => {
+    await markAsRead(id);
+    navigate(link);
+  };
 
     return (
         <>
@@ -107,59 +84,70 @@
                 </div>
             </div>
 
-            {/* Daftar Notifikasi */}
-            {notifications.length === 0 ? (
+            {/* Loading State */}
+            {loading ? (
                 <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
                 <div className="inline-flex items-center justify-center w-14 h-14 bg-[#f0f7ff] rounded-full mb-4">
-                    <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.8}
-                    stroke="#1E3A8A"
-                    className="w-7 h-7"
-                    >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-5.454l6.898-6.898c1.14-1.14 1.14-2.98 0-4.12a2.087 2.087 0 00-1.593-.69A21.035 21.035 0 003.762 12.265a21.035 21.035 0 0010.404 10.404 21.035 21.035 0 0010.404-10.404 21.035 21.035 0 00-10.404-10.404 21.035 21.035 0 00-10.404 10.404z" />
-                    </svg>
+                    <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-blue-600"></div>
                 </div>
-                <h3 className="text-[18px] font-[600] text-gray-800 mb-2">Tidak ada notifikasi</h3>
-                <p className="text-[14px] text-gray-600">
-                    Anda akan menerima notifikasi saat ada yang menghubungi atau menyukai produk Anda.
-                </p>
+                <h3 className="text-[18px] font-[600] text-gray-800 mb-2">Memuat notifikasi...</h3>
                 </div>
             ) : (
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                {notifications.map((notif) => (
-                    <div
-                    key={notif.id}
-                    className={`p-5 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 ${
-                        !notif.read ? "bg-blue-50" : ""
-                    }`}
-                    onClick={() => handleNotificationClick(notif.link, notif.id)}
-                    >
-                    <div className="flex items-start gap-3">
-                        {/* ✅ Ikon dengan background dan titik merah */}
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        !notif.read ? "bg-gray-100" : "bg-gray-100"
-                        } relative`}>
-                        {notif.icon}
-                        {/* ✅ Titik merah jika belum dibaca */}
-                        {!notif.read && (
-                            <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-                        )}
-                        </div>
+                /* Daftar Notifikasi */
+                notifications.length === 0 ? (
+                    <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+                    <div className="inline-flex items-center justify-center w-14 h-14 bg-[#f0f7ff] rounded-full mb-4">
+                        <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.8}
+                        stroke="#1E3A8A"
+                        className="w-7 h-7"
+                        >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-5.454l6.898-6.898c1.14-1.14 1.14-2.98 0-4.12a2.087 2.087 0 00-1.593-.69A21.035 21.035 0 003.762 12.265a21.035 21.035 0 0010.404 10.404 21.035 21.035 0 0010.404-10.404 21.035 21.035 0 00-10.404-10.404 21.035 21.035 0 00-10.404 10.404z" />
+                        </svg>
+                    </div>
+                    <h3 className="text-[18px] font-[600] text-gray-800 mb-2">Tidak ada notifikasi</h3>
+                    <p className="text-[14px] text-gray-600">
+                        Anda akan menerima notifikasi saat ada yang menghubungi atau menyukai produk Anda.
+                    </p>
+                    </div>
+                ) : (
+                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                    {notifications.map((notif) => (
+                        <div
+                        key={notif.id}
+                        className={`p-5 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 ${
+                            !notif.is_read ? "bg-blue-50" : ""
+                        }`}
+                        onClick={() => handleNotificationClick(notif.link || "/", notif.id)}
+                        >
+                        <div className="flex items-start gap-3">
+                            {/* ✅ Ikon dengan background dan titik merah */}
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 relative`}>
+                            {getNotificationIcon(notif.type)}
+                            {/* ✅ Titik merah jika belum dibaca */}
+                            {!notif.is_read && (
+                                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                            )}
+                            </div>
 
-                        {/* Konten */}
-                        <div className="flex-1 min-w-0">
-                        <p className={`text-sm ${!notif.read ? "font-medium" : "text-gray-700"}`}>
-                            {notif.message}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
+                            {/* Konten */}
+                            <div className="flex-1 min-w-0">
+                            {notif.title && (
+                                <p className="text-xs font-medium text-gray-500 mb-1">{notif.title}</p>
+                            )}
+                            <p className={`text-sm ${!notif.is_read ? "font-medium" : "text-gray-700"}`}>
+                                {notif.message}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">{formatRelativeTime(notif.created_at)}</p>
+                            </div>
                         </div>
+                        </div>
+                    ))}
                     </div>
-                    </div>
-                ))}
-                </div>
+                )
             )}
             </div>
         </Background>

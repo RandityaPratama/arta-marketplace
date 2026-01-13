@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\User\UserCategoriesController;
 use App\Http\Controllers\Api\User\UserChatController;
 use App\Http\Controllers\Api\User\UserReportController;
 use App\Http\Controllers\Api\User\UserPaymentController;
+use App\Http\Controllers\Api\User\UserNotificationController;
 
 // Public routes
 Route::post('/register', [UserAuthController::class, 'register']);
@@ -26,6 +27,7 @@ Route::middleware('auth:sanctum', 'isUser')->group(function () {
     Route::post('/refresh', [UserAuthController::class, 'refresh']);
     Route::post('/products', [UserProductController::class, 'addProduct']);
     Route::get('/products', [UserProductController::class, 'getProducts']);
+    Route::get('/products/{id}', [UserProductController::class, 'getProductById']);
     Route::delete('/products/{id}', [UserProductController::class, 'deleteProduct']);
     Route::get('/favorites', [UserFavoriteController::class, 'index']);
     Route::post('/favorites/toggle', [UserFavoriteController::class, 'toggle']);
@@ -46,4 +48,10 @@ Route::middleware('auth:sanctum', 'isUser')->group(function () {
     Route::get('/my-reports', [UserReportController::class, 'myReports']);
     Route::post('/checkout', [UserPaymentController::class, 'checkout']);
     Route::get('/transactions', [UserPaymentController::class, 'index']);
+
+    // Notification routes
+    Route::get('/notifications', [UserNotificationController::class, 'index']);
+    Route::put('/notifications/{id}/read', [UserNotificationController::class, 'markAsRead']);
+    Route::put('/notifications/mark-all-read', [UserNotificationController::class, 'markAllAsRead']);
+    Route::get('/notifications/unread-count', [UserNotificationController::class, 'unreadCount']);
 });

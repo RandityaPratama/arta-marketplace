@@ -26,6 +26,16 @@ class MessageSent implements ShouldBroadcast
     {
         $this->message = $message;
         $this->conversation = $conversation;
+
+        // Create notification for the recipient
+        $recipient = $conversation->getOtherParticipant($message->sender_id);
+        if ($recipient) {
+            \App\Services\NotificationService::createChatNotification(
+                $recipient->id,
+                $message->sender->name,
+                $conversation->id
+            );
+        }
     }
 
     /**
