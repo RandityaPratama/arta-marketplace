@@ -7,6 +7,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\Activity;
 use App\Events\MessageSent;
 use App\Events\MessageUpdated;
 use App\Events\MessageDeleted;
@@ -120,6 +121,17 @@ class UserChatController extends Controller
                     'seller_id' => $product->user_id,
                     'last_message_at' => now(),
                 ]);
+
+                // ✅ Catat aktivitas ketika pembeli menghubungi penjual
+                try {
+                    Activity::create([
+                        'user_id' => $user->id,
+                        'action' => $user->name . ' menghubungi penjual untuk produk \'' . $product->name . '\'',
+                        'type' => 'chat',
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to log chat contact activity: ' . $e->getMessage());
+                }
             }
 
             // Load relationships

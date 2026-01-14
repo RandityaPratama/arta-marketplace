@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Activity;
 use App\Models\PaymentLog;
 use App\Models\Product;
 use App\Models\Transaction;
@@ -18,14 +19,12 @@ class UserPaymentController extends Controller
 {
     public function __construct()
     {
-      
         Config::$serverKey = config('midtrans.server_key') ?? env('MIDTRANS_SERVER_KEY');
         Config::$isProduction = filter_var(config('midtrans.is_production') ?? env('MIDTRANS_IS_PRODUCTION', false), FILTER_VALIDATE_BOOLEAN);
         Config::$isSanitized = config('midtrans.is_sanitized') ?? env('MIDTRANS_IS_SANITIZED', true);
         Config::$is3ds = config('midtrans.is_3ds') ?? env('MIDTRANS_IS_3DS', true);
     }
 
-   
     public function checkout(Request $request)
     {
         if (empty(Config::$serverKey)) {
@@ -35,7 +34,6 @@ class UserPaymentController extends Controller
             ], 500);
         }
 
-        // 1. Validasi Input
         $validator = Validator::make($request->all(), [
             'product_id' => 'required|exists:products,id',
         ]);
@@ -54,7 +52,6 @@ class UserPaymentController extends Controller
             $user = Auth::user();
             $product = Product::with('user')->findOrFail($request->product_id);
 
-            // Cek apakah user membeli produk sendiri
             if ($product->user_id == $user->id) {
                 return response()->json([
                     'success' => false,
@@ -62,7 +59,6 @@ class UserPaymentController extends Controller
                 ], 400);
             }
 
-            // Cek apakah produk masih tersedia (status aktif)
             if ($product->status !== 'aktif') {
                 return response()->json([
                     'success' => false,
@@ -70,31 +66,27 @@ class UserPaymentController extends Controller
                 ], 400);
             }
 
-            // Cek apakah sudah ada transaksi pending untuk produk ini oleh user ini
-            $pendingTransaction = Transaction::where('user_id', $user->id)
+            $existingTransaction = Transaction::where('user_id', $user->id)
                 ->where('product_id', $product->id)
-                ->where('status', 'pending')
+                ->whereIn('status', ['pending', 'challenge'])
                 ->first();
 
-            if ($pendingTransaction) {
+            if ($existingTransaction) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Anda memiliki transaksi tertunda untuk produk ini',
                     'data' => [
-                        'transaction_id' => $pendingTransaction->id,
-                        'order_id' => $pendingTransaction->order_id,
-                        'snap_token' => $pendingTransaction->snap_token,
-                        'amount' => $pendingTransaction->amount,
+                        'transaction_id' => $existingTransaction->id,
+                        'order_id' => $existingTransaction->order_id,
+                        'snap_token' => $existingTransaction->snap_token,
+                        'amount' => $existingTransaction->amount,
                         'product_name' => $product->name,
                     ]
                 ], 200);
             }
 
-            // 2. Buat Order ID Unik
-            // Format: TRX-{USER_ID}-{TIMESTAMP}-{RANDOM}
             $orderId = 'TRX-' . $user->id . '-' . time() . '-' . rand(100, 999);
 
-            // 3. Simpan Transaksi ke Database (Status: Pending)
             $transaction = Transaction::create([
                 'order_id' => $orderId,
                 'user_id' => $user->id,
@@ -104,13 +96,6 @@ class UserPaymentController extends Controller
                 'status' => 'pending',
             ]);
 
-            // Create notification for the seller
-            \App\Services\NotificationService::createTransactionNotification(
-                $product->user_id,
-                $product->name
-            );
-
-            // 4. Siapkan Parameter untuk Midtrans Snap
             $params = [
                 'transaction_details' => [
                     'order_id' => $orderId,
@@ -126,15 +111,12 @@ class UserPaymentController extends Controller
                         'id' => (string) $product->id,
                         'price' => (int) $product->price,
                         'quantity' => 1,
-                        'name' => substr($product->name, 0, 50), // Midtrans limit name length 50 chars
+                        'name' => substr($product->name, 0, 50),
                     ]
                 ]
             ];
 
-            // 5. Request Snap Token ke Midtrans
             $snapToken = Snap::getSnapToken($params);
-
-            // 6. Update Snap Token di Database
             $transaction->update(['snap_token' => $snapToken]);
 
             DB::commit();
@@ -163,30 +145,53 @@ class UserPaymentController extends Controller
         }
     }
 
-    /**
-     * Handle Midtrans Webhook Notification
-     */
     public function notificationHandler(Request $request)
     {
         try {
-            // Config::$serverKey sudah diset di __construct
-            
-            // Instance notifikasi Midtrans (akan membaca php://input)
-            $notif = new \Midtrans\Notification();
+            $requestData = $request->all();
 
-            $transaction = $notif->transaction_status;
-            $type = $notif->payment_type;
-            $orderId = $notif->order_id;
-            $fraud = $notif->fraud_status;
+            $transaction = $requestData['transaction_status'] ?? null;
+            $type = $requestData['payment_type'] ?? null;
+            $orderId = $requestData['order_id'] ?? null;
+            $fraud = $requestData['fraud_status'] ?? null;
 
-            // Cari transaksi berdasarkan order_id
+            if (!$orderId || !$transaction) {
+                try {
+                    $notif = new \Midtrans\Notification();
+                    if (!$orderId) $orderId = $notif->order_id ?? null;
+                    if (!$transaction) $transaction = $notif->transaction_status ?? null;
+                    if (!$type) $type = $notif->payment_type ?? null;
+                    if (!isset($fraud)) $fraud = $notif->fraud_status ?? null;
+                } catch (\Exception $e) {
+                    Log::warning('Midtrans SDK failed, using request data only', [
+                        'error' => $e->getMessage(),
+                        'request_data' => $requestData
+                    ]);
+                }
+            }
+
+            if (!$orderId) {
+                Log::warning('Midtrans notification received without order_id', [
+                    'request_data' => $requestData
+                ]);
+                return response()->json(['message' => 'Invalid notification data: missing order_id'], 400);
+            }
+
+            if (!$transaction) {
+                Log::warning('Midtrans notification received without transaction_status', [
+                    'order_id' => $orderId,
+                    'request_data' => $requestData
+                ]);
+                return response()->json(['message' => 'Invalid notification data: missing transaction_status'], 400);
+            }
+
             $trx = Transaction::where('order_id', $orderId)->first();
 
             if (!$trx) {
+                Log::warning('Transaction not found for order_id: ' . $orderId);
                 return response()->json(['message' => 'Transaction not found'], 404);
             }
 
-            // Simpan log pembayaran
             PaymentLog::create([
                 'order_id' => $orderId,
                 'transaction_status' => $transaction,
@@ -194,7 +199,6 @@ class UserPaymentController extends Controller
                 'raw_response' => $request->all()
             ]);
 
-            // Tentukan status baru
             $status = null;
 
             if ($transaction == 'capture') {
@@ -217,7 +221,6 @@ class UserPaymentController extends Controller
                 $status = 'canceled';
             }
 
-            // Update status transaksi jika ada perubahan status
             if ($status) {
                 $trx->update([
                     'status' => $status,
@@ -225,13 +228,11 @@ class UserPaymentController extends Controller
                     'payment_details' => $request->all()
                 ]);
 
-                // ✅ UPDATE: Jika pembayaran berhasil, ubah status produk menjadi 'terjual'
                 if ($status === 'paid') {
                     $product = Product::find($trx->product_id);
                     if ($product) {
                         $product->update(['status' => 'terjual']);
 
-                        // Create notifications for successful payment
                         \App\Services\NotificationService::createPaymentSuccessNotification(
                             $trx->user_id,
                             $product->name
@@ -241,6 +242,19 @@ class UserPaymentController extends Controller
                             $trx->seller_id,
                             $product->name
                         );
+
+                        try {
+                            $user = \App\Models\User::find($trx->user_id);
+                            if ($user) {
+                                Activity::create([
+                                    'user_id' => $user->id,
+                                    'action' => $user->name . ' membeli produk ' . $product->name,
+                                    'type' => 'transaksi',
+                                ]);
+                            }
+                        } catch (\Exception $e) {
+                            Log::error('Gagal mencatat aktivitas pembelian', ['error' => $e->getMessage()]);
+                        }
                     }
                 }
             }
@@ -253,9 +267,6 @@ class UserPaymentController extends Controller
         }
     }
 
-    /**
-     * Get user transaction history
-     */
     public function index()
     {
         $user = Auth::user();

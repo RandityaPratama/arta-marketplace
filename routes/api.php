@@ -11,17 +11,25 @@ use App\Http\Controllers\Api\User\UserReportController;
 use App\Http\Controllers\Api\User\UserPaymentController;
 use App\Http\Controllers\Api\User\UserNotificationController;
 
+// Admin routes
+use App\Http\Controllers\Api\Admin\AdminAuthController;
+use App\Http\Controllers\Api\Admin\AdminDashboardController;
+use App\Http\Controllers\Api\Admin\AdminUserController;
+use App\Http\Controllers\Api\Admin\AdminProductController;
+use App\Http\Controllers\Api\Admin\AdminReportController;
+use App\Http\Controllers\Api\Admin\AdminActivityController;
+use App\Http\Controllers\Api\Admin\AdminSettingsController;
+
 // Public routes
 Route::post('/register', [UserAuthController::class, 'register']);
 Route::post('/login', [UserAuthController::class, 'login']);
 Route::get('/categories', [UserCategoriesController::class, 'index']);
 Route::get('/popular-products', [UserFavoriteController::class, 'popular']);
-Route::post('/midtrans/notification', [UserPaymentController::class, 'notificationHandler']);
 
-  
+
 // Protected routes (memerlukan token)
 Route::middleware('auth:sanctum', 'isUser')->group(function () {
-     Route::post('/logout', [UserAuthController::class, 'logout']);  
+     Route::post('/logout', [UserAuthController::class, 'logout']);
     Route::get('/profile', [UserAuthController::class, 'profile']);
     Route::post('/profile/update', [UserProfileController::class, 'update']);
     Route::post('/refresh', [UserAuthController::class, 'refresh']);
@@ -31,7 +39,7 @@ Route::middleware('auth:sanctum', 'isUser')->group(function () {
     Route::delete('/products/{id}', [UserProductController::class, 'deleteProduct']);
     Route::get('/favorites', [UserFavoriteController::class, 'index']);
     Route::post('/favorites/toggle', [UserFavoriteController::class, 'toggle']);
-    
+
     // Chat routes
     Route::get('/conversations', [UserChatController::class, 'getConversations']);
     Route::post('/conversations', [UserChatController::class, 'getOrCreateConversation']);
@@ -41,7 +49,7 @@ Route::middleware('auth:sanctum', 'isUser')->group(function () {
     Route::delete('/conversations/{conversationId}/messages/{messageId}', [UserChatController::class, 'deleteMessage']);
     Route::post('/conversations/{id}/read', [UserChatController::class, 'markAsRead']);
     Route::delete('/conversations/{id}', [UserChatController::class, 'deleteConversation']);
-    
+
     // Report routes
     Route::get('/report-reasons', [UserReportController::class, 'getReportReasons']);
     Route::post('/reports', [UserReportController::class, 'store']);
@@ -54,4 +62,9 @@ Route::middleware('auth:sanctum', 'isUser')->group(function () {
     Route::put('/notifications/{id}/read', [UserNotificationController::class, 'markAsRead']);
     Route::put('/notifications/mark-all-read', [UserNotificationController::class, 'markAllAsRead']);
     Route::get('/notifications/unread-count', [UserNotificationController::class, 'unreadCount']);
+});
+
+// Admin routes
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::get('/admin/dashboard/stats', [AdminDashboardController::class, 'getStats']);
 });

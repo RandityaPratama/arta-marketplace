@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
+use App\Http\Controllers\Api\Admin\AdminActivityController;
 use App\Http\Controllers\Api\Admin\AdminProductController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
 use App\Http\Controllers\Api\Admin\AdminSettingsController;
@@ -12,8 +13,12 @@ Route::post('/login', [AdminAuthController::class, 'login']);
 
 Route::middleware(['auth:sanctum', 'isAdmin'])->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout']);
-    Route::get('/me', [AdminAuthController::class, 'me']);  
-    Route::get('/products', [AdminProductController::class, 'getAllProducts']);    
+    Route::get('/me', [AdminAuthController::class, 'me']);
+
+    // Activity routes
+    Route::get('/activities', [AdminActivityController::class, 'getActivities']);
+
+    Route::get('/products', [AdminProductController::class, 'getAllProducts']);
     Route::put('/products/{id}/status', [AdminProductController::class, 'updateStatus']);
 
     // Routes Manajemen Pengguna

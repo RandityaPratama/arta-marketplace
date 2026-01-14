@@ -8,17 +8,13 @@ export default function AdminLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [adminName, setAdminName] = useState("Admin");
-  const { adminLogout } = useAdminAuth();
-  const [errorLogout,setErrorLogout] = useState("");
+  const { admin, adminLogout } = useAdminAuth();
+  const [errorLogout, setErrorLogout] = useState("");
 
-  useEffect(() => {
-    const saved = localStorage.getItem("admin_profile");
-    if (saved) {
-      const profile = JSON.parse(saved);
-      setAdminName(profile.name || "Admin");
-    }
-  }, []);
+  // Get admin data from context
+  const adminName = admin?.name || "Admin";
+  const adminAvatar = admin?.avatar || null;
+  const adminInitial = adminName.charAt(0).toUpperCase();
 
   const isActive = (path) => {
     return location.pathname === path;
@@ -108,14 +104,30 @@ export default function AdminLayout({ children }) {
               {menuItems.find(item => isActive(item.path))?.name || "Admin"}
             </h1>
             
-            {/* ✅ Hanya tampilkan profil (tanpa notifikasi) */}
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/admin/profile")}>
-              <div className="w-10 h-10 bg-[#DDE7FF] rounded-full flex items-center justify-center">
-                <span className="text-[#1E3A8A] font-bold">A</span>
+            {/* ✅ Avatar profil admin dengan gambar atau inisial */}
+            <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition" onClick={() => navigate("/admin/profile")}>
+              <div className="w-10 h-10 bg-[#DDE7FF] rounded-full flex items-center justify-center overflow-hidden">
+                {adminAvatar ? (
+                  <img 
+                    src={adminAvatar} 
+                    alt={adminName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <span 
+                  className="text-[#1E3A8A] font-bold"
+                  style={{ display: adminAvatar ? 'none' : 'flex' }}
+                >
+                  {adminInitial}
+                </span>
               </div>
               <div className="text-right hidden md:block">
                 <p className="text-sm font-medium text-gray-800">{adminName}</p>
-                <p className="text-xs text-gray-500">Admin</p>
+                <p className="text-xs text-gray-500">Administrator</p>
               </div>
             </div>
           </div>

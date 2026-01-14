@@ -89,24 +89,30 @@ class AdminUserController extends Controller
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'Pengguna tidak ditemukan'], 404);
         }
-        
+
         $isActive = $request->input('status') === 'Aktif';
 
-        // Catat aktivitas hanya jika admin memblokir pengguna (status menjadi tidak aktif)
-        if (!$isActive) {
-            try {
-                $adminName = $request->user()->name;
-                Activity::create([
-                    'user_id' => null,
-                    'admin_id' => $request->user()->id,
-                    'action' => "Admin {$adminName} memblokir pengguna {$user->name}",
-                    'type' => 'admin',
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Gagal mencatat aktivitas blokir user', ['error' => $e->getMessage()]);
+        // Catat aktivitas admin untuk block/unblock user
+        try {
+            $adminName = $request->user()->name;
+            if ($isActive) {
+                // Admin mengaktifkan kembali user
+                $actionText = "Admin {$adminName} mengaktifkan kembali pengguna {$user->name}";
+            } else {
+                // Admin memblokir user
+                $actionText = "Admin {$adminName} memblokir pengguna {$user->name}";
             }
+
+            Activity::create([
+                'user_id' => null,
+                'admin_id' => $request->user()->id,
+                'action' => $actionText,
+                'type' => 'admin',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gagal mencatat aktivitas admin user', ['error' => $e->getMessage()]);
         }
-        
+
         $user->is_active = $isActive;
         $user->save();
 

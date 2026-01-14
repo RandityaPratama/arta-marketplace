@@ -49,12 +49,22 @@ class NotificationService
 
         $template = self::$templates[$type];
 
+        // ✅ Allow title override from data, otherwise use template
+        $title = isset($data['title']) ? $data['title'] : $template['title'];
+        $message = isset($data['message']) ? $data['message'] : $template['message'];
+        $link = isset($data['link']) ? $data['link'] : $template['link'];
+
+        // Apply placeholder replacement
+        $title = self::replacePlaceholders($title, $data);
+        $message = self::replacePlaceholders($message, $data);
+        $link = self::replacePlaceholders($link, $data);
+
         $notification = Notification::create([
             'user_id' => $userId,
             'type' => $type,
-            'title' => self::replacePlaceholders($template['title'], $data),
-            'message' => self::replacePlaceholders($template['message'], $data),
-            'link' => self::replacePlaceholders($template['link'], $data),
+            'title' => $title,
+            'message' => $message,
+            'link' => $link,
         ]);
 
         broadcast(new NotificationSent($notification));

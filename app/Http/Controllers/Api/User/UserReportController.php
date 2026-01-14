@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Activity;
 use App\Models\Report;
 use App\Models\ReportReason;
 use App\Models\Product;
@@ -86,6 +87,19 @@ class UserReportController extends Controller
             ]);
 
             $report->load(['reporter', 'product', 'seller', 'reportReason', 'transaction']);
+
+            // ✅ Catat aktivitas pelaporan
+            try {
+                $user = Auth::user();
+                $reportTypeText = $transactionId ? 'transaksi' : 'iklan';
+                Activity::create([
+                    'user_id' => $user->id,
+                    'action' => $user->name . ' melaporkan ' . $reportTypeText . ' ' . $product->name,
+                    'type' => 'laporan',
+                ]);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Gagal mencatat aktivitas pelaporan', ['error' => $e->getMessage()]);
+            }
 
             return response()->json([
                 'success' => true,
