@@ -59,6 +59,39 @@ export const ProfileProvider = ({ children }) => {
     }
   };
 
+  // ✅ Upload Avatar
+  const updateAvatar = async (file) => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/profile/avatar`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        if (checkAuth) await checkAuth(); // Refresh data user di AuthContext
+        return { success: true, message: result.message || "Avatar berhasil diperbarui" };
+      } else {
+        return { success: false, message: result.message || "Gagal mengupload avatar" };
+      }
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      return { success: false, message: "Terjadi kesalahan jaringan" };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ✅ Format Tanggal Bergabung
   const getJoinDate = () => {
     if (!user || !user.created_at) return "-";
@@ -71,7 +104,7 @@ export const ProfileProvider = ({ children }) => {
   };
 
   return (
-    <ProfileContext.Provider value={{ user, loading, updateProfile, getJoinDate }}>
+    <ProfileContext.Provider value={{ user, loading, updateProfile, updateAvatar, getJoinDate }}>
       {children}
     </ProfileContext.Provider>
   );

@@ -19,9 +19,11 @@ import { useAuth } from "../components/context/AuthContext";
     const navigate = useNavigate();
     const location = useLocation(); // ✅
     const { getUserProducts, fetchMyProducts } = useProducts();
-    const { user, updateProfile, getJoinDate, loading: profileLoading } = useProfile();
+    const { user, updateProfile, updateAvatar, getJoinDate, loading: profileLoading } = useProfile();
     const { isAuthenticated, loading: authLoading } = useAuth();
     const products = getUserProducts();
+    const [avatarFile, setAvatarFile] = useState(null);
+    const [avatarPreview, setAvatarPreview] = useState(null);
     
     // 🔍 DEBUG: Cek data user di Console Browser (F12)
     console.log("Profile Page User Data:", user);
@@ -135,6 +137,27 @@ import { useAuth } from "../components/context/AuthContext";
         setIsEditModalOpen(false);
     };
 
+    const handleAvatarChange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Validasi ukuran file (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                setNotification({ show: true, message: "Ukuran file maksimal 2MB", type: "error" });
+                return;
+            }
+
+            // Validasi tipe file
+            if (!file.type.startsWith('image/')) {
+                setNotification({ show: true, message: "File harus berupa gambar", type: "error" });
+                return;
+            }
+
+            // Upload avatar
+            const result = await updateAvatar(file);
+            setNotification({ show: true, message: result.message, type: result.success ? "success" : "error" });
+        }
+    };
+
     // ✅ Reset state setelah beberapa detik (opsional)
     useEffect(() => {
         if (location.state?.fromSellPage) {
@@ -165,8 +188,29 @@ import { useAuth } from "../components/context/AuthContext";
                 <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-[0px_4px_11px_rgba(0,0,0,0.07)]">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-[#DDE7FF] rounded-full flex items-center justify-center">
-                        <User size={32} className="text-[#1E3A8A]" strokeWidth={1.5} />
+                    <div className="relative w-16 h-16 bg-[#DDE7FF] rounded-full flex items-center justify-center overflow-hidden group">
+                        {user?.avatar ? (
+                            <img 
+                                src={`http://127.0.0.1:8000/storage/${user.avatar}`} 
+                                alt={user.name}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <User size={32} className="text-[#1E3A8A]" strokeWidth={1.5} />
+                        )}
+                        <label 
+                            htmlFor="avatar-upload" 
+                            className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        >
+                            <span className="text-white text-xs">Ubah</span>
+                        </label>
+                        <input
+                            id="avatar-upload"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleAvatarChange}
+                        />
                     </div>
                     <div>
                         <h2 className="text-lg font-semibold text-gray-800">{user?.name || 'Pengguna'}</h2>

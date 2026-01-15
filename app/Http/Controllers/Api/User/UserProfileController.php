@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Activity;
 
 class UserProfileController extends Controller
@@ -62,6 +63,69 @@ class UserProfileController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan server',
+            ], 500);
+        }
+    }
+
+    /**
+     * Update user avatar
+     */
+    public function updateAvatar(Request $request)
+    {
+        $user = $request->user();
+
+        // Validasi file avatar
+        $validator = Validator::make($request->all(), [
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // max 2MB
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            // Hapus avatar lama jika ada
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+
+            // Upload avatar baru
+            $avatarPath = $request->file('avatar')->store('avatars/users', 'public');
+
+            // Update user avatar
+            $user->update([
+                'avatar' => $avatarPath
+            ]);
+
+            // Catat aktivitas
+            try {
+                Activity::create([
+                    'user_id' => $user->id,
+                    'action' => $user->name . ' mengubah foto profil',
+                    'type' => 'pengguna',
+                ]);
+            } catch (\Exception $e) {
+                Log::warning('Failed to log avatar update activity: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Avatar berhasil diperbarui',
+                'data' => [
+                    'avatar' => $avatarPath,
+                    'avatar_url' => Storage::url($avatarPath)
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Avatar update error', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengupload avatar',
             ], 500);
         }
     }

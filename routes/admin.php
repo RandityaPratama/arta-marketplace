@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\AdminProductController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
 use App\Http\Controllers\Api\Admin\AdminSettingsController;
 use App\Http\Controllers\Api\Admin\AdminReportController;
+use App\Http\Controllers\Api\Admin\AdminProfileController;
 
 
 Route::post('/login', [AdminAuthController::class, 'login']);
@@ -14,6 +15,12 @@ Route::post('/login', [AdminAuthController::class, 'login']);
 Route::middleware(['auth:sanctum', 'isAdmin'])->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout']);
     Route::get('/me', [AdminAuthController::class, 'me']);
+
+    // Admin Profile routes
+    Route::get('/profile', [AdminProfileController::class, 'show']);
+    Route::post('/profile/update', [AdminProfileController::class, 'update']);
+    Route::post('/profile/avatar', [AdminProfileController::class, 'updateAvatar']);
+    Route::post('/profile/change-password', [AdminProfileController::class, 'changePassword']);
 
     // Activity routes
     Route::get('/activities', [AdminActivityController::class, 'getActivities']);

@@ -11,7 +11,7 @@ export default function NavbarAfter() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const profileRef = useRef(null);
   const notificationRef = useRef(null);
-  const {logout}=useAuth();
+  const { user, logout } = useAuth();
   const { notifications, unreadCount, markAsRead } = useNotification();
 
   // Helper function to get icon based on notification type
@@ -182,10 +182,18 @@ export default function NavbarAfter() {
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="p-2 rounded-full hover:bg-white/10 transition"
+              className="w-9 h-9 rounded-full hover:bg-white/10 transition overflow-hidden flex items-center justify-center bg-white/20"
               aria-label="Profil"
             >
-              <User size={20} className="text-white" strokeWidth={1.8} />
+              {user?.avatar ? (
+                <img 
+                  src={`http://127.0.0.1:8000/storage/${user.avatar}`} 
+                  alt={user.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User size={20} className="text-white" strokeWidth={1.8} />
+              )}
             </button>
 
             {isProfileOpen && (

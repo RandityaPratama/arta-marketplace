@@ -52,6 +52,7 @@ class UserChatController extends Controller
                         'other_participant' => [
                             'id' => $otherParticipant->id,
                             'name' => $otherParticipant->name,
+                            'avatar' => $otherParticipant->avatar,
                         ],
                         'last_message' => $conversation->last_message,
                         'last_message_at' => $conversation->last_message_at,
@@ -161,6 +162,7 @@ class UserChatController extends Controller
                     'other_participant' => [
                         'id' => $otherParticipant->id,
                         'name' => $otherParticipant->name,
+                        'avatar' => $otherParticipant->avatar,
                     ],
                     'last_message' => $conversation->last_message,
                     'last_message_at' => $conversation->last_message_at,

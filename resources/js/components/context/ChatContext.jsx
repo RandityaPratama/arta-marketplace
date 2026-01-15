@@ -73,6 +73,7 @@ export const ChatProvider = ({ children }) => {
               buyerName: c.participant_type === 'seller' ? c.other_participant.name : 'You',
               sellerName: c.participant_type === 'buyer' ? c.other_participant.name : 'You',
               otherParticipant: c.other_participant,
+              participantAvatar: c.other_participant.avatar,
               lastMessage: c.last_message,
               lastMessageAt: c.last_message_at,
               unreadCount: c.unread_count,

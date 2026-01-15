@@ -110,40 +110,58 @@ export default function ChatPage() {
 
           {currentChats.length > 0 ? (
             <div className="space-y-4">
-              {currentChats.map((chat) => (
-                <div
-                  key={`chat-${chat.id}-${chat.lastMessageAt || chat.createdAt}`}
-                  className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigate(`/chatroom/${chat.id}`)}
-                >
-                  <div className="w-16 h-16 bg-gray-200 rounded overflow-hidden flex items-center justify-center">
-                    {chat.product.images && chat.product.images.length > 0 ? (
-                      <img src={chat.product.images[0]} alt={chat.product.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-xs text-gray-500">Foto</span>
-                    )}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between">
-                      <h3 className="font-semibold text-gray-800 truncate">
-                        {activeTab === "incoming" 
-                          ? `${chat.buyerName} • ${chat.product.name}`
-                          : `${chat.sellerName} • ${chat.product.name}`}
-                      </h3>
-                      <span className="text-xs text-gray-500">
-                        {formatTime(chat.lastMessageAt)}
-                      </span>
+              {currentChats.map((chat) => {
+                const participantName = activeTab === "incoming" ? chat.buyerName : chat.sellerName;
+                const participantRole = activeTab === "incoming" ? "Pembeli" : "Penjual";
+                
+                return (
+                  <div
+                    key={`chat-${chat.id}-${chat.lastMessageAt || chat.createdAt}`}
+                    className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                    onClick={() => navigate(`/chatroom/${chat.id}`)}
+                  >
+                    {/* Avatar Participant */}
+                    <div className="w-12 h-12 bg-[#DDE7FF] rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {chat.participantAvatar ? (
+                        <img 
+                          src={`http://127.0.0.1:8000/storage/${chat.participantAvatar}`} 
+                          alt={participantName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-[#1E3A8A] font-bold text-lg">
+                          {participantName?.charAt(0).toUpperCase() || 'P'}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-600 truncate">{chat.lastMessage}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {activeTab === "incoming" 
-                        ? `Pembeli • ${chat.product.location}`
-                        : `Penjual • ${chat.product.location}`}
-                    </p>
+
+                    {/* Product Image */}
+                    <div className="w-16 h-16 bg-gray-200 rounded overflow-hidden flex items-center justify-center flex-shrink-0">
+                      {chat.product.images && chat.product.images.length > 0 ? (
+                        <img src={chat.product.images[0]} alt={chat.product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs text-gray-500">Foto</span>
+                      )}
+                    </div>
+                    
+                    {/* Chat Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between">
+                        <h3 className="font-semibold text-gray-800 truncate">
+                          {participantName} • {chat.product.name}
+                        </h3>
+                        <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                          {formatTime(chat.lastMessageAt)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 truncate">{chat.lastMessage}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {participantRole} • {chat.product.location}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12 text-gray-500">

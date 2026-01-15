@@ -18,6 +18,7 @@ import { ProfileProvider } from "./components/context/ProfileContext";
 import { AdminSettingProvider } from "./components/admin/admincontext/AdminSettingContext";
 import { AdminUserProvider } from "./components/admin/admincontext/AdminUserContext";
 import { AdminProductProvider } from "./components/admin/admincontext/AdminProductContext";
+import { AdminProfileProvider } from "./components/admin/admincontext/AdminProfileContext";
 
 // Route Guards
 import ProtectedRoute from "./components/protectedroutes/ProtectedRoute";
@@ -51,15 +52,17 @@ import AdminReports from "./components/admin/AdminReports";
 import AdminUserProfile from "./components/admin/AdminUserProfile";
 import AdminSettings from "./components/admin/AdminSettings";
 import AdminActivity from "./components/admin/AdminActivity";
+import AdminProfile from "./components/admin/AdminProfile";
 
 ReactDOM.createRoot(document.getElementById("app")).render(
   <React.StrictMode>
     <BrowserRouter>
       {/* ADMIN AUTH PROVIDER DI LEVEL PALING ATAS */}
       <AdminAuthProvider>
-        <AdminUserProvider>
-          <AdminProductProvider>
-            <AdminSettingProvider>
+        <AdminProfileProvider>
+          <AdminUserProvider>
+            <AdminProductProvider>
+              <AdminSettingProvider>
         
           <ChatProvider>
             <ReportProvider>
@@ -104,6 +107,7 @@ ReactDOM.createRoot(document.getElementById("app")).render(
                     {/* PROTECTED ADMIN ROUTES */}
                     <Route element={<AdminProtectedRoute requireAuth={true} />}>
                       <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                      <Route path="/admin/profile" element={<AdminProfile />} />
                       <Route path="/admin/users" element={<AdminUsers />} />
                       <Route path="/admin/products" element={<AdminProducts />} />
                       <Route path="/admin/reports" element={<AdminReports />} />
@@ -123,9 +127,10 @@ ReactDOM.createRoot(document.getElementById("app")).render(
               </ProductProvider>
             </ReportProvider>
           </ChatProvider>        
-            </AdminSettingProvider>
-          </AdminProductProvider>
-        </AdminUserProvider>
+              </AdminSettingProvider>
+            </AdminProductProvider>
+          </AdminUserProvider>
+        </AdminProfileProvider>
       </AdminAuthProvider>
     </BrowserRouter>
   </React.StrictMode>

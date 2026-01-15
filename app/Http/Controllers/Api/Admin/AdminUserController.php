@@ -59,28 +59,75 @@ class AdminUserController extends Controller
      */
     public function show($id)
     {
-        $user = User::with(['products'])->find($id);
+        try {
+            $user = User::with(['products', 'purchases.product.user'])->find($id);
 
-        if (!$user) {
-            return response()->json(['success' => false, 'message' => 'Pengguna tidak ditemukan'], 404);
+            if (!$user) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Pengguna tidak ditemukan'
+                ], 404);
+            }
+
+            // Format products data
+            $listings = [];
+            if ($user->products) {
+                $listings = $user->products->map(function ($product) {
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'category' => $product->category ?? 'Tidak ada kategori',
+                        'price' => number_format($product->price, 0, ',', '.'),
+                        'status' => $product->status ?? 'Aktif',
+                        'publishedAt' => $product->created_at->format('d M Y'),
+                        'image' => is_array($product->images) && count($product->images) > 0 ? $product->images[0] : null,
+                    ];
+                });
+            }
+
+            // Format purchases data from transactions
+            $purchases = [];
+            if ($user->purchases) {
+                $purchases = $user->purchases->map(function ($transaction) {
+                    return [
+                        'id' => $transaction->id,
+                        'productName' => $transaction->product->name ?? 'Produk tidak tersedia',
+                        'seller' => $transaction->product->user->name ?? 'Penjual tidak diketahui',
+                        'price' => number_format($transaction->amount, 0, ',', '.'),
+                        'status' => ucfirst($transaction->status),
+                        'purchaseDate' => $transaction->created_at->format('d M Y'),
+                    ];
+                });
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'phone' => $user->phone ?? '-',
+                        'location' => $user->location ?? '-',
+                        'avatar' => $user->avatar ? url('storage/' . $user->avatar) : null,
+                        'status' => $user->is_active ? 'Aktif' : 'Diblokir',
+                        'joined' => $user->created_at->format('d M Y'),
+                    ],
+                    'listings' => $listings,
+                    'purchases' => $purchases
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching user profile', [
+                'user_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data pengguna'
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone ?? '-',
-                    'location' => $user->address ?? '-', // Asumsi ada kolom address
-                    'status' => $user->is_active ? 'Aktif' : 'Diblokir',
-                    'joined' => $user->created_at->format('d M Y'),
-                ],
-                'listings' => $user->products, // Produk yang dijual user
-                'purchases' => [] // Kosongkan dulu jika belum ada relasi transaksi
-            ]
-        ]);
     }
 
     public function updateStatus(Request $request, $id)

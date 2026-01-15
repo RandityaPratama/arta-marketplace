@@ -26,6 +26,7 @@ class User extends Authenticatable
         'password',
         'phone',
         'location',
+        'avatar',
     ];
 
     /**
@@ -82,5 +83,29 @@ class User extends Authenticatable
     {
         return Conversation::where('buyer_id', $this->id)
             ->orWhere('seller_id', $this->id);
+    }
+
+    /**
+     * Relationship: User has many products
+     */
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'user_id');
+    }
+
+    /**
+     * Relationship: User has many transactions as buyer
+     */
+    public function purchases()
+    {
+        return $this->hasMany(Transaction::class, 'user_id');
+    }
+
+    /**
+     * Relationship: User has many transactions as seller
+     */
+    public function sales()
+    {
+        return $this->hasMany(Transaction::class, 'seller_id');
     }
 }

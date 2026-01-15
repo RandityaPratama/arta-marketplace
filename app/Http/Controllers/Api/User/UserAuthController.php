@@ -69,6 +69,7 @@ class UserAuthController extends Controller
                         'email' => $user->email,
                         'phone' => $user->phone,
                         'location' => $user->location,
+                        'avatar' => $user->avatar,
                         'created_at' => $user->created_at,
                         'is_active' => $user->is_active,
                     ],
@@ -130,24 +131,25 @@ class UserAuthController extends Controller
         // Buat token baru
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Login berhasil',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'location' => $user->location,
-                    'created_at' => $user->created_at,
-                    'is_active' => $user->is_active,
-                ],
-                'token' => $token,
-                'token_type' => 'Bearer',
-                'expires_in' => config('sanctum.expiration') // jika ada config
-            ]
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Login berhasil',
+                'data' => [
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'phone' => $user->phone,
+                        'location' => $user->location,
+                        'avatar' => $user->avatar,
+                        'created_at' => $user->created_at,
+                        'is_active' => $user->is_active,
+                    ],
+                    'token' => $token,
+                    'token_type' => 'Bearer',
+                    'expires_in' => config('sanctum.expiration') // jika ada config
+                ]
+            ]);
     }
 
     /**
@@ -222,6 +224,7 @@ public function logout(Request $request)
                     'email' => $user->email,
                     'phone' => $user->phone,
                     'location' => $user->location,
+                    'avatar' => $user->avatar,
                     'created_at' => $user->created_at,
                     'is_active' => $user->is_active,
                 ]

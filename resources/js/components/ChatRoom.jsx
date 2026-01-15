@@ -30,6 +30,20 @@ export default function ChatRoom() {
   const chat = conversations.find(c => c.id == id);
   const isMessagesLoading = messagesLoading[id] || false;
 
+  // 🔍 DEBUG: Log chat data untuk melihat avatar
+  useEffect(() => {
+    if (chat) {
+      console.log('🔍 ChatRoom - Chat Data:', {
+        id: chat.id,
+        participantAvatar: chat.participantAvatar,
+        otherParticipant: chat.otherParticipant,
+        participantType: chat.participantType,
+        buyerName: chat.buyerName,
+        sellerName: chat.sellerName
+      });
+    }
+  }, [chat]);
+
   // ✅ FIX: Load conversations dulu jika belum ada data (untuk handle refresh)
   useEffect(() => {
     if (conversations.length === 0 && !loading && isInitialLoad) {
@@ -134,19 +148,29 @@ export default function ChatRoom() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                 </svg>
               </button>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#DDE7FF] rounded-full flex items-center justify-center">
-                  <span className="text-[#1E3A8A] font-bold">P</span>
-                </div>
-                <div>
-                  <h2 className="font-semibold text-gray-800">
-                    {chat.participantType === "seller" ? chat.buyerName : chat.sellerName}
-                  </h2>
-                  <p className="text-xs text-gray-500">
-                    {chat.participantType === "seller" ? "Pembeli" : "Penjual"}
-                  </p>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[#DDE7FF] rounded-full flex items-center justify-center overflow-hidden">
+                {chat.participantAvatar ? (
+                  <img 
+                    src={`http://127.0.0.1:8000/storage/${chat.participantAvatar}`} 
+                    alt={chat.participantType === "seller" ? chat.buyerName : chat.sellerName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[#1E3A8A] font-bold">
+                    {(chat.participantType === "seller" ? chat.buyerName : chat.sellerName)?.charAt(0).toUpperCase() || 'P'}
+                  </span>
+                )}
               </div>
+              <div>
+                <h2 className="font-semibold text-gray-800">
+                  {chat.participantType === "seller" ? chat.buyerName : chat.sellerName}
+                </h2>
+                <p className="text-xs text-gray-500">
+                  {chat.participantType === "seller" ? "Pembeli" : "Penjual"}
+                </p>
+              </div>
+            </div>
             </div>
             <div className="flex items-center justify-center h-[500px]">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E3A8A]"></div>
@@ -178,8 +202,18 @@ export default function ChatRoom() {
               </svg>
             </button>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#DDE7FF] rounded-full flex items-center justify-center">
-                <span className="text-[#1E3A8A] font-bold">P</span>
+              <div className="w-10 h-10 bg-[#DDE7FF] rounded-full flex items-center justify-center overflow-hidden">
+                {chat.participantAvatar ? (
+                  <img 
+                    src={`http://127.0.0.1:8000/storage/${chat.participantAvatar}`} 
+                    alt={otherName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[#1E3A8A] font-bold">
+                    {otherName?.charAt(0).toUpperCase() || 'P'}
+                  </span>
+                )}
               </div>
               <div>
                 <h2 className="font-semibold text-gray-800">{otherName}</h2>
