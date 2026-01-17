@@ -25,7 +25,8 @@ Route::post('/register', [UserAuthController::class, 'register']);
 Route::post('/login', [UserAuthController::class, 'login']);
 Route::get('/categories', [UserCategoriesController::class, 'index']);
 Route::get('/popular-products', [UserFavoriteController::class, 'popular']);
-
+Route::post('/forgot-password', [UserAuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [UserAuthController::class, 'resetPassword']);
 
 // Protected routes (memerlukan token)
 Route::middleware('auth:sanctum', 'isUser')->group(function () {

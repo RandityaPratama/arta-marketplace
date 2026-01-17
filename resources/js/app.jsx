@@ -42,6 +42,7 @@ import PurchaseHistoryPage from "./components/PurchaseHistoryPage";
 import DiskonPage from "./components/DiskonPage";
 import PopularPage from "./components/PopularPage";
 import ForgotPasswordPage from "./components/ForgotPasswordPage";
+import ResetPasswordPage from './components/ResetPasswordPage';
 
 // Admin Components
 import AdminLogin from "./components/admin/AdminLogin";
@@ -79,6 +80,7 @@ ReactDOM.createRoot(document.getElementById("app")).render(
                       <Route path="/login" element={<LoginPage />} />
                       <Route path="/signup" element={<SignupPage />} />
                       <Route path="/forgot" element={<ForgotPasswordPage />} />
+                      <Route path="/reset-password" element={<ResetPasswordPage />} />
                     </Route>
 
                     {/* ========== PROTECTED USER ROUTES ========== */}

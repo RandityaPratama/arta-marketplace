@@ -3,9 +3,11 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
 import Background from "./Background";
+import { useAuth } from "./context/AuthContext";
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
+  const { forgotPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
@@ -16,42 +18,44 @@ export default function ForgotPasswordPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+  
+  if (!validateEmail(email)) {
+    setMessage({ type: "error", text: "Email tidak valid" });
+    return;
+  }
+
+  setLoading(true);
+  setMessage({ type: "", text: "" });
+
+  try {
+    const result = await forgotPassword(email);
     
-    if (!validateEmail(email)) {
-      setMessage({ type: "error", text: "Email tidak valid" });
-      return;
-    }
-
-    setLoading(true);
-    setMessage({ type: "", text: "" });
-
-    try {
-      // ✅ Ganti dengan API reset password-mu
-      // const response = await api.post('/auth/forgot-password', { email });
-      
-      // Simulasi API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+    if (result.success) {
       setMessage({ 
         type: "success", 
-        text: "Link reset password telah dikirim ke email Anda" 
+        text: result.message 
       });
-      
-      // Redirect ke login setelah 3 detik
+            
       setTimeout(() => {
         navigate("/login");
       }, 3000);
-      
-    } catch (error) {
+    } else {
       setMessage({ 
         type: "error", 
-        text: "Email tidak ditemukan atau gagal mengirim email" 
+        text: result.message 
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    setMessage({ 
+      type: "error", 
+      text: "Terjadi kesalahan server" 
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <>

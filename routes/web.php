@@ -23,7 +23,12 @@ Route::get('/product-images/{path}', function ($path) {
 // ✅ WORKAROUND: Handle Midtrans notification tanpa prefix /api
 Route::post('/midtrans/notification', [UserPaymentController::class, 'notificationHandler']);
 
+// ✅ ADD: Route for password reset (used by Laravel's Password facade)
+Route::get('/reset-password', function () {
+    return view('welcome');
+})->name('password.reset');
+
 // ✅ UPDATE: Tambahkan pengecualian '|storage' agar URL gambar tidak dianggap halaman React
 Route::get('/{any?}', function () {
-    return view('welcome'); 
+    return view('welcome');
 })->where('any', '^(?!api|product-images).*');

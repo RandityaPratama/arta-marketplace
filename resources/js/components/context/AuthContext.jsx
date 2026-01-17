@@ -189,6 +189,39 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const forgotPassword = async (email) => {
+  try {
+    const response = await fetch(`${API_URL}/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return { 
+        success: true, 
+        message: result.message 
+      };
+    } else {
+      return { 
+        success: false, 
+        message: result.message || 'Gagal mengirim email reset password' 
+      };
+    }
+  } catch (error) {
+    return { 
+      success: false, 
+      message: error.message || 'Terjadi kesalahan jaringan' 
+    };
+  }
+};
+
+
   const value = {
     user,
     loading,
@@ -197,7 +230,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     checkAuth,
-    fetchWithAuth
+    fetchWithAuth,
+    forgotPassword
   };
 
   return (
