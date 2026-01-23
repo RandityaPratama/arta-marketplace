@@ -24,13 +24,22 @@ class UserProductController extends Controller
         'user_agent' => $request->userAgent(),
     ]);
 
+    // ✅ Convert empty strings to null untuk field optional
+    $requestData = $request->all();
+    if (isset($requestData['discount']) && $requestData['discount'] === '') {
+        $requestData['discount'] = null;
+    }
+    if (isset($requestData['original_price']) && $requestData['original_price'] === '') {
+        $requestData['original_price'] = null;
+    }
+
     // 1. Validasi Input
-    $validator = Validator::make($request->all(), [
+    $validator = Validator::make($requestData, [
         'name' => 'required|string|max:255',
         'category' => 'required|string',
         'price' => 'required|numeric',
         'original_price' => 'nullable|numeric',
-        'discount' => 'nullable|integer',
+        'discount' => 'nullable|integer|min:0|max:100',
         'location' => 'required|string',
         'condition' => 'required|string',
         'description' => 'required|string',
@@ -74,14 +83,14 @@ class UserProductController extends Controller
         // 3. Simpan Data Produk
         $product = Product::create([
             'user_id' => $request->user()->id,
-            'name' => $request->name,
-            'category' => $request->category,
-            'price' => $request->price,
-            'original_price' => $request->original_price,
-            'discount' => $request->discount,
-            'location' => $request->location,
-            'condition' => $request->condition,
-            'description' => $request->description,
+            'name' => $requestData['name'],
+            'category' => $requestData['category'],
+            'price' => $requestData['price'],
+            'original_price' => $requestData['original_price'] ?? null,
+            'discount' => $requestData['discount'] ?? null,
+            'location' => $requestData['location'],
+            'condition' => $requestData['condition'],
+            'description' => $requestData['description'],
             'images' => $imagePaths,
             'status' => 'menunggu',
         ]);

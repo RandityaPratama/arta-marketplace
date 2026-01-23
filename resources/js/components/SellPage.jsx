@@ -64,13 +64,22 @@ export default function SellPage() {
 
   const calculateDiscountedPrice = () => {
     const { originalPrice, discount } = formData;
-    if (!originalPrice || !discount) return formData.price;
-
+    
+    // Jika tidak ada original price, return price biasa
+    if (!originalPrice || originalPrice === "") return formData.price || "0";
+    
     const price = parseFloat(originalPrice);
-    const disc = parseFloat(discount);
     
-    if (isNaN(price) || isNaN(disc) || disc < 0 || disc > 100) return formData.price;
+    // Jika original price tidak valid, return 0
+    if (isNaN(price)) return "0";
     
+    // Jika discount kosong atau tidak valid, anggap discount = 0
+    const disc = discount && discount !== "" ? parseFloat(discount) : 0;
+    
+    // Validasi discount range
+    if (isNaN(disc) || disc < 0 || disc > 100) return price.toString();
+    
+    // Hitung harga setelah diskon
     const finalPrice = price * (1 - disc / 100);
     return Math.round(finalPrice).toString();
   };
@@ -119,8 +128,15 @@ export default function SellPage() {
     data.append("category", formData.category);
     data.append("price", finalPrice);
     
-    if (formData.originalPrice) data.append("original_price", formData.originalPrice);
-    if (formData.discount) data.append("discount", formData.discount);
+    // ✅ Hanya append jika ada nilai, dan convert empty string ke null
+    if (formData.originalPrice && formData.originalPrice !== "") {
+      data.append("original_price", formData.originalPrice);
+    }
+    
+    // ✅ Hanya append discount jika ada nilai yang valid (bukan empty string)
+    if (formData.discount && formData.discount !== "") {
+      data.append("discount", formData.discount);
+    }
     
     data.append("location", formData.location);
     data.append("condition", formData.condition);

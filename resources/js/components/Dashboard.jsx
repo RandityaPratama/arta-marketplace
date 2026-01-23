@@ -31,6 +31,7 @@ export default function Dashboard() {
   }, [fetchProducts]);
 
   const [categories, setCategories] = useState(["Semua"]);
+  const [searchTerm, setSearchTerm] = useState(""); // ✅ State untuk search
 
   // ✅ Fetch Kategori dari API
   useEffect(() => {
@@ -53,11 +54,27 @@ export default function Dashboard() {
   // ✅ POSISI VERTIKAL FLEKSIBEL - BISA DIUBAH SESUAI KEBUTUHAN
   const badgeVerticalPosition = '55%'; // ✅ Ganti nilai ini: '30%', '35%', '40%', '45%', '50%', dll
 
+  // ✅ Handler untuk search
+  const handleSearch = (search, category) => {
+    setSearchTerm(search);
+    setSelectedCategory(category);
+  };
+
+  // ✅ Filter produk berdasarkan search dan kategori
   const filteredProducts = products
     .filter(product => product.status === "aktif")
-    .filter(product => 
-      selectedCategory === "Semua" || selectedCategory === "Semua kategori" || product.category === selectedCategory
-    );
+    .filter(product => {
+      // Filter berdasarkan kategori
+      const categoryMatch = selectedCategory === "Semua" || selectedCategory === "Semua kategori" || product.category === selectedCategory;
+      
+      // Filter berdasarkan search term
+      const searchMatch = !searchTerm || 
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      return categoryMatch && searchMatch;
+    });
 
   const totalProducts = filteredProducts.length;
 
@@ -66,7 +83,7 @@ export default function Dashboard() {
       <NavbarAfter />
       <Background>
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6  md:px-8 lg:px-12 py-8">
-          <SearchBar onCategoryChange={setSelectedCategory} />
+          <SearchBar onSearch={handleSearch} onCategoryChange={setSelectedCategory} />
 
           {/* Promo Banners */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
