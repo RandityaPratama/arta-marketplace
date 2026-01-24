@@ -1,6 +1,6 @@
 // src/components/SellPage.js
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ Tidak perlu useLocation di sini
+import { useNavigate } from "react-router-dom"; 
 import Button from "../components/ui/Button";
 import NavbarAfter from "./NavbarAfter";
 import Footer from "./Footer";

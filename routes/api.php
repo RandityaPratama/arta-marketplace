@@ -24,9 +24,13 @@ use App\Http\Controllers\Api\Admin\AdminSettingsController;
 Route::post('/register', [UserAuthController::class, 'register']);
 Route::post('/login', [UserAuthController::class, 'login']);
 Route::get('/categories', [UserCategoriesController::class, 'index']);
-Route::get('/popular-products', [UserFavoriteController::class, 'popular']);
 Route::post('/forgot-password', [UserAuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [UserAuthController::class, 'resetPassword']);
+
+// Optional auth routes (can be accessed by both guest and authenticated users)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/popular-products', [UserFavoriteController::class, 'popular']);
+});
 
 // Protected routes (memerlukan token)
 Route::middleware('auth:sanctum', 'isUser')->group(function () {

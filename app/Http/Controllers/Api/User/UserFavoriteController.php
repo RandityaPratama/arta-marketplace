@@ -90,15 +90,26 @@ class UserFavoriteController extends Controller
         $popularMap = $popular->pluck('total', 'product_id');
         $productIds = $popular->pluck('product_id');
 
-        // 2. Ambil detail produk berdasarkan ID yang ditemukan
+        // Get current user ID if authenticated
+        $currentUserId = Auth::check() ? Auth::id() : null;
+
+        // 2. Ambil detail produk berdasarkan ID yang ditemukan dengan join ke users table
         $products = DB::table('products')
-            ->whereIn('id', $productIds)
-            ->where('status', 'aktif')
+            ->leftJoin('users', 'products.user_id', '=', 'users.id')
+            ->select(
+                'products.*',
+                'users.name as seller_name'
+            )
+            ->whereIn('products.id', $productIds)
+            ->where('products.status', 'aktif')
             ->get();
 
-        // 3. Gabungkan data produk dengan jumlah favoritnya
-        $result = $products->map(function ($product) use ($popularMap) {
+        // 3. Gabungkan data produk dengan jumlah favoritnya dan tambahkan is_mine
+        $result = $products->map(function ($product) use ($popularMap, $currentUserId) {
             $product->favoriteCount = $popularMap[$product->id] ?? 0;
+            $product->seller_id = $product->user_id;
+            // Cast to int for proper comparison since DB::table returns strings
+            $product->is_mine = $currentUserId && (int)$product->user_id === (int)$currentUserId;
             return $product;
         })->sortByDesc('favoriteCount')->values();
 

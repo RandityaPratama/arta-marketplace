@@ -164,7 +164,14 @@ const fetchProductById = useCallback(async (productId) => {
 // ✅ Fetch Produk Populer (Berdasarkan jumlah favorit)
 const fetchPopularProducts = useCallback(async () => {
     try {
-        const response = await fetch(`${API_URL}/popular-products`);
+        const token = localStorage.getItem('token');
+        const headers = { 'Accept': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const response = await fetch(`${API_URL}/popular-products`, {
+            method: 'GET',
+            headers
+        });
         const result = await response.json();
         
         if (result.success) {
@@ -183,7 +190,7 @@ const fetchPopularProducts = useCallback(async () => {
                     sellerId: item.seller_id,
                     publishedDate: item.published_at,
                     onDiscount: !!item.discount,
-                    is_mine: false,
+                    is_mine: !!item.is_mine, // ✅ Gunakan nilai is_mine dari API
                     favoritesCount: item.favoriteCount || item.favorites_count || 0, // ✅ Tambahkan favorites count (support both formats)
                     images: itemImages.map(path => `${STORAGE_URL}/${path}`)
                 };

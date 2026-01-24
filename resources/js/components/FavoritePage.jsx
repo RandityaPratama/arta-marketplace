@@ -84,7 +84,7 @@ export default function FavoritePage() {
                   className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-[0px_4px_11px_rgba(0,0,0,0.07)] relative cursor-pointer"
                   onClick={() => {
                     // ✅ Navigasi cerdas: produk sendiri vs orang lain
-                    if (product.sellerId === "user-1") {
+                    if (product.is_mine) {
                       navigate(`/detailseller/${product.id}`);
                     } else {
                       navigate(`/product/${product.id}`);
@@ -116,7 +116,7 @@ export default function FavoritePage() {
                   </Button>
 
                   {/* ✅ BADGE "IKLANKU" */}
-                  {product.sellerId === "user-1" && (
+                  {product.is_mine && (
                     <div 
                       className="absolute right-0 transform -translate-y-1/2 bg-[#1E3A8A] text-white text-[11px] font-[600] px-2 py-1.5 rounded-l-full z-10 whitespace-nowrap"
                       style={{ top: badgeVerticalPosition }}
