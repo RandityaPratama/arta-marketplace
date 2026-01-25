@@ -19,7 +19,7 @@ import { useAuth } from "../components/context/AuthContext";
     const navigate = useNavigate();
     const location = useLocation(); // ✅
     const { getUserProducts, fetchMyProducts } = useProducts();
-    const { user, updateProfile, updateAvatar, getJoinDate, loading: profileLoading } = useProfile();
+    const { user, updateProfile, updateAvatar, deleteAvatar, getJoinDate, loading: profileLoading } = useProfile();
     const { isAuthenticated, loading: authLoading } = useAuth();
     const products = getUserProducts();
     const [avatarFile, setAvatarFile] = useState(null);
@@ -158,6 +158,14 @@ import { useAuth } from "../components/context/AuthContext";
         }
     };
 
+    // ✅ Hapus Avatar
+    const handleDeleteAvatar = async () => {
+        if (window.confirm("Apakah Anda yakin ingin menghapus foto profil?")) {
+            const result = await deleteAvatar();
+            setNotification({ show: true, message: result.message, type: result.success ? "success" : "error" });
+        }
+    };
+
     // ✅ Reset state setelah beberapa detik (opsional)
     useEffect(() => {
         if (location.state?.fromSellPage) {
@@ -239,6 +247,11 @@ import { useAuth } from "../components/context/AuthContext";
                     <Button variant="outline" size="md" onClick={handleEditProfile}>
                         Edit Profil
                     </Button>
+                    {user?.avatar && (
+                        <Button variant="danger" size="md" onClick={handleDeleteAvatar} disabled={profileLoading}>
+                            Hapus Foto
+                        </Button>
+                    )}
                     <Button variant="primary" size="md" onClick={() => navigate("/sell")}>
                         Jual Barang
                     </Button>

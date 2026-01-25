@@ -129,4 +129,47 @@ class UserProfileController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Delete user avatar
+     */
+    public function deleteAvatar(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->avatar) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada avatar untuk dihapus'
+            ], 404);
+        }
+
+        try {
+            // Hapus file avatar dari storage
+            Storage::disk('public')->delete($user->avatar);
+
+            // Update kolom avatar di database menjadi null
+            $user->update(['avatar' => null]);
+
+            // Catat aktivitas
+            try {
+                Activity::create([
+                    'user_id' => $user->id,
+                    'action' => $user->name . ' menghapus foto profil',
+                    'type' => 'pengguna',
+                ]);
+            } catch (\Exception $e) {
+                Log::warning('Failed to log avatar delete activity: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Avatar berhasil dihapus',
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Avatar delete error', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus avatar'], 500);
+        }
+    }
 }

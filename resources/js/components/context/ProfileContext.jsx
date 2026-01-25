@@ -92,6 +92,31 @@ export const ProfileProvider = ({ children }) => {
     }
   };
 
+  // ✅ Delete Avatar
+  const deleteAvatar = async () => {
+    setLoading(true);
+    try {
+      const response = await fetchWithAuth(`${API_URL}/profile/avatar`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        if (checkAuth) await checkAuth(); // Refresh user data
+        return { success: true, message: result.message || "Avatar berhasil dihapus" };
+      } else {
+        return { success: false, message: result.message || "Gagal menghapus avatar" };
+      }
+    } catch (error) {
+      console.error("Error deleting avatar:", error);
+      return { success: false, message: "Terjadi kesalahan jaringan" };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   // ✅ Format Tanggal Bergabung
   const getJoinDate = () => {
     if (!user || !user.created_at) return "-";
@@ -104,7 +129,7 @@ export const ProfileProvider = ({ children }) => {
   };
 
   return (
-    <ProfileContext.Provider value={{ user, loading, updateProfile, updateAvatar, getJoinDate }}>
+    <ProfileContext.Provider value={{ user, loading, updateProfile, updateAvatar, deleteAvatar, getJoinDate }}>
       {children}
     </ProfileContext.Provider>
   );

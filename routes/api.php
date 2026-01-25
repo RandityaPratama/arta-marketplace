@@ -38,6 +38,7 @@ Route::middleware('auth:sanctum', 'isUser')->group(function () {
     Route::get('/profile', [UserAuthController::class, 'profile']);
     Route::post('/profile/update', [UserProfileController::class, 'update']);
     Route::post('/profile/avatar', [UserProfileController::class, 'updateAvatar']);
+    Route::delete('/profile/avatar', [UserProfileController::class, 'deleteAvatar']);
     Route::post('/refresh', [UserAuthController::class, 'refresh']);
     Route::post('/products', [UserProductController::class, 'addProduct']);
     Route::get('/products', [UserProductController::class, 'getProducts']);
