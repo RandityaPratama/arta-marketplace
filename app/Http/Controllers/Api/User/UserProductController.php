@@ -205,6 +205,7 @@ class UserProductController extends Controller
                 'description' => $product->description,
                 'images' => $images, 
                 'status' => $product->status,
+                'rejection_reason' => $product->rejection_reason, // ✅ Tambahkan alasan penolakan
                 'seller_name' => $product->user ? $product->user->name : 'Unknown',
                 'seller_id' => $product->user_id,
                 'is_mine' => $isMine,
@@ -317,6 +318,7 @@ class UserProductController extends Controller
             'description' => $product->description,
             'images' => $images,
             'status' => $product->status,
+            'rejection_reason' => $product->rejection_reason, // ✅ Tambahkan alasan penolakan
             'seller_name' => $product->user ? $product->user->name : 'Unknown',
             'seller_id' => $product->user_id,
             'is_mine' => $isMine,

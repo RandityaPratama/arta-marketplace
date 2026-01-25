@@ -85,8 +85,13 @@ class AdminProductController extends Controller
         }
 
         $product->status = $request->status;
-        // Jika Anda memiliki kolom 'rejection_reason' di database, simpan di sini:
-        // if ($request->status === 'ditolak') $product->rejection_reason = $request->reason;
+        // Simpan alasan penolakan jika status ditolak
+        if ($request->status === 'ditolak' && $request->has('reason')) {
+            $product->rejection_reason = $request->reason;
+        } else if ($request->status !== 'ditolak') {
+            // Hapus rejection_reason jika status berubah dari ditolak ke status lain
+            $product->rejection_reason = null;
+        }
         $product->save();
 
         Log::info("Admin updated product status", ['product_id' => $id, 'status' => $request->status]);

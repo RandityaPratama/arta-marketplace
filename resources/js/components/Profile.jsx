@@ -344,8 +344,8 @@ import { useAuth } from "../components/context/AuthContext";
                             
                             <div className="mt-2">
                             {getStatusBadge(product.status)}
-                            {product.status === "ditolak" && (
-                                <p className="text-[11px] text-gray-600 mt-1">Alasan: {product.rejectionReason}</p>
+                            {product.status === "ditolak" && product.rejection_reason && (
+                                <p className="text-[11px] text-gray-600 mt-1">Alasan: {product.rejection_reason}</p>
                             )}
                             </div>
                             {product.status === "ditolak" && (

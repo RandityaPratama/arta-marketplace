@@ -420,10 +420,10 @@
                         </div>
                     </div>
 
-                    {product.status === "ditolak" && (
+                    {product.status === "ditolak" && product.rejection_reason && (
                         <div className="pt-2">
                         <p className="text-sm text-red-600">
-                            <span className="font-medium">Alasan penolakan:</span> {product.rejectionReason}
+                            <span className="font-medium">Alasan penolakan:</span> {product.rejection_reason}
                         </p>
                         </div>
                     )}
