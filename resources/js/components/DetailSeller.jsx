@@ -8,6 +8,9 @@
     import { useProducts } from "../components/context/ProductContext";
     import { Heart } from "lucide-react"; // ✅ Import ikon dari lucide-react
 
+    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+    const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
+
     export default function DetailSellerPage() {
     const navigate = useNavigate();
     const { id } = useParams();
@@ -22,7 +25,7 @@
     const [isDeleting, setIsDeleting] = useState(false);
     const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
-    // ✅ Auto-hide notification (Dipindahkan ke atas sebelum return)
+    
     useEffect(() => {
         if (notification.show) {
         const timer = setTimeout(() => {
@@ -191,7 +194,7 @@
                     <div className="w-10 h-10 bg-[#DDE7FF] rounded-full flex items-center justify-center overflow-hidden">
                         {product.sellerAvatar ? (
                             <img 
-                                src={`http://127.0.0.1:8000/storage/${product.sellerAvatar}`} 
+                                src={`${STORAGE_URL}/${product.sellerAvatar}`} 
                                 alt={product.sellerName}
                                 className="w-full h-full object-cover"
                             />

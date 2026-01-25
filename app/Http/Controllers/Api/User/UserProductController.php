@@ -207,6 +207,7 @@ class UserProductController extends Controller
                 'status' => $product->status,
                 'rejection_reason' => $product->rejection_reason, // ✅ Tambahkan alasan penolakan
                 'seller_name' => $product->user ? $product->user->name : 'Unknown',
+                'seller_avatar' => $product->user ? $product->user->avatar : null,
                 'seller_id' => $product->user_id,
                 'is_mine' => $isMine,
                 'published_at' => $product->created_at->format('d/m/Y'),
@@ -320,6 +321,7 @@ class UserProductController extends Controller
             'status' => $product->status,
             'rejection_reason' => $product->rejection_reason, // ✅ Tambahkan alasan penolakan
             'seller_name' => $product->user ? $product->user->name : 'Unknown',
+            'seller_avatar' => $product->user ? $product->user->avatar : null,
             'seller_id' => $product->user_id,
             'is_mine' => $isMine,
             'published_at' => $product->created_at->format('d/m/Y'),

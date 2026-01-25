@@ -11,6 +11,7 @@ import { useReports } from "../components/context/ReportContext";
 import { useProducts } from "../components/context/ProductContext";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
 
 // ✅ Fungsi format harga
 const formatPrice = (price) => {
@@ -244,7 +245,7 @@ export default function ProductDetailPage() {
                   <div className="w-10 h-10 bg-[#DDE7FF] rounded-full flex items-center justify-center overflow-hidden">
                     {product.sellerAvatar ? (
                       <img 
-                        src={`http://127.0.0.1:8000/storage/${product.sellerAvatar}`} 
+                        src={`${STORAGE_URL}/${product.sellerAvatar}`} 
                         alt={product.sellerName}
                         className="w-full h-full object-cover"
                       />
