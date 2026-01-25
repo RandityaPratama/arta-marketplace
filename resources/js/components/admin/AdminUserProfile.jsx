@@ -5,6 +5,9 @@ import Button from "../ui/Button";
 import { useAdminUser } from "./admincontext/AdminUserContext";
 import { User } from "lucide-react";
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
+
 export default function AdminUserProfile() {
   const navigate = useNavigate();
   const { userId } = useParams();
@@ -151,27 +154,44 @@ export default function AdminUserProfile() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {listings.map((product) => (
-                      <tr key={product.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 font-medium text-gray-900">{product.name}</td>
-                        <td className="px-6 py-4">
-                          <span className="px-2 py-1 bg-[#DDE7FF] text-[#1E3A8A] rounded-full text-xs">
-                            {product.category}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">Rp. {product.price}</td>
-                        <td className="px-6 py-4 text-gray-700">{product.publishedAt}</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            product.status === "Aktif" ? "bg-green-100 text-green-800" :
-                            product.status === "Menunggu" ? "bg-yellow-100 text-yellow-800" :
-                            "bg-red-100 text-red-800"
-                          }`}>
-                            {product.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {listings.map((product) => {
+                      const imageUrl = product.image 
+                        ? `${STORAGE_URL}/${product.image}`
+                        : "https://via.placeholder.com/60x60?text=No+Image";
+
+                      return (
+                        <tr key={product.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 bg-gray-200 rounded overflow-hidden flex-shrink-0">
+                                <img 
+                                  src={imageUrl} 
+                                  alt={product.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div className="font-medium text-gray-900">{product.name}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="px-2 py-1 bg-[#DDE7FF] text-[#1E3A8A] rounded-full text-xs">
+                              {product.category}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">Rp. {product.price}</td>
+                          <td className="px-6 py-4 text-gray-700">{product.publishedAt}</td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              product.status === "Aktif" ? "bg-green-100 text-green-800" :
+                              product.status === "Menunggu" ? "bg-yellow-100 text-yellow-800" :
+                              "bg-red-100 text-red-800"
+                            }`}>
+                              {product.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -196,23 +216,40 @@ export default function AdminUserProfile() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {purchases.map((purchase) => (
-                      <tr key={purchase.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 font-medium text-gray-900">{purchase.productName}</td>
-                        <td className="px-6 py-4 text-gray-700">{purchase.seller}</td>
-                        <td className="px-6 py-4">Rp. {purchase.price}</td>
-                        <td className="px-6 py-4 text-gray-700">{purchase.purchaseDate}</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            purchase.status === "Diterima" ? "bg-green-100 text-green-800" :
-                            purchase.status === "Dikirim" ? "bg-blue-100 text-blue-800" :
-                            "bg-yellow-100 text-yellow-800"
-                          }`}>
-                            {purchase.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {purchases.map((purchase) => {
+                      const imageUrl = purchase.image 
+                        ? `${STORAGE_URL}/${purchase.image}`
+                        : "https://via.placeholder.com/60x60?text=No+Image";
+
+                      return (
+                        <tr key={purchase.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 bg-gray-200 rounded overflow-hidden flex-shrink-0">
+                                <img 
+                                  src={imageUrl} 
+                                  alt={purchase.productName}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div className="font-medium text-gray-900">{purchase.productName}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-gray-700">{purchase.seller}</td>
+                          <td className="px-6 py-4">Rp. {purchase.price}</td>
+                          <td className="px-6 py-4 text-gray-700">{purchase.purchaseDate}</td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              purchase.status === "Diterima" ? "bg-green-100 text-green-800" :
+                              purchase.status === "Dikirim" ? "bg-blue-100 text-blue-800" :
+                              "bg-yellow-100 text-yellow-800"
+                            }`}>
+                              {purchase.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

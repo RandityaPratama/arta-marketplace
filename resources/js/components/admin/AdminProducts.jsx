@@ -5,6 +5,9 @@ import AdminLayout from "./AdminLayout";
 import Button from "../ui/Button";
 import { AdminProductProvider, useAdminProduct } from "./admincontext/AdminProductContext";
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
+
 function AdminProductsContent() {
   const navigate = useNavigate();
   const location = useLocation(); // ✅ Ambil state dari navigasi
@@ -158,14 +161,30 @@ function AdminProductsContent() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{product.name}</div>
-                      <span className="text-xs text-gray-500">ID: {product.id}</span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">{product.seller}</td>
-                    <td className="px-6 py-4">
+                {products.map((product) => {
+                  const imageUrl = product.images && product.images.length > 0
+                    ? `${STORAGE_URL}/${product.images[0]}`
+                    : "https://via.placeholder.com/60x60?text=No+Image";
+
+                  return (
+                    <tr key={product.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-gray-200 rounded overflow-hidden flex-shrink-0">
+                            <img 
+                              src={imageUrl} 
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900">{product.name}</div>
+                            <span className="text-xs text-gray-500">ID: {product.id}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-700">{product.seller}</td>
+                      <td className="px-6 py-4">
                       <span className="px-2 py-1 bg-[#DDE7FF] text-[#1E3A8A] rounded-full text-xs">
                         {product.category}
                       </span>
@@ -177,7 +196,8 @@ function AdminProductsContent() {
                       {renderActions(product)}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           )}

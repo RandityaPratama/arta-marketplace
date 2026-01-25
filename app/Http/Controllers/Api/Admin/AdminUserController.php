@@ -96,6 +96,7 @@ class AdminUserController extends Controller
                         'price' => number_format($transaction->amount, 0, ',', '.'),
                         'status' => ucfirst($transaction->status),
                         'purchaseDate' => $transaction->created_at->format('d M Y'),
+                        'image' => ($transaction->product && is_array($transaction->product->images) && count($transaction->product->images) > 0) ? $transaction->product->images[0] : null,
                     ];
                 });
             }
