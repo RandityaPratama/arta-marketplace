@@ -66,8 +66,8 @@ export const AdminSettingProvider = ({ children }) => {
   };
 
   // --- Categories Actions ---
-  const addCategory = async (name) => {
-    const result = await apiRequest('categories', 'POST', { name });
+  const addCategory = async (name, icon) => {
+    const result = await apiRequest('categories', 'POST', { name, icon });
     if (result.success) {
       setCategories(prev => [...prev, result.data]);
     }

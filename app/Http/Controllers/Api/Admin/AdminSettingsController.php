@@ -35,6 +35,7 @@ class AdminSettingsController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|unique:categories,name|max:50',
+            'icon' => 'nullable|string|max:50',
         ]);
 
         if ($validator->fails()) {
@@ -63,6 +64,7 @@ class AdminSettingsController extends Controller
         $category = Category::create([
             'name' => $name,
             'slug' => $slug,
+            'icon' => $request->icon,
         ]);
 
         return response()->json([

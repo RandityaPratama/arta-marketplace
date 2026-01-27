@@ -1,5 +1,5 @@
     // components/LandingPage.jsx
-    import React from "react";
+    import React, { useEffect, useState } from "react";
     import { useNavigate } from "react-router-dom";
     import {
     ShieldCheck,
@@ -8,13 +8,55 @@
     Tv,
     Home,
     Shirt,
-    Gem
+    Gem,
+    Gamepad2,
+    Dumbbell,
+    Car,
+    Briefcase,
+    Wrench,
+    BookOpen,
+    Leaf,
+    Building2,
+    Package
     } from 'lucide-react';
     import NavbarBefore from "./NavbarBefore";
     import Footer from "./Footer";
 
     export default function LandingPage() {
     const navigate = useNavigate();
+    const [categories, setCategories] = useState([]);
+
+    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+
+    const iconMap = {
+        tv: Tv,
+        shirt: Shirt,
+        gamepad: Gamepad2,
+        dumbbell: Dumbbell,
+        home: Home,
+        car: Car,
+        briefcase: Briefcase,
+        tool: Wrench,
+        "book-open": BookOpen,
+        gem: Gem,
+        leaf: Leaf,
+        "building-2": Building2,
+    };
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+        try {
+            const response = await fetch(`${API_URL}/categories`);
+            const result = await response.json();
+            if (result.success) {
+            setCategories(result.data);
+            }
+        } catch (error) {
+            console.error("Gagal mengambil kategori:", error);
+        }
+        };
+        fetchCategories();
+    }, []);
 
     // ✅ GANTI WARNA DI SINI - Gradien 3 Warna
     const gradientColors = {
@@ -120,13 +162,8 @@
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-[50px] max-w-[950px] mx-auto mt-[55px]">
-                {[
-                { name: "Elektronik", total: "128+", icon: Tv },
-                { name: "Rumah Tangga", total: "78+", icon: Home },
-                { name: "Fashion", total: "96+", icon: Shirt },
-                { name: "Aksesoris", total: "54+", icon: Gem },
-                ].map((item, i) => {
-                const IconComponent = item.icon;
+                {categories.map((item, i) => {
+                const IconComponent = iconMap[item.icon] ?? Package;
                 return (
                     <div
                     key={i}
@@ -136,7 +173,7 @@
                         <IconComponent size={24} className="text-[#1E3A8A]" />
                     </div>
                     <h3 className="text-black font-[600] text-[17px]">{item.name}</h3>
-                    <p className="text-[#6F6F6F] text-[13px] mt-[6px]">{item.total} Produk</p>
+                    <p className="text-[#6F6F6F] text-[13px] mt-[6px]">{(item.total ?? 0).toLocaleString("id-ID")} Produk</p>
                     </div>
                 );
                 })}

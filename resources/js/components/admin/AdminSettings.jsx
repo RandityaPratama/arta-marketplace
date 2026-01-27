@@ -1,12 +1,12 @@
     // components/admin/AdminSettings.jsx
     import React, { useState, useEffect } from "react";
     import { useNavigate } from "react-router-dom";
-    import AdminLayout from "./AdminLayout";
-    import Button from "../ui/Button";
-    import { useAdminSetting } from "./admincontext/AdminSettingContext";
+import AdminLayout from "./AdminLayout";
+import Button from "../ui/Button";
+import { useAdminSetting } from "./admincontext/AdminSettingContext";
 
-    export default function AdminSettings() {
-    const navigate = useNavigate();
+export default function AdminSettings() {
+  const navigate = useNavigate();
     const { 
         categories, 
         reportReasons, 
@@ -18,20 +18,36 @@
         loading 
     } = useAdminSetting();
 
-    // State lokal untuk input baru
-    const [newCategory, setNewCategory] = useState("");
-    const [newReason, setNewReason] = useState("");
+  // State lokal untuk input baru
+  const [newCategory, setNewCategory] = useState("");
+  const [newCategoryIcon, setNewCategoryIcon] = useState("tv");
+  const [newReason, setNewReason] = useState("");
 
-    useEffect(() => {
-        fetchSettings();
-    }, [fetchSettings]);
+  const iconOptions = [
+    { value: "tv", label: "Elektronik (TV)" },
+    { value: "shirt", label: "Fashion (Shirt)" },
+    { value: "gamepad", label: "Hobi (Gamepad)" },
+    { value: "dumbbell", label: "Olahraga (Dumbbell)" },
+    { value: "home", label: "Rumah Tangga (Home)" },
+    { value: "car", label: "Komponen Otomotif (Car)" },
+    { value: "briefcase", label: "Asset (Briefcase)" },
+    { value: "tool", label: "Peralatan (Wrench)" },
+    { value: "book-open", label: "Koleksi (Book)" },
+    { value: "gem", label: "Perhiasan (Gem)" },
+    { value: "leaf", label: "Hewan & Pertanian (Leaf)" },
+    { value: "building-2", label: "Bisnis (Building)" },
+  ];
 
-    const handleAddCategory = async () => {
-        if (!newCategory.trim()) return;
-        const result = await addCategory(newCategory);
-        if (result.success) setNewCategory("");
-        else alert(result.message);
-    };
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  const handleAddCategory = async () => {
+    if (!newCategory.trim()) return;
+    const result = await addCategory(newCategory, newCategoryIcon);
+    if (result.success) setNewCategory("");
+    else alert(result.message);
+  };
 
     const handleAddReason = async () => {
         if (!newReason.trim()) return;
@@ -86,7 +102,7 @@
                 ))}
 
                 {/* Input Tambah Kategori */}
-                <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+            <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
                     <input
                         type="text"
                         value={newCategory}
@@ -95,6 +111,17 @@
                         placeholder="Tambah kategori baru..."
                         onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
                     />
+                    <select
+                        value={newCategoryIcon}
+                        onChange={(e) => setNewCategoryIcon(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+                    >
+                        {iconOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                    </select>
                     <Button variant="primary" size="sm" onClick={handleAddCategory} disabled={loading}>
                         + Tambah
                     </Button>
