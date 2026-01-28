@@ -13,7 +13,9 @@ class UserCategoriesController extends Controller
     public function index(): JsonResponse
     {
         $categories = Category::orderBy('name')->get();
-        $counts = Product::selectRaw('category, COUNT(*) as total')
+        // Hanya hitung produk yang aktif agar sesuai dengan tampilan dashboard/landing page user
+        $counts = Product::where('status', 'aktif')
+            ->selectRaw('category, COUNT(*) as total')
             ->groupBy('category')
             ->pluck('total', 'category');
 
