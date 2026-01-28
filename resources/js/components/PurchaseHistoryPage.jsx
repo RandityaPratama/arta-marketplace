@@ -23,6 +23,7 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
     const [notification, setNotification] = useState({ show: false, message: "", type: "" });
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState({ id: null, type: null });
 
   useEffect(() => {
     const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
@@ -60,7 +61,11 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
       const result = await response.json();
       
       if (result.success) {
-        setTransactions(result.data);
+        const filtered = (result.data || []).filter(trx => {
+          const isAutoCanceled = trx?.status === 'canceled' && trx?.payment_details?.auto_canceled;
+          return !isAutoCanceled;
+        });
+        setTransactions(filtered);
       }
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -138,7 +143,26 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
     }
   };
 
-  const getStatusBadge = (status) => {
+  const isCodTransaction = (trx) => {
+    return trx.payment_type === 'cod' || (trx.order_id || '').startsWith('COD-');
+  };
+
+  const getStatusBadge = (trx) => {
+    const status = trx.status;
+    const isCod = isCodTransaction(trx);
+
+    if (isCod) {
+      if (status === 'processing' || status === 'pending') {
+        return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">COD - Dalam Proses</span>;
+      }
+      if (status === 'paid') {
+        return <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">COD - Selesai</span>;
+      }
+      if (status === 'canceled') {
+        return <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">COD - Dibatalkan</span>;
+      }
+    }
+
     switch (status) {
       case 'paid':
       case 'settlement':
@@ -148,10 +172,67 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
         return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">Menunggu Pembayaran</span>;
       case 'deny':
       case 'cancel':
+      case 'canceled':
       case 'expire':
         return <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Gagal / Kadaluarsa</span>;
       default:
         return <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs">{status}</span>;
+    }
+  };
+
+  const handleCompleteCod = async (transactionId) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    setActionLoading({ id: transactionId, type: 'complete' });
+    try {
+      const response = await fetch(`${API_URL}/transactions/${transactionId}/complete`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Gagal menyelesaikan COD');
+      }
+
+      setNotification({ show: true, message: "COD diselesaikan. Produk otomatis terjual.", type: "success" });
+      fetchTransactions();
+    } catch (error) {
+      setNotification({ show: true, message: error.message || "Gagal menyelesaikan COD", type: "error" });
+    } finally {
+      setActionLoading({ id: null, type: null });
+    }
+  };
+
+  const handleCancelCod = async (transactionId) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    setActionLoading({ id: transactionId, type: 'cancel' });
+    try {
+      const response = await fetch(`${API_URL}/transactions/${transactionId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Gagal membatalkan COD');
+      }
+
+      setNotification({ show: true, message: "COD dibatalkan.", type: "success" });
+      fetchTransactions();
+    } catch (error) {
+      setNotification({ show: true, message: error.message || "Gagal membatalkan COD", type: "error" });
+    } finally {
+      setActionLoading({ id: null, type: null });
     }
   };
 
@@ -217,10 +298,29 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
                   })}
                 </td>
                         <td className="px-6 py-4">
-                  {getStatusBadge(trx.status)}
+                  {getStatusBadge(trx)}
                         </td>
                         <td className="px-6 py-4">
-                  {trx.status === 'pending' ? (
+                  {isCodTransaction(trx) && (trx.status === 'processing' || trx.status === 'pending') ? (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleCompleteCod(trx.id)}
+                        disabled={actionLoading.id === trx.id}
+                      >
+                        {actionLoading.id === trx.id && actionLoading.type === 'complete' ? "Memproses..." : "Selesaikan"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCancelCod(trx.id)}
+                        disabled={actionLoading.id === trx.id}
+                      >
+                        {actionLoading.id === trx.id && actionLoading.type === 'cancel' ? "Memproses..." : "Batalkan"}
+                      </Button>
+                    </div>
+                  ) : trx.status === 'pending' ? (
                     <Button
                       variant="primary"
                       size="sm"

@@ -145,6 +145,102 @@ class UserPaymentController extends Controller
         }
     }
 
+    public function checkoutCod(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|exists:products,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $user = Auth::user();
+            $product = Product::with('user')->findOrFail($request->product_id);
+
+            if ($product->user_id == $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak bisa membeli produk sendiri'
+                ], 400);
+            }
+
+            if ($product->status !== 'aktif') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Produk tidak tersedia untuk dibeli'
+                ], 400);
+            }
+
+            $existingTransaction = Transaction::where('user_id', $user->id)
+                ->where('product_id', $product->id)
+                ->whereIn('status', ['pending', 'processing'])
+                ->where(function ($q) {
+                    $q->where('payment_type', 'cod')
+                      ->orWhere('order_id', 'like', 'COD-%');
+                })
+                ->first();
+
+            if ($existingTransaction) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Anda memiliki transaksi tertunda untuk produk ini',
+                    'data' => [
+                        'transaction_id' => $existingTransaction->id,
+                        'order_id' => $existingTransaction->order_id,
+                        'amount' => $existingTransaction->amount,
+                        'product_name' => $product->name,
+                    ]
+                ], 200);
+            }
+
+            $orderId = 'COD-' . $user->id . '-' . time() . '-' . rand(100, 999);
+
+            $transaction = Transaction::create([
+                'order_id' => $orderId,
+                'user_id' => $user->id,
+                'product_id' => $product->id,
+                'seller_id' => $product->user_id,
+                'amount' => $product->price,
+                'status' => 'processing',
+                'payment_type' => 'cod',
+                'payment_details' => [
+                    'method' => 'cod',
+                ],
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi COD berhasil dibuat',
+                'data' => [
+                    'transaction_id' => $transaction->id,
+                    'order_id' => $orderId,
+                    'amount' => $transaction->amount,
+                    'product_name' => $product->name,
+                ]
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Checkout COD Error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses COD',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function notificationHandler(Request $request)
     {
         try {
@@ -256,6 +352,9 @@ class UserPaymentController extends Controller
                             Log::error('Gagal mencatat aktivitas pembelian', ['error' => $e->getMessage()]);
                         }
                     }
+
+                    // Batalkan transaksi lain untuk produk yang sama agar tidak muncul di riwayat pembeli lain
+                    $this->autoCancelCompetingTransactions($trx);
                 }
             }
 
@@ -272,6 +371,16 @@ class UserPaymentController extends Controller
         $user = Auth::user();
         $transactions = Transaction::with(['product', 'seller'])
             ->where('user_id', $user->id)
+            ->where(function ($q) {
+                $q->where('status', '!=', 'canceled')
+                  ->orWhere(function ($q2) {
+                      $q2->where('status', 'canceled')
+                         ->where(function ($q3) {
+                             $q3->whereNull('payment_details->auto_canceled')
+                                ->orWhere('payment_details->auto_canceled', '!=', true);
+                         });
+                  });
+            })
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -279,5 +388,163 @@ class UserPaymentController extends Controller
             'success' => true,
             'data' => $transactions
         ]);
+    }
+
+    public function completeCod(Request $request, $id)
+    {
+        $user = Auth::user();
+        $trx = Transaction::with('product')->where('id', $id)->where('user_id', $user->id)->first();
+
+        if (!$trx) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak ditemukan'
+            ], 404);
+        }
+
+        if ($trx->payment_type !== 'cod') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi bukan COD'
+            ], 400);
+        }
+
+        if ($trx->status !== 'processing') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak dapat diselesaikan'
+            ], 400);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $trx->update([
+                'status' => 'paid',
+                'payment_details' => array_merge($trx->payment_details ?? [], [
+                    'completed_at' => now()->toDateTimeString(),
+                ]),
+            ]);
+
+            $product = $trx->product;
+            if ($product) {
+                $product->update(['status' => 'terjual']);
+
+                \App\Services\NotificationService::createPaymentSuccessNotification(
+                    $trx->user_id,
+                    $product->name
+                );
+
+                \App\Services\NotificationService::createProductSoldNotification(
+                    $trx->seller_id,
+                    $product->name
+                );
+
+                try {
+                    $buyer = \App\Models\User::find($trx->user_id);
+                    if ($buyer) {
+                        Activity::create([
+                            'user_id' => $buyer->id,
+                            'action' => $buyer->name . ' menyelesaikan COD untuk produk ' . $product->name,
+                            'type' => 'transaksi',
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Gagal mencatat aktivitas COD', ['error' => $e->getMessage()]);
+                }
+            }
+
+            // Batalkan transaksi lain untuk produk yang sama
+            $this->autoCancelCompetingTransactions($trx);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi COD diselesaikan'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Complete COD Error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyelesaikan COD',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function cancelCod(Request $request, $id)
+    {
+        $user = Auth::user();
+        $trx = Transaction::where('id', $id)->where('user_id', $user->id)->first();
+
+        if (!$trx) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak ditemukan'
+            ], 404);
+        }
+
+        if ($trx->payment_type !== 'cod') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi bukan COD'
+            ], 400);
+        }
+
+        if ($trx->status !== 'processing') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak dapat dibatalkan'
+            ], 400);
+        }
+
+        try {
+            $trx->update([
+                'status' => 'canceled',
+                'payment_details' => array_merge($trx->payment_details ?? [], [
+                    'canceled_at' => now()->toDateTimeString(),
+                ]),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi COD dibatalkan'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Cancel COD Error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membatalkan COD',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    protected function autoCancelCompetingTransactions(Transaction $paidTransaction): void
+    {
+        try {
+            $others = Transaction::where('product_id', $paidTransaction->product_id)
+                ->where('id', '!=', $paidTransaction->id)
+                ->whereIn('status', ['pending', 'processing', 'challenge'])
+                ->get();
+
+            foreach ($others as $trx) {
+                $details = $trx->payment_details ?? [];
+                $details['auto_canceled'] = true;
+                $details['auto_canceled_reason'] = 'product_sold';
+                $details['auto_canceled_at'] = now()->toDateTimeString();
+
+                $trx->update([
+                    'status' => 'canceled',
+                    'payment_details' => $details,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Auto-cancel competing transactions failed: ' . $e->getMessage());
+        }
     }
 }

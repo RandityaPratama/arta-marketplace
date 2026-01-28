@@ -63,7 +63,10 @@ Route::middleware('auth:sanctum', 'isUser')->group(function () {
     Route::post('/reports', [UserReportController::class, 'store']);
     Route::get('/my-reports', [UserReportController::class, 'myReports']);
     Route::post('/checkout', [UserPaymentController::class, 'checkout']);
+    Route::post('/checkout/cod', [UserPaymentController::class, 'checkoutCod']);
     Route::get('/transactions', [UserPaymentController::class, 'index']);
+    Route::post('/transactions/{id}/complete', [UserPaymentController::class, 'completeCod']);
+    Route::post('/transactions/{id}/cancel', [UserPaymentController::class, 'cancelCod']);
 
     // Notification routes
     Route::get('/notifications', [UserNotificationController::class, 'index']);

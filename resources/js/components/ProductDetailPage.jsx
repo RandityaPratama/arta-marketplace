@@ -32,9 +32,11 @@ export default function ProductDetailPage() {
   const isFavorited = favorites.has(parseInt(id));
 
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [selectedReasonId, setSelectedReasonId] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
   const [loadingPayment, setLoadingPayment] = useState(false);
+  const [loadingCod, setLoadingCod] = useState(false);
 
   // ✅ Fetch product data dengan favorites count terbaru
   useEffect(() => {
@@ -215,6 +217,45 @@ export default function ProductDetailPage() {
     }
   };
 
+  const handleBuyCod = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        setNotification({ show: true, message: "Silakan login untuk membeli", type: "error" });
+        return;
+    }
+
+    setLoadingCod(true);
+
+    try {
+        const response = await fetch(`${API_URL}/checkout/cod`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ product_id: product.id })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            const errorMessage = result.error 
+                ? `${result.message}: ${result.error}` 
+                : (result.message || "Gagal memproses COD");
+            throw new Error(errorMessage);
+        }
+
+        setNotification({ show: true, message: "COD dibuat. Silakan cek riwayat pembelian.", type: "success" });
+        setIsPurchaseModalOpen(false);
+        navigate('/history');
+    } catch (error) {
+        console.error("Checkout COD Error:", error);
+        setNotification({ show: true, message: error.message, type: "error" });
+    } finally {
+        setLoadingCod(false);
+    }
+  };
+
   return (
     <>
       <NavbarAfter />
@@ -327,10 +368,10 @@ export default function ProductDetailPage() {
                   variant="primary" 
                   size="md" 
                   className="flex-1" 
-                  onClick={handleBuyNow}
-                  disabled={loadingPayment}
+                  onClick={() => setIsPurchaseModalOpen(true)}
+                  disabled={loadingPayment || loadingCod}
                 >
-                  {loadingPayment ? "Memproses..." : "Beli Sekarang"}
+                  {(loadingPayment || loadingCod) ? "Memproses..." : "Beli Sekarang"}
                 </Button>
                 <Button variant="outline" size="md" className="flex-1" onClick={handleContactSeller}>
                   Hubungi Penjual
@@ -419,6 +460,49 @@ export default function ProductDetailPage() {
                   {loading ? "Mengirim..." : "Kirim Laporan"}
                 </Button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {isPurchaseModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-6 w-full max-w-md">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Pilih Metode Pembelian</h3>
+              <p className="text-sm text-gray-600 mb-6">Silakan pilih metode yang Anda inginkan.</p>
+
+              <div className="space-y-3 mb-6">
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="w-full"
+                  onClick={() => {
+                    setIsPurchaseModalOpen(false);
+                    handleBuyNow();
+                  }}
+                  disabled={loadingPayment}
+                >
+                  {loadingPayment ? "Memproses..." : "Beli Sekarang (Online)"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="w-full"
+                  onClick={handleBuyCod}
+                  disabled={loadingCod}
+                >
+                  {loadingCod ? "Memproses..." : "COD (Bayar di Tempat)"}
+                </Button>
+              </div>
+
+              <Button
+                variant="outline"
+                size="md"
+                className="w-full"
+                onClick={() => setIsPurchaseModalOpen(false)}
+                disabled={loadingPayment || loadingCod}
+              >
+                Batal
+              </Button>
             </div>
           </div>
         )}
