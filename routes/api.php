@@ -43,6 +43,7 @@ Route::middleware('auth:sanctum', 'isUser')->group(function () {
     Route::post('/products', [UserProductController::class, 'addProduct']);
     Route::get('/products', [UserProductController::class, 'getProducts']);
     Route::get('/products/{id}', [UserProductController::class, 'getProductById']);
+    Route::put('/products/{id}', [UserProductController::class, 'update']);
     Route::delete('/products/{id}', [UserProductController::class, 'deleteProduct']);
     Route::get('/favorites', [UserFavoriteController::class, 'index']);
     Route::post('/favorites/toggle', [UserFavoriteController::class, 'toggle']);

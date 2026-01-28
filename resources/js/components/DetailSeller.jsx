@@ -73,7 +73,7 @@
         return Math.round(price * (1 - disc / 100)).toString();
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         let finalPrice = formData.price;
         let onDiscount = false;
 
@@ -88,15 +88,24 @@
         onDiscount,
         };
 
-        updateProduct(product.id, updatedProduct);
+        try {
+        await updateProduct(product.id, updatedProduct);
         setIsEditing(false);
-        
+        setFormData((prev) => ({ ...prev, ...updatedProduct }));
+
         // ✅ Notifikasi toast
         setNotification({ 
-        show: true, 
-        message: "Produk berhasil diperbarui!", 
-        type: "success" 
+            show: true, 
+            message: "Produk berhasil diperbarui!", 
+            type: "success" 
         });
+        } catch (error) {
+        setNotification({ 
+            show: true, 
+            message: "Gagal memperbarui produk: " + (error.message || "Terjadi kesalahan"), 
+            type: "error" 
+        });
+        }
     };
 
     const handleCancel = () => {
@@ -128,15 +137,22 @@
         }
     };
 
-    const toggleStatus = () => {
+    const toggleStatus = async () => {
         const newStatus = product.status === "aktif" ? "terjual" : "aktif";
-        updateProduct(product.id, { status: newStatus });
-        
+        try {
+        await updateProduct(product.id, { status: newStatus });
         setNotification({ 
-        show: true, 
-        message: `Status diubah menjadi: ${newStatus === "terjual" ? "Terjual" : "Aktif"}`, 
-        type: "success" 
+            show: true, 
+            message: `Status diubah menjadi: ${newStatus === "terjual" ? "Terjual" : "Aktif"}`, 
+            type: "success" 
         });
+        } catch (error) {
+        setNotification({ 
+            show: true, 
+            message: "Gagal mengubah status: " + (error.message || "Terjadi kesalahan"), 
+            type: "error" 
+        });
+        }
     };
 
     const formatPrice = (price) => {

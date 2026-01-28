@@ -245,15 +245,108 @@ const addProduct = async (productData) => {
     }
 };
 
-// ✅ Update produk yang ada
-const updateProduct = (productId, updatedData) => {
-    setProducts(prev => 
-    prev.map(product => 
-        product.id === productId 
-        ? { ...product, ...updatedData }
-        : product
-    )
-    );
+// ✅ Update produk yang ada (sync ke backend)
+const updateProduct = async (productId, updatedData) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('Unauthorized');
+    }
+
+    // Map field frontend -> backend (snake_case)
+    const payload = {};
+    const allowedFields = [
+        'name',
+        'category',
+        'price',
+        'originalPrice',
+        'original_price',
+        'discount',
+        'location',
+        'condition',
+        'description',
+        'status'
+    ];
+
+    Object.entries(updatedData || {}).forEach(([key, value]) => {
+        if (!allowedFields.includes(key)) return;
+        if (value === undefined) return;
+
+        if (key === 'originalPrice') {
+            payload.original_price = value;
+        } else if (key === 'original_price') {
+            payload.original_price = value;
+        } else {
+            payload[key] = value;
+        }
+    });
+
+    try {
+        const response = await fetch(`${API_URL}/products/${productId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Gagal memperbarui produk');
+        }
+
+        const normalizedUpdate = { ...updatedData };
+        if (normalizedUpdate.original_price !== undefined && normalizedUpdate.originalPrice === undefined) {
+            normalizedUpdate.originalPrice = normalizedUpdate.original_price;
+            delete normalizedUpdate.original_price;
+        }
+
+        const mergeProduct = (product) => {
+            if (product.id !== productId) return product;
+
+            let merged = { ...product, ...normalizedUpdate };
+
+            if (result.data) {
+                const item = result.data;
+                let itemImages = item.images;
+                if (typeof itemImages === 'string') {
+                    try { itemImages = JSON.parse(itemImages); } catch (e) { itemImages = []; }
+                }
+                if (!Array.isArray(itemImages)) itemImages = [];
+
+                merged = {
+                    ...merged,
+                    ...item,
+                    originalPrice: item.original_price ?? merged.originalPrice,
+                    sellerName: item.seller_name ?? merged.sellerName,
+                    sellerAvatar: item.seller_avatar ?? merged.sellerAvatar,
+                    sellerId: item.seller_id ?? merged.sellerId,
+                    publishedDate: item.published_at ?? merged.publishedDate,
+                    onDiscount: item.discount ? true : false,
+                    is_mine: item.is_mine ?? merged.is_mine,
+                    favoritesCount: item.favorites_count ?? merged.favoritesCount,
+                    images: itemImages.length ? itemImages.map(path => `${STORAGE_URL}/${path}`) : merged.images
+                };
+            }
+
+            if (normalizedUpdate.discount !== undefined || normalizedUpdate.originalPrice !== undefined) {
+                const discountValue = merged.discount ?? normalizedUpdate.discount;
+                merged.onDiscount = !!discountValue;
+            }
+
+            return merged;
+        };
+
+        setProducts(prev => prev.map(mergeProduct));
+        setMyProducts(prev => prev.map(mergeProduct));
+
+        return result;
+    } catch (error) {
+        console.error("Error updating product:", error);
+        throw error;
+    }
 };
 
 // ✅ Hapus produk
