@@ -85,14 +85,17 @@ export default function SellPage() {
   };
 
   const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
+    const input = e.target;
+    const files = Array.from(input.files || []);
     if (files.length + images.length > 5) {
       setNotification({ show: true, message: "Maksimal 5 gambar!", type: "error" });
+      input.value = "";
       return;
     }
     const newImages = files.map(file => URL.createObjectURL(file));
     setImages(prev => [...prev, ...newImages]);
     setImageFiles(prev => [...prev, ...files]); // ✅ Simpan file asli untuk diupload
+    input.value = "";
   };
 
   const handleRemoveImage = (index) => {
@@ -476,3 +479,4 @@ export default function SellPage() {
     </>
   );
 }
+
