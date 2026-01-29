@@ -109,7 +109,7 @@ class NotificationService
     {
         return self::create($buyerId, self::TYPE_TRANSACTION, [
             'title' => 'Pembayaran Berhasil',
-            'message' => 'Pembayaran untuk produk \'{product_name}\' telah berhasil',
+            'message' => 'Pembayaran untuk produk \'{product_name}\' telah berhasil. Silakan cek riwayat pembelian.',
             'link' => '/history',
             'product_name' => $productName,
         ]);

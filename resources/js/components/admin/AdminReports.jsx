@@ -14,6 +14,7 @@ export default function AdminReports() {
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [previewImage, setPreviewImage] = useState(null);
 
   const getToken = () => localStorage.getItem('admin_token');
 
@@ -77,6 +78,14 @@ export default function AdminReports() {
           const imageUrl = report.product?.images && report.product.images.length > 0
             ? `${STORAGE_URL}/${report.product.images[0]}` 
             : "https://via.placeholder.com/60x60?text=No+Image";
+          const evidenceImages = Array.isArray(report.evidence_images) ? report.evidence_images : [];
+          const evidenceUrls = evidenceImages
+            .filter((path) => !!path)
+            .map((path) => (
+              typeof path === 'string' && path.startsWith('http')
+                ? path
+                : `${STORAGE_URL}/${path}`
+            ));
           
           return {
             id: report.id,
@@ -103,7 +112,8 @@ export default function AdminReports() {
             transactionId: report.transaction_id,
             buyer: report.reporter?.name,
             purchaseDate: report.transaction ? new Date(report.transaction.created_at).toLocaleDateString('id-ID') : '-',
-            transactionStatus: report.transaction?.status || '-'
+            transactionStatus: report.transaction?.status || '-',
+            evidenceImages: evidenceUrls
           };
         });
         
@@ -408,17 +418,26 @@ export default function AdminReports() {
                   </td>
                   {!isAdTab && (
                     <td className="px-4 py-4">
-                      <div className="flex gap-1.5">
-                        {report.evidenceImages?.map((img, idx) => (
-                          <div key={idx} className="w-10 h-10 bg-gray-200 rounded overflow-hidden">
-                            <img 
-                              src={img} 
-                              alt={`Bukti ${idx + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ))}
-                      </div>
+                      {report.evidenceImages && report.evidenceImages.length > 0 ? (
+                        <div className="flex gap-1.5">
+                          {report.evidenceImages.map((img, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setPreviewImage(img)}
+                              className="w-10 h-10 bg-gray-200 rounded overflow-hidden cursor-pointer hover:opacity-90"
+                            >
+                              <img 
+                                src={img} 
+                                alt={`Bukti ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
                     </td>
                   )}
                   <td className="px-4 py-4">
@@ -531,6 +550,34 @@ export default function AdminReports() {
             </tbody>
           </table>
         </div>
+        )}
+
+        {previewImage && (
+          <div
+            className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+            onClick={() => setPreviewImage(null)}
+          >
+            <div
+              className="relative bg-white rounded-lg shadow-xl max-w-3xl w-full"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+                aria-label="Tutup"
+              >
+                ✕
+              </button>
+              <div className="p-4">
+                <img
+                  src={previewImage}
+                  alt="Bukti laporan"
+                  className="w-full max-h-[80vh] object-contain rounded-md"
+                />
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </AdminLayout>

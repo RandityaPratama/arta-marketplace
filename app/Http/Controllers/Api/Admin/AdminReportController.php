@@ -52,6 +52,14 @@ class AdminReportController extends Controller
 
             // Format data untuk frontend
             $formattedReports = $reports->map(function($report) {
+                $evidenceImages = $report->evidence_images;
+                if (is_string($evidenceImages)) {
+                    $evidenceImages = json_decode($evidenceImages, true);
+                }
+                if (!is_array($evidenceImages)) {
+                    $evidenceImages = [];
+                }
+
                 return [
                     'id' => $report->id,
                     'report_type' => $report->report_type,
@@ -78,6 +86,7 @@ class AdminReportController extends Controller
                         'status' => $report->transaction->status,
                     ] : null,
                     'reason' => $report->reportReason ? $report->reportReason->reason : 'Unknown',
+                    'evidence_images' => $evidenceImages,
                     'status' => $report->status,
                     'admin_notes' => $report->admin_notes,
                     'handler' => $report->handler ? [
@@ -111,6 +120,14 @@ class AdminReportController extends Controller
             $report = Report::with(['reporter', 'product', 'seller', 'reportReason', 'handler', 'transaction'])
                 ->findOrFail($id);
 
+            $evidenceImages = $report->evidence_images;
+            if (is_string($evidenceImages)) {
+                $evidenceImages = json_decode($evidenceImages, true);
+            }
+            if (!is_array($evidenceImages)) {
+                $evidenceImages = [];
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -141,6 +158,7 @@ class AdminReportController extends Controller
                         'status' => $report->transaction->status,
                     ] : null,
                     'reason' => $report->reportReason ? $report->reportReason->reason : 'Unknown',
+                    'evidence_images' => $evidenceImages,
                     'status' => $report->status,
                     'admin_notes' => $report->admin_notes,
                     'handler' => $report->handler ? [

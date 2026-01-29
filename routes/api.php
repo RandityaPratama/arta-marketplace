@@ -67,6 +67,7 @@ Route::middleware('auth:sanctum', 'isUser')->group(function () {
     Route::get('/transactions', [UserPaymentController::class, 'index']);
     Route::post('/transactions/{id}/complete', [UserPaymentController::class, 'completeCod']);
     Route::post('/transactions/{id}/cancel', [UserPaymentController::class, 'cancelCod']);
+    Route::post('/transactions/{id}/sync', [UserPaymentController::class, 'syncStatus']);
 
     // Notification routes
     Route::get('/notifications', [UserNotificationController::class, 'index']);

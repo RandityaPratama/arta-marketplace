@@ -186,10 +186,24 @@ export default function ProductDetailPage() {
         }
 
         const snapToken = result.data.snap_token;
+        const transactionId = result.data.transaction_id;
 
         if (window.snap) {
             window.snap.pay(snapToken, {
-                onSuccess: function(result){
+                onSuccess: async function(result){
+                    if (transactionId) {
+                        try {
+                            await fetch(`${API_URL}/transactions/${transactionId}/sync`, {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Accept': 'application/json'
+                                }
+                            });
+                        } catch (syncError) {
+                            console.error("Sync transaksi gagal:", syncError);
+                        }
+                    }
                     setNotification({ show: true, message: "Pembayaran Berhasil!", type: "success" });
                     navigate('/history'); 
                 },

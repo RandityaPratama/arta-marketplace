@@ -96,6 +96,11 @@ class UserPaymentController extends Controller
                 'status' => 'pending',
             ]);
 
+            $finishRedirectUrl = env('MIDTRANS_FINISH_URL');
+            if (!$finishRedirectUrl) {
+                $finishRedirectUrl = rtrim(config('app.url', 'http://127.0.0.1:8000'), '/') . '/history';
+            }
+
             $params = [
                 'transaction_details' => [
                     'order_id' => $orderId,
@@ -113,7 +118,12 @@ class UserPaymentController extends Controller
                         'quantity' => 1,
                         'name' => substr($product->name, 0, 50),
                     ]
-                ]
+                ],
+                'callbacks' => [
+                    'finish' => $finishRedirectUrl,
+                    'error' => $finishRedirectUrl,
+                    'pending' => $finishRedirectUrl,
+                ],
             ];
 
             $snapToken = Snap::getSnapToken($params);
@@ -302,11 +312,11 @@ class UserPaymentController extends Controller
                     if ($fraud == 'challenge') {
                         $status = 'challenge';
                     } else {
-                        $status = 'paid';
+                        $status = 'shipping';
                     }
                 }
             } else if ($transaction == 'settlement') {
-                $status = 'paid';
+                $status = 'shipping';
             } else if ($transaction == 'pending') {
                 $status = 'pending';
             } else if ($transaction == 'deny') {
@@ -318,13 +328,15 @@ class UserPaymentController extends Controller
             }
 
             if ($status) {
+                $previousStatus = $trx->status;
+
                 $trx->update([
                     'status' => $status,
                     'payment_type' => $type,
                     'payment_details' => $request->all()
                 ]);
 
-                if ($status === 'paid') {
+                if ($status === 'shipping' && $previousStatus !== 'shipping') {
                     $product = Product::find($trx->product_id);
                     if ($product) {
                         $product->update(['status' => 'terjual']);
@@ -344,7 +356,7 @@ class UserPaymentController extends Controller
                             if ($user) {
                                 Activity::create([
                                     'user_id' => $user->id,
-                                    'action' => $user->name . ' membeli produk ' . $product->name,
+                                    'action' => $user->name . ' menyelesaikan pembayaran produk ' . $product->name,
                                     'type' => 'transaksi',
                                 ]);
                             }
@@ -402,74 +414,101 @@ class UserPaymentController extends Controller
             ], 404);
         }
 
-        if ($trx->payment_type !== 'cod') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaksi bukan COD'
-            ], 400);
-        }
-
-        if ($trx->status !== 'processing') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaksi tidak dapat diselesaikan'
-            ], 400);
+        if ($trx->payment_type === 'cod') {
+            if ($trx->status !== 'processing') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaksi tidak dapat diselesaikan'
+                ], 400);
+            }
+        } else {
+            if ($trx->status !== 'shipping') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaksi belum bisa diselesaikan'
+                ], 400);
+            }
         }
 
         try {
             DB::beginTransaction();
 
-            $trx->update([
-                'status' => 'paid',
-                'payment_details' => array_merge($trx->payment_details ?? [], [
-                    'completed_at' => now()->toDateTimeString(),
-                ]),
-            ]);
+            if ($trx->payment_type === 'cod') {
+                $trx->update([
+                    'status' => 'paid',
+                    'payment_details' => array_merge($trx->payment_details ?? [], [
+                        'completed_at' => now()->toDateTimeString(),
+                    ]),
+                ]);
 
-            $product = $trx->product;
-            if ($product) {
-                $product->update(['status' => 'terjual']);
+                $product = $trx->product;
+                if ($product) {
+                    $product->update(['status' => 'terjual']);
 
-                \App\Services\NotificationService::createPaymentSuccessNotification(
-                    $trx->user_id,
-                    $product->name
-                );
+                    \App\Services\NotificationService::createPaymentSuccessNotification(
+                        $trx->user_id,
+                        $product->name
+                    );
 
-                \App\Services\NotificationService::createProductSoldNotification(
-                    $trx->seller_id,
-                    $product->name
-                );
+                    \App\Services\NotificationService::createProductSoldNotification(
+                        $trx->seller_id,
+                        $product->name
+                    );
 
-                try {
-                    $buyer = \App\Models\User::find($trx->user_id);
-                    if ($buyer) {
-                        Activity::create([
-                            'user_id' => $buyer->id,
-                            'action' => $buyer->name . ' menyelesaikan COD untuk produk ' . $product->name,
-                            'type' => 'transaksi',
-                        ]);
+                    try {
+                        $buyer = \App\Models\User::find($trx->user_id);
+                        if ($buyer) {
+                            Activity::create([
+                                'user_id' => $buyer->id,
+                                'action' => $buyer->name . ' menyelesaikan COD untuk produk ' . $product->name,
+                                'type' => 'transaksi',
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Gagal mencatat aktivitas COD', ['error' => $e->getMessage()]);
                     }
-                } catch (\Exception $e) {
-                    Log::error('Gagal mencatat aktivitas COD', ['error' => $e->getMessage()]);
+                }
+
+                // Batalkan transaksi lain untuk produk yang sama
+                $this->autoCancelCompetingTransactions($trx);
+            } else {
+                $trx->update([
+                    'status' => 'paid',
+                    'payment_details' => array_merge($trx->payment_details ?? [], [
+                        'delivered_at' => now()->toDateTimeString(),
+                    ]),
+                ]);
+
+                $product = $trx->product;
+                if ($product) {
+                    try {
+                        $buyer = \App\Models\User::find($trx->user_id);
+                        if ($buyer) {
+                            Activity::create([
+                                'user_id' => $buyer->id,
+                                'action' => $buyer->name . ' mengonfirmasi barang telah sampai untuk produk ' . $product->name,
+                                'type' => 'transaksi',
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Gagal mencatat aktivitas pengiriman selesai', ['error' => $e->getMessage()]);
+                    }
                 }
             }
-
-            // Batalkan transaksi lain untuk produk yang sama
-            $this->autoCancelCompetingTransactions($trx);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Transaksi COD diselesaikan'
+                'message' => 'Transaksi berhasil diselesaikan'
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Complete COD Error: ' . $e->getMessage());
+            Log::error('Complete Transaction Error: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menyelesaikan COD',
+                'message' => 'Gagal menyelesaikan transaksi',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -522,6 +561,115 @@ class UserPaymentController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function syncStatus(Request $request, $id)
+    {
+        $user = Auth::user();
+        $trx = Transaction::with('product')->where('id', $id)->where('user_id', $user->id)->first();
+
+        if (!$trx) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak ditemukan'
+            ], 404);
+        }
+
+        if ($trx->payment_type === 'cod' || str_starts_with($trx->order_id, 'COD-')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi COD tidak perlu sinkronisasi'
+            ], 400);
+        }
+
+        try {
+            $statusResponse = \Midtrans\Transaction::status($trx->order_id);
+        } catch (\Exception $e) {
+            Log::error('Midtrans status sync error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil status pembayaran',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+
+        $transactionStatus = $statusResponse->transaction_status ?? null;
+        $paymentType = $statusResponse->payment_type ?? null;
+        $fraudStatus = $statusResponse->fraud_status ?? null;
+
+        $status = null;
+        if ($transactionStatus === 'capture') {
+            if ($paymentType === 'credit_card') {
+                if ($fraudStatus === 'challenge') {
+                    $status = 'challenge';
+                } else {
+                    $status = 'shipping';
+                }
+            }
+        } else if ($transactionStatus === 'settlement') {
+            $status = 'shipping';
+        } else if ($transactionStatus === 'pending') {
+            $status = 'pending';
+        } else if ($transactionStatus === 'deny') {
+            $status = 'failed';
+        } else if ($transactionStatus === 'expire') {
+            $status = 'expired';
+        } else if ($transactionStatus === 'cancel') {
+            $status = 'canceled';
+        }
+
+        if ($status && $status !== $trx->status) {
+            $previousStatus = $trx->status;
+            $details = json_decode(json_encode($statusResponse), true) ?? [];
+
+            $trx->update([
+                'status' => $status,
+                'payment_type' => $paymentType ?? $trx->payment_type,
+                'payment_details' => $details,
+            ]);
+
+            if ($status === 'shipping' && $previousStatus !== 'shipping') {
+                $product = $trx->product;
+                if ($product && $product->status !== 'terjual') {
+                    $product->update(['status' => 'terjual']);
+                }
+
+                \App\Services\NotificationService::createPaymentSuccessNotification(
+                    $trx->user_id,
+                    $product?->name ?? 'produk'
+                );
+
+                if ($product) {
+                    \App\Services\NotificationService::createProductSoldNotification(
+                        $trx->seller_id,
+                        $product->name
+                    );
+                }
+
+                try {
+                    $buyer = \App\Models\User::find($trx->user_id);
+                    if ($buyer && $product) {
+                        Activity::create([
+                            'user_id' => $buyer->id,
+                            'action' => $buyer->name . ' menyelesaikan pembayaran produk ' . $product->name,
+                            'type' => 'transaksi',
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Gagal mencatat aktivitas pembayaran', ['error' => $e->getMessage()]);
+                }
+
+                $this->autoCancelCompetingTransactions($trx);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status transaksi disinkronkan',
+            'data' => [
+                'status' => $trx->status
+            ]
+        ]);
     }
 
     protected function autoCancelCompetingTransactions(Transaction $paidTransaction): void

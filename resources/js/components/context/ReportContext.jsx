@@ -40,7 +40,7 @@ export const ReportProvider = ({ children }) => {
     }
   }, []);
 
-  const submitReport = useCallback(async (productId, reportReasonId, transactionId = null, reportType = 'iklan') => {
+  const submitReport = useCallback(async (productId, reportReasonId, transactionId = null, reportType = 'iklan', evidenceFiles = []) => {
     const token = getToken();
     if (!token) {
       throw new Error("Anda harus login terlebih dahulu");
@@ -48,25 +48,36 @@ export const ReportProvider = ({ children }) => {
 
     setLoading(true);
     try {
+      const formData = new FormData();
+      formData.append('product_id', productId);
+      formData.append('report_reason_id', reportReasonId);
+      if (transactionId) {
+        formData.append('transaction_id', transactionId);
+      }
+      if (reportType) {
+        formData.append('report_type', reportType);
+      }
+      if (Array.isArray(evidenceFiles) && evidenceFiles.length > 0) {
+        evidenceFiles.forEach((file) => {
+          formData.append('evidence_images[]', file);
+        });
+      }
+
       const response = await fetch(`${API_URL}/reports`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          product_id: productId,
-          report_reason_id: reportReasonId,
-          transaction_id: transactionId,
-          report_type: reportType
-        })
+        body: formData
       });
 
       const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.message || 'Gagal mengirim laporan');
+        const errors = result?.errors || {};
+        const firstError = Object.values(errors).flat()?.[0];
+        throw new Error(firstError || result.message || 'Gagal mengirim laporan');
       }
 
       return result;

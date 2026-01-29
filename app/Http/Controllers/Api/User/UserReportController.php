@@ -40,12 +40,19 @@ class UserReportController extends Controller
             'product_id' => 'required|exists:products,id',
             'report_reason_id' => 'required|exists:report_reasons,id',
             'transaction_id' => 'nullable|exists:transactions,id',
+            'evidence_images' => 'nullable|array',
+            'evidence_images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'evidence_images.*.image' => 'File bukti harus berupa gambar.',
+            'evidence_images.*.mimes' => 'Format foto bukti harus JPG, PNG, atau GIF.',
+            'evidence_images.*.max' => 'Ukuran file maksimal 2MB per foto.',
+            'evidence_images.array' => 'Format bukti tidak valid.',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validasi gagal',
+                'message' => $validator->errors()->first() ?: 'Validasi gagal',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -76,6 +83,13 @@ class UserReportController extends Controller
                 ], 400);
             }
 
+            $evidencePaths = [];
+            if ($request->hasFile('evidence_images')) {
+                foreach ($request->file('evidence_images') as $image) {
+                    $evidencePaths[] = $image->store('reports/evidence', 'public');
+                }
+            }
+
             $report = Report::create([
                 'reporter_id' => Auth::id(),
                 'product_id' => $request->product_id,
@@ -83,6 +97,7 @@ class UserReportController extends Controller
                 'report_reason_id' => $request->report_reason_id,
                 'transaction_id' => $transactionId,
                 'report_type' => $reportType,
+                'evidence_images' => $evidencePaths,
                 'status' => 'pending',
             ]);
 

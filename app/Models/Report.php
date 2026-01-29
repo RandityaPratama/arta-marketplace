@@ -16,6 +16,7 @@ class Report extends Model
         'transaction_id',
         'report_reason_id',
         'report_type',
+        'evidence_images',
         'status',
         'admin_notes',
         'handled_by',
@@ -24,6 +25,7 @@ class Report extends Model
 
     protected $casts = [
         'handled_at' => 'datetime',
+        'evidence_images' => 'array',
     ];
 
     /**

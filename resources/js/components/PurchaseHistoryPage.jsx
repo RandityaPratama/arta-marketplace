@@ -20,6 +20,9 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [reportData, setReportData] = useState({ productId: null, productName: "", transactionId: null });
     const [selectedReasonId, setSelectedReasonId] = useState(null);
+    const [evidenceFiles, setEvidenceFiles] = useState([]);
+    const [evidencePreviews, setEvidencePreviews] = useState([]);
+    const [evidenceInputKey, setEvidenceInputKey] = useState(0);
     const [notification, setNotification] = useState({ show: false, message: "", type: "" });
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +91,32 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
     const openReportModal = (productId, productName, transactionId) => {
         setReportData({ productId, productName, transactionId });
         setSelectedReasonId(null);
+        setEvidenceFiles([]);
+        setEvidencePreviews((prev) => {
+          prev.forEach((url) => URL.revokeObjectURL(url));
+          return [];
+        });
+        setEvidenceInputKey((key) => key + 1);
         setIsReportModalOpen(true);
+    };
+
+    const handleEvidenceChange = (event) => {
+        const files = Array.from(event.target.files || []);
+        const previews = files.map((file) => URL.createObjectURL(file));
+        setEvidencePreviews((prev) => {
+            prev.forEach((url) => URL.revokeObjectURL(url));
+            return previews;
+        });
+        setEvidenceFiles(files);
+    };
+
+    const resetEvidence = () => {
+        setEvidenceFiles([]);
+        setEvidencePreviews((prev) => {
+            prev.forEach((url) => URL.revokeObjectURL(url));
+            return [];
+        });
+        setEvidenceInputKey((key) => key + 1);
     };
 
     const submitReportForm = async () => {
@@ -98,8 +126,9 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
         }
         
         try {
-            await submitReport(reportData.productId, selectedReasonId, reportData.transactionId, 'transaksi');
+            await submitReport(reportData.productId, selectedReasonId, reportData.transactionId, 'transaksi', evidenceFiles);
             setIsReportModalOpen(false);
+            resetEvidence();
             
             setNotification({ 
                 show: true, 
@@ -120,10 +149,23 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
         }
     }, [notification.show]);
 
-  const handlePay = (snapToken) => {
+  const handlePay = (snapToken, transactionId) => {
     if (window.snap) {
       window.snap.pay(snapToken, {
-        onSuccess: function(result){
+        onSuccess: async function(result){
+          if (transactionId) {
+            try {
+              await fetch(`${API_URL}/transactions/${transactionId}/sync`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                  'Accept': 'application/json'
+                }
+              });
+            } catch (syncError) {
+              console.error("Sync transaksi gagal:", syncError);
+            }
+          }
           setNotification({ show: true, message: "Pembayaran Berhasil!", type: "success" });
           fetchTransactions(); 
         },
@@ -168,6 +210,8 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
       case 'settlement':
       case 'capture':
         return <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Berhasil</span>;
+      case 'shipping':
+        return <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Pengiriman</span>;
       case 'pending':
         return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">Menunggu Pembayaran</span>;
       case 'deny':
@@ -203,6 +247,34 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
       fetchTransactions();
     } catch (error) {
       setNotification({ show: true, message: error.message || "Gagal menyelesaikan COD", type: "error" });
+    } finally {
+      setActionLoading({ id: null, type: null });
+    }
+  };
+
+  const handleCompleteDelivery = async (transactionId) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    setActionLoading({ id: transactionId, type: 'delivery' });
+    try {
+      const response = await fetch(`${API_URL}/transactions/${transactionId}/complete`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Gagal menyelesaikan pengiriman');
+      }
+
+      setNotification({ show: true, message: "Pesanan ditandai sudah sampai.", type: "success" });
+      fetchTransactions();
+    } catch (error) {
+      setNotification({ show: true, message: error.message || "Gagal menyelesaikan pengiriman", type: "error" });
     } finally {
       setActionLoading({ id: null, type: null });
     }
@@ -320,11 +392,20 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
                         {actionLoading.id === trx.id && actionLoading.type === 'cancel' ? "Memproses..." : "Batalkan"}
                       </Button>
                     </div>
+                  ) : (!isCodTransaction(trx) && trx.status === 'shipping') ? (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleCompleteDelivery(trx.id)}
+                      disabled={actionLoading.id === trx.id}
+                    >
+                      {actionLoading.id === trx.id && actionLoading.type === 'delivery' ? "Memproses..." : "Selesaikan"}
+                    </Button>
                   ) : trx.status === 'pending' ? (
                     <Button
                       variant="primary"
                       size="sm"
-                      onClick={() => handlePay(trx.snap_token)}
+                      onClick={() => handlePay(trx.snap_token, trx.id)}
                     >
                       Bayar
                     </Button>
@@ -380,11 +461,39 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
                     </div>
                 </div>
 
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Upload Bukti (opsional)
+                    </label>
+                    <input
+                    key={evidenceInputKey}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleEvidenceChange}
+                    className="w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                    />
+                    {evidencePreviews.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {evidencePreviews.map((src, idx) => (
+                        <div key={idx} className="w-14 h-14 rounded-md overflow-hidden border border-gray-200">
+                            <img src={src} alt={`Bukti ${idx + 1}`} className="w-full h-full object-cover" />
+                        </div>
+                        ))}
+                    </div>
+                    ) : (
+                    <p className="text-xs text-gray-500 mt-2">Maksimal 2MB per foto. Format: JPG/PNG/GIF.</p>
+                    )}
+                </div>
+
                 <div className="flex gap-3">
                     <Button
                     variant="outline"
                     size="md"
-                    onClick={() => setIsReportModalOpen(false)}
+                    onClick={() => {
+                        setIsReportModalOpen(false);
+                        resetEvidence();
+                    }}
                     className="flex-1"
                     >
                     Batal
