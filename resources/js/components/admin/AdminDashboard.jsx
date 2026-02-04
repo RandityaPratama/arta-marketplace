@@ -242,7 +242,7 @@ function OverviewContent() {
             {/* Produk Terbaru */}
             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Produk Terbaru ({dashboardData?.latest_products?.length || 0})
+                Produk Terbaru dan Aktif({dashboardData?.latest_products?.length || 0})
               </h3>
               {dashboardData?.latest_products && dashboardData.latest_products.length > 0 ? (
                 <div className="space-y-4">
@@ -272,11 +272,11 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: "overview", label: "Overview" },
-    { id: "users", label: "Users" },
-    { id: "products", label: "Products" },
-    { id: "reports", label: "Reports" },
-    { id: "activity", label: "Activity" },
-    { id: "settings", label: "Settings" },
+    { id: "users", label: "User" },
+    { id: "products", label: "Produk" },
+    { id: "reports", label: "Laporan" },
+    { id: "activity", label: "Aktivitas" },
+    { id: "settings", label: "Pengaturan" },
   ];
 
   const renderContent = () => {

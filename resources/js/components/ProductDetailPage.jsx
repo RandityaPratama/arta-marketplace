@@ -364,7 +364,7 @@ export default function ProductDetailPage() {
                 {product.onDiscount ? (
                   <>
                     <p className="text-xl text-gray-500 line-through">Rp. {formatPrice(product.originalPrice)}</p>
-                    <p className="text-2xl font-bold text-[#1E3A8A] mt-1">Rp. {formatPrice(product.price)}</p>
+                    <p className="text-2xl font-bold text-red-400 mt-1">Rp. {formatPrice(product.price)}</p>
                   </>
                 ) : (
                   <p className="text-2xl font-bold text-[#1E3A8A]">Rp. {formatPrice(product.price)}</p>

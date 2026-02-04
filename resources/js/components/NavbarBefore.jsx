@@ -9,7 +9,7 @@
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 flex items-center justify-between">
             {/* Left: Logo */}
             <div className="flex items-center gap-3">
-            <span className="font-bold text-[#FED7AA] text-xl tracking-tight cursor-default">ARTA MARKETPLACE</span>
+            <span className="font-bold text-white text-xl tracking-tight cursor-default">ARTA MARKETPLACE</span>
             </div>
 
             {/* Right: Login & Daftar */}

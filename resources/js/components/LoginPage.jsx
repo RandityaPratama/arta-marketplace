@@ -42,7 +42,9 @@ export default function LoginPage() {
             
             {/* Left side - Branding */}
             <div className="text-center md:text-center px-8">
-              <h1 className="text-2xl font-bold text-[#1E3A8A] mt-4">
+              <h1 
+              onClick={() => navigate("/")}
+              className="text-2xl font-bold text-[#1E3A8A] cursor-default mt-4">
                 ARTA MARKETPLACE
               </h1>
 
@@ -73,7 +75,7 @@ export default function LoginPage() {
                   {/* Email Field */}
                   <div className="space-y-1 mb-4">
                     <label className="block text-xs font-semibold text-gray-700">E-mail</label>
-                    <div className="flex items-center border border-gray-300 rounded-lg px-3 py-2">
+                    <div className="relative flex items-center border border-gray-300 rounded-lg px-3 py-2">
                       <Mail size={16} className="text-gray-500 mr-2" />
                       <input
                         type="email"
@@ -98,7 +100,7 @@ export default function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Masukkan password anda"
-                        className="w-full pl-10 pr-10 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+                        className="w-full pl-10 pr-10 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none"
                         required
                       />
                       <button

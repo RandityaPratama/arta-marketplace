@@ -78,7 +78,7 @@ export default function NavbarAfter() {
         <div className="flex items-center gap-3">
           <span 
             onClick={() => navigate("/dashboard")}
-            className="font-bold text-[#FED7AA] text-xl tracking-tight cursor-default"
+            className="font-bold text-white text-xl tracking-tight cursor-default"
           >
             ARTA MARKETPLACE
           </span>
@@ -182,7 +182,7 @@ export default function NavbarAfter() {
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="w-9 h-9 rounded-full hover:bg-white/10 transition overflow-hidden flex items-center justify-center bg-white/20"
+              className="w-9 h-9 rounded-full hover:bg-white/10 transition overflow-hidden flex items-center justify-center "
               aria-label="Profil"
             >
               {user?.avatar ? (

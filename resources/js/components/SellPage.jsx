@@ -9,6 +9,20 @@ import { useProducts } from "../components/context/ProductContext";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 
+// ✅ Helper function untuk format harga dengan titik
+const formatPriceWithDots = (value) => {
+  if (!value) return "";
+  const numericValue = value.replace(/\D/g, "");
+  if (!numericValue) return "";
+  return new Intl.NumberFormat('id-ID').format(numericValue);
+};
+
+// ✅ Helper function untuk parse harga ke number
+const parsePrice = (formattedValue) => {
+  if (!formattedValue) return "";
+  return formattedValue.replace(/\D/g, "");
+};
+
 export default function SellPage() {
   const navigate = useNavigate();
   const { addProduct } = useProducts();
@@ -26,12 +40,11 @@ export default function SellPage() {
   });
 
   const [images, setImages] = useState([]);
-  const [imageFiles, setImageFiles] = useState([]); // ✅ State untuk menyimpan file asli
+  const [imageFiles, setImageFiles] = useState([]);
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
   const [categories, setCategories] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ✅ Fetch Kategori dari API
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -57,32 +70,40 @@ export default function SellPage() {
     const { name, value } = e.target;
     if ((name === "originalPrice" || name === "discount" || name === "price" || name === "stock") && value !== "") {
       const numericValue = value.replace(/\D/g, "");
-      setFormData(prev => ({ ...prev, [name]: numericValue }));
-    } else {
+      const validDiscount = numericValue === "" ? "" : Math.min(parseInt(numericValue) || 0, 100).toString();
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        discount: validDiscount,
+        price: prev.originalPrice ? calculateDiscountedPrice(parsePrice(prev.originalPrice), validDiscount) : prev.price
+      }));
+    }
+    else if (name === "price") {
+      const formattedValue = formatPriceWithDots(value);
+      setFormData(prev => ({ ...prev, price: formattedValue }));
+    }
+    else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  const calculateDiscountedPrice = () => {
-    const { originalPrice, discount } = formData;
+  const calculateDiscountedPrice = (originalPriceStr, discountStr) => {
+    const originalPrice = parseFloat(originalPriceStr);
+    const discount = parseFloat(discountStr) || 0;
     
-    // Jika tidak ada original price, return price biasa
-    if (!originalPrice || originalPrice === "") return formData.price || "0";
+    if (isNaN(originalPrice) || originalPrice <= 0) return "";
     
-    const price = parseFloat(originalPrice);
-    
-    // Jika original price tidak valid, return 0
-    if (isNaN(price)) return "0";
-    
-    // Jika discount kosong atau tidak valid, anggap discount = 0
-    const disc = discount && discount !== "" ? parseFloat(discount) : 0;
-    
-    // Validasi discount range
-    if (isNaN(disc) || disc < 0 || disc > 100) return price.toString();
-    
-    // Hitung harga setelah diskon
-    const finalPrice = price * (1 - disc / 100);
+    const finalPrice = originalPrice * (1 - discount / 100);
     return Math.round(finalPrice).toString();
+  };
+
+  const calculateDiscountAmount = () => {
+    const originalPrice = parseFloat(parsePrice(formData.originalPrice));
+    const discount = parseFloat(formData.discount) || 0;
+    
+    if (isNaN(originalPrice) || originalPrice <= 0 || discount <= 0) return 0;
+    
+    return Math.round(originalPrice * (discount / 100));
   };
 
   const handleImageUpload = (e) => {
@@ -95,16 +116,16 @@ export default function SellPage() {
     }
     const newImages = files.map(file => URL.createObjectURL(file));
     setImages(prev => [...prev, ...newImages]);
-    setImageFiles(prev => [...prev, ...files]); // ✅ Simpan file asli untuk diupload
+    setImageFiles(prev => [...prev, ...files]);
     input.value = "";
   };
 
   const handleRemoveImage = (index) => {
     setImages(prev => prev.filter((_, i) => i !== index));
-    setImageFiles(prev => prev.filter((_, i) => i !== index)); // ✅ Hapus file asli juga
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSave = async () => { // ✅ Ubah jadi async
+  const handleSave = async () => {
     if (!formData.name || !formData.category || !formData.location || !formData.description) {
       setNotification({ show: true, message: "Nama, kategori, lokasi, dan deskripsi wajib diisi!", type: "error" });
       return;
@@ -122,24 +143,25 @@ export default function SellPage() {
 
     setIsSubmitting(true);
 
-    const finalPrice = formData.originalPrice 
-      ? calculateDiscountedPrice() 
-      : formData.price;
+    const originalPriceNumeric = parsePrice(formData.originalPrice);
+    const priceNumeric = parsePrice(formData.price);
+    const discountNumeric = formData.discount;
 
-    // ✅ Bungkus data ke dalam FormData
+    const finalPrice = originalPriceNumeric 
+      ? calculateDiscountedPrice(originalPriceNumeric, discountNumeric)
+      : priceNumeric;
+
     const data = new FormData();
     data.append("name", formData.name);
     data.append("category", formData.category);
     data.append("price", finalPrice);
     
-    // ✅ Hanya append jika ada nilai, dan convert empty string ke null
-    if (formData.originalPrice && formData.originalPrice !== "") {
-      data.append("original_price", formData.originalPrice);
+    if (originalPriceNumeric) {
+      data.append("original_price", originalPriceNumeric);
     }
     
-    // ✅ Hanya append discount jika ada nilai yang valid (bukan empty string)
-    if (formData.discount && formData.discount !== "") {
-      data.append("discount", formData.discount);
+    if (discountNumeric) {
+      data.append("discount", discountNumeric);
     }
     
     data.append("location", formData.location);
@@ -149,13 +171,12 @@ export default function SellPage() {
       data.append("stock", formData.stock);
     }
 
-    // ✅ Append gambar-gambar asli
     imageFiles.forEach((file) => {
       data.append("images[]", file);
     });
 
     try {
-      await addProduct(data); // ✅ Kirim FormData ke Context
+      await addProduct(data);
 
       setNotification({ 
         show: true, 
@@ -180,6 +201,16 @@ export default function SellPage() {
       return () => clearTimeout(timer);
     }
   }, [notification.show]);
+
+  const displayPrice = (priceStr) => {
+    if (!priceStr) return "";
+    const numeric = parsePrice(priceStr);
+    return numeric ? new Intl.NumberFormat('id-ID').format(numeric) : "";
+  };
+
+  // ✅ Tentukan apakah sedang pakai diskon atau tidak
+  const hasDiscount = formData.originalPrice && formData.discount && parseInt(formData.discount) > 0;
+  const isOnlyOriginalPrice = formData.originalPrice && !formData.discount;
 
   return (
     <>
@@ -214,7 +245,7 @@ export default function SellPage() {
                     <img src={img} alt={`Preview ${index}`} className="w-full h-full object-cover" />
                     <button
                       onClick={() => handleRemoveImage(index)}
-                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                      className="absolute top-1 right-1 w-5 h-5 bg-red-500 bg-opacity-90 hover:bg-opacity-100 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-md hover:shadow-lg transition-all duration-200 z-10"
                     >
                       ×
                     </button>
@@ -301,17 +332,16 @@ export default function SellPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px]">
                 <div>
                   <label className="block text-[13px] font-[500] text-gray-700 mb-[8px]">
-                    Harga Asli (Rp)
+                    Harga Asli (Rp) <span className="text-gray-500"></span>
                   </label>
                   <input
                     type="text"
                     name="originalPrice"
                     value={formData.originalPrice}
                     onChange={handleInputChange}
-                    placeholder="Contoh: 12000000"
+                    placeholder="Contoh: 1.000.000"
                     className="w-full px-[16px] py-[10px] text-[15px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] focus:border-[#1E3A8A] transition"
                   />
-                  <p className="text-[12px] text-gray-500 mt-1">Isi jika ingin memberi diskon</p>
                 </div>
 
                 <div>
@@ -326,21 +356,30 @@ export default function SellPage() {
                     placeholder="Contoh: 10"
                     className="w-full px-[16px] py-[10px] text-[15px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] focus:border-[#1E3A8A] transition"
                   />
-                  <p className="text-[12px] text-gray-500 mt-1">Kosongkan jika tidak ada diskon</p>
+                  <p className="text-[12px] text-gray-500 mt-1">Isi jika ingin memberi diskon</p>
+                  {hasDiscount && (
+                    <p className="text-[12px] text-green-600 mt-1">
+                      Diskon {formData.discount}% (-Rp {displayPrice(calculateDiscountAmount().toString())})
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {formData.originalPrice && (
+              {(formData.originalPrice || formData.discount) && (
                 <div className="p-3 bg-gray-50 rounded-lg border">
-                  <p className="text-[13px] text-gray-700">
-                    Harga setelah diskon:{" "}
-                    <span className="font-bold text-green-600">
-                      Rp. {parseInt(calculateDiscountedPrice()).toLocaleString("id-ID")}
-                    </span>
-                  </p>
-                  {formData.discount && parseInt(formData.discount) > 0 && (
-                    <p className="text-[12px] text-red-500 mt-1">
-                      Diskon {formData.discount}%
+                  {formData.originalPrice && (
+                    <p className="text-[13px] text-gray-700">
+                      Harga asli: Rp {displayPrice(formData.originalPrice)}
+                    </p>
+                  )}
+                  {hasDiscount && (
+                    <p className="text-[13px] text-red-500 mt-1">
+                      Diskon {formData.discount}% (-Rp {displayPrice(calculateDiscountAmount().toString())})
+                    </p>
+                  )}
+                  {formData.originalPrice && (
+                    <p className="text-[13px] font-bold text-green-600 mt-2">
+                      {hasDiscount ? 'Harga setelah diskon' : 'Harga asli'}: Rp {displayPrice(formData.price)}
                     </p>
                   )}
                 </div>
@@ -348,38 +387,33 @@ export default function SellPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px]">
                 <div>
-                  {formData.originalPrice ? (
-                    <div>
-                      <label className="block text-[13px] font-[500] text-gray-700 mb-[8px]">
-                        Harga Setelah Diskon
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-[16px] top-[10px] text-gray-500">Rp.</span>
-                        <input
-                          type="text"
-                          value={parseInt(calculateDiscountedPrice()).toLocaleString("id-ID")}
-                          readOnly
-                          className="w-full pl-[40px] pr-[16px] py-[10px] text-[15px] border border-gray-300 rounded-lg bg-gray-100"
-                        />
-                      </div>
-                    </div>
-                  ) : (
+                  {!formData.originalPrice ? (
                     <>
                       <label className="block text-[13px] font-[500] text-gray-700 mb-[8px]">
                         Harga <span className="text-red-500">*</span>
                       </label>
-                      <div className="relative">
-                        <span className="absolute left-[16px] top-[10px] text-gray-500">Rp.</span>
-                        <input
-                          type="number"
-                          name="price"
-                          value={formData.price}
-                          onChange={handleInputChange}
-                          placeholder="0"
-                          className="w-full pl-[40px] pr-[16px] py-[10px] text-[15px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] focus:border-[#1E3A8A] transition"
-                        />
-                      </div>
+                      <input
+                        type="text"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        placeholder="Contoh: 900.000"
+                        className="w-full px-[16px] py-[10px] text-[15px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] focus:border-[#1E3A8A] transition"
+                      />
                     </>
+                  ) : (
+                    <div>
+                      <label className="block text-[13px] font-[500] text-gray-700 mb-[8px]">
+                        {/* ✅ DINAMIS: "Harga Asli" atau "Harga Setelah Diskon" */}
+                        {isOnlyOriginalPrice ? 'Harga Asli' : 'Harga Setelah Diskon'}
+                      </label>
+                      <input
+                        type="text"
+                        value={displayPrice(formData.price)}
+                        readOnly
+                        className="w-full px-[16px] py-[10px] text-[15px] border border-gray-300 rounded-lg bg-gray-100"
+                      />
+                    </div>
                   )}
                 </div>
 
@@ -499,4 +533,3 @@ export default function SellPage() {
     </>
   );
 }
-

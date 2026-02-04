@@ -88,7 +88,9 @@ export default function ResetPasswordPage() {
           <div className="grid md:grid-cols-2 gap-10 items-center max-w-7xl w-full">
             
             <div className="text-center md:text-center px-8">
-              <h1 className="text-2xl font-bold text-[#1E3A8A] mt-4">
+              <h1 
+              onClick={() => navigate("/")}
+              className="text-2xl cursor-default font-bold text-[#1E3A8A] mt-4">
                 ARTA MARKETPLACE
               </h1>
               <p className="font-bold text-lg text-gray-800 mt-3">

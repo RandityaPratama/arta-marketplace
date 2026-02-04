@@ -90,7 +90,9 @@ import React, { useState } from "react";
                 
                 <div className="text-center md:text-center px-8">
 
-                <h1 className="text-2xl font-bold whitespace-pre-line text-[#1E3A8A] mt-4">
+                <h1 
+                onClick={() => navigate("/")}
+                className="text-2xl font-bold whitespace-pre-line text-[#1E3A8A] mt-4 cursor-default">
                     ARTA MARKETPLACE
                 </h1>
 
