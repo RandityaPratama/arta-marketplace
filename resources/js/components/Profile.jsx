@@ -325,7 +325,7 @@ import { useAuth } from "../components/context/AuthContext";
                             </div>
                         )}
 
-                        <div className="bg-gray-200 h-32 w-full overflow-hidden">
+                        <div className="bg-gray-200 h-47 w-full overflow-hidden">
                             {product.images && product.images.length > 0 ? (
                                 <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
                             ) : (
@@ -336,20 +336,20 @@ import { useAuth } from "../components/context/AuthContext";
                             <span className="inline-block bg-[#DDE7FF] text-[#1E3A8A] text-[12px] font-[500] px-2 py-1 rounded-full mb-2">
                             {product.category}
                             </span>
-                            <h4 className="text-[14px] font-[500] text-gray-800 truncate">{product.name}</h4>
+                            <h4 className="text-[15px] font-[500] text-gray-800 truncate">{product.name}</h4>
                             
                             <div className="mt-1">
                             {product.onDiscount ? (
                                 <>
-                                <p className="text-[12px] text-gray-500 line-through">
+                                <p className="text-[13px] text-gray-500 line-through">
                                     Rp. {formatPrice(product.originalPrice)}
                                 </p>
-                                <p className="text-[14px] font-bold text-red-600">
+                                <p className="text-[15px] font-bold text-red-400">
                                     Rp. {formatPrice(product.price)}
                                 </p>
                                 </>
                             ) : (
-                                <p className="text-[14px] font-bold text-black">
+                                <p className="text-[15px] font-bold text-[#1E3A8A]">
                                 Rp. {formatPrice(product.price)}
                                 </p>
                             )}

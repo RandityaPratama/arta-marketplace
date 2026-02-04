@@ -43,7 +43,7 @@ class UserProductController extends Controller
         'location' => 'required|string',
         'condition' => 'required|string',
         'description' => 'required|string',
-        'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+        'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:20000',
     ]);
 
     if ($validator->fails()) {

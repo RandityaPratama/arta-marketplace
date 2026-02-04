@@ -6,7 +6,7 @@
     import Background from "./Background";
     import Footer from "./Footer";
     import { useProducts } from "../components/context/ProductContext";
-    import { Heart } from "lucide-react"; // ✅ Import ikon dari lucide-react
+    import { User, Heart } from "lucide-react"; // ✅ Import ikon dari lucide-react
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
     const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
@@ -215,9 +215,9 @@
                                 className="w-full h-full object-cover"
                             />
                         ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="#1E3A8A" className="w-5 h-5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                            </svg>
+                            <span className="text-[#1E3A8A] font-bold">
+                            {product.sellerName?.charAt(0).toUpperCase() || 'P'}
+                            </span>
                         )}
                     </div>
                     <div className="flex-1">
@@ -286,7 +286,7 @@
                         <p className="text-xl text-gray-500 line-through">
                             Rp. {formatPrice(product.originalPrice)}
                         </p>
-                        <p className="text-2xl font-bold text-[#1E3A8A] mt-1">
+                        <p className="text-2xl font-bold text-red-400 mt-1">
                             Rp. {formatPrice(product.price)}
                         </p>
                         </>
@@ -375,7 +375,7 @@
                         placeholder="Contoh: 12000000"
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                        Jika tidak pakai diskon, isi harga langsung di sini.
+                        Jika pakai diskon atau ganti harga, masukan ulang di sini.
                         </p>
                     </div>
 

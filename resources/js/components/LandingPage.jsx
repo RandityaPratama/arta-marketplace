@@ -189,7 +189,7 @@
 
             <div className="flex gap-[16px] mt-[38px] justify-center">
                 <button 
-                className="bg-[#FED7AA] text-[#1E3A8A] font-[600] text-[15px] rounded-[10px] w-[160px] h-[46px] hover:opacity-90"
+                className="bg-white text-[#1E3A8A] font-[600] text-[15px] rounded-[10px] w-[160px] h-[46px] hover:opacity-90"
                 onClick={() => navigate("/signup")}
                 >
                 Daftar Sekarang

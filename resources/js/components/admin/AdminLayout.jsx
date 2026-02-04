@@ -22,7 +22,7 @@ export default function AdminLayout({ children }) {
 
   const menuItems = [
     { name: "Dashboard", icon: BarChart3, path: "/admin/dashboard" },
-    { name: "Activity", icon: Activity, path: "/admin/activity" },
+    { name: "Aktivitas", icon: Activity, path: "/admin/activity" },
     { name: "Pengguna", icon: Users, path: "/admin/users" },
     { name: "Produk", icon: Package, path: "/admin/products" },
     { name: "Laporan", icon: Flag, path: "/admin/reports" },
@@ -60,7 +60,7 @@ export default function AdminLayout({ children }) {
       {isSidebarOpen && (
         <div className="w-64 bg-[#1E3A8A] text-white fixed min-h-screen p-4 z-10">
           <div className="flex items-center text-center gap-2 mb-10 mt-2">
-            <span className="font-bold text-md">RARENSELL MARKETPLACE</span>
+            <span className="font-bold text-xl px-2">ARTA MARKETPLACE</span>
           </div>
 
           <nav className="space-y-2">
@@ -105,7 +105,7 @@ export default function AdminLayout({ children }) {
             </h1>
             
             {/* ✅ Avatar profil admin dengan gambar atau inisial */}
-            <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition" onClick={() => navigate("/admin/profile")}>
+            <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition"> {/* onClick={() => navigate("/admin/profile")} */}
               <div className="w-10 h-10 bg-[#DDE7FF] rounded-full flex items-center justify-center overflow-hidden">
                 {adminAvatar ? (
                   <img 

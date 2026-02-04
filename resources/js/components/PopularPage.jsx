@@ -22,6 +22,9 @@
     const [popularProducts, setPopularProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // ✅ POSISI VERTIKAL FLEKSIBEL
+    const badgeVerticalPosition = '62%';
+
     // ✅ Fetch data real dari database via API
     useEffect(() => {
         const loadData = async () => {
@@ -88,7 +91,7 @@
                         e.stopPropagation();
                         toggleFavorite(product.id);
                         }}
-                        className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center z-10 hover:bg-gray-50"
+                        className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center z-10 hover:bg-gray-50"
                     >
                         {isFavorited(product.id) ? (
                         <Heart size={20} className="text-[#1E3A8A]" fill="#1E3A8A" strokeWidth={0} />
@@ -101,13 +104,13 @@
                     {product.is_mine && (
                         <div 
                         className="absolute right-0 transform -translate-y-1/2 bg-[#1E3A8A] text-white text-[11px] font-[600] px-2 py-1.5 rounded-l-full z-10 whitespace-nowrap"
-                        style={{ top: '55%' }}
+                        style={{ top: badgeVerticalPosition }}
                         >
                         Iklanku
                         </div>
                     )}
 
-                    <div className="bg-gray-200 h-32 w-full overflow-hidden">
+                    <div className="bg-gray-200 h-47 w-full overflow-hidden">
                         {product.images && product.images.length > 0 ? (
                             <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
                         ) : (

@@ -52,7 +52,7 @@ export default function Dashboard() {
   const [selectedCategory, setSelectedCategory] = useState("Semua");
 
   // ✅ POSISI VERTIKAL FLEKSIBEL - BISA DIUBAH SESUAI KEBUTUHAN
-  const badgeVerticalPosition = '55%'; // ✅ Ganti nilai ini: '30%', '35%', '40%', '45%', '50%', dll
+  const badgeVerticalPosition = '62%'; // ✅ Ganti nilai ini: '30%', '35%', '40%', '45%', '50%', dll
 
   // ✅ Handler untuk search
   const handleSearch = (search, category) => {
@@ -87,7 +87,7 @@ export default function Dashboard() {
 
           {/* Promo Banners */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            <div className="bg-gradient-to-r from-[#1E3A8A] to-red-300 h-[170px] rounded-xl border border-[#1E3A8A] flex items-center justify-between px-6 text-white">
+            <div className="bg-gradient-to-r from-[#1E3A8A] to-red-400 h-[170px] rounded-xl border border-[#1E3A8A] flex items-center justify-between px-6 text-white">
               <div className="w-[120px] h-[100px] bg-gray-200 rounded-lg flex items-center justify-center">
                 <Plus size={40} className="text-white" strokeWidth={1.5} />
               </div>
@@ -100,7 +100,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-[#1E3A8A] to-green-300 h-[170px] rounded-xl border border-[#1E3A8A] flex items-center justify-between px-6 text-white">
+            <div className="bg-gradient-to-r from-[#1E3A8A] to-green-400 h-[170px] rounded-xl border border-[#1E3A8A] flex items-center justify-between px-6 text-white">
               <div className="w-[120px] h-[100px] bg-gray-200 rounded-lg flex items-center justify-center">
                 <User size={40} className="text-white" strokeWidth={1.5} />
               </div>
@@ -217,7 +217,7 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  <div className="bg-gray-200 h-32 w-full overflow-hidden">
+                  <div className="bg-gray-200 h-47 w-full overflow-hidden">
                     {product.images && product.images.length > 0 ? (
                       <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
                     ) : (
@@ -236,12 +236,12 @@ export default function Dashboard() {
                         <p className="text-[13px] text-gray-500 line-through">
                           Rp. {formatPrice(product.originalPrice)}
                         </p>
-                        <p className="text-[15px] font-bold text-red-600">
+                        <p className="text-[15px] font-bold text-red-400">
                           Rp. {formatPrice(product.price)}
                         </p>
                       </div>
                     ) : (
-                      <p className="text-[15px] font-bold text-black mt-2">
+                      <p className="text-[15px] font-bold text-[#1E3A8A] mt-2">
                         Rp. {formatPrice(product.price)}
                       </p>
                     )}

@@ -24,7 +24,7 @@
             
             {/* Brand Section */}
             <div>
-            <h2 className="font-bold text-xl text-[#F4C18E]">ARTA MARKETPLACE</h2>
+            <h2 className="font-bold text-xl text-white">ARTA MARKETPLACE</h2>
             <p className="text-sm text-gray-300 mt-4 leading-relaxed w-72">
                 Platform terpercaya untuk jual beli barang bekas dengan sistem keamanan terjamin dan kemudahan bertransaksi.
             </p>

@@ -16,7 +16,7 @@
     };
 
     // ✅ POSISI VERTIKAL FLEKSIBEL
-    const badgeVerticalPosition = '51%';
+    const badgeVerticalPosition = '61.5%';
 
     export default function DiskonPage() {
     const navigate = useNavigate();
@@ -87,14 +87,14 @@
                     {/* ✅ BADGE "IKLANKU" */}
                     {product.is_mine && (
                         <div 
-                        className="absolute right-0 transform -translate-y-1/2 bg-[#1E3A8A] text-white text-[#11px] font-[600] px-2 py-1.5 rounded-l-full z-10 whitespace-nowrap"
+                        className="absolute right-0 transform -translate-y-1/2 bg-[#1E3A8A] text-white text-[11px] font-[600] px-2 py-1.5 rounded-l-full z-10 whitespace-nowrap"
                         style={{ top: badgeVerticalPosition }}
                         >
                         Iklanku
                         </div>
                     )}
 
-                    <div className="bg-gray-200 h-32 w-full overflow-hidden">
+                    <div className="bg-gray-200 h-47 w-full overflow-hidden">
                         {product.images && product.images.length > 0 ? (
                             <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
                         ) : (
@@ -108,16 +108,16 @@
                         <h3 className="text-[15px] font-[500] text-gray-800">{product.name}</h3>
                         
                         {/* Harga dengan format titik */}
-                        <div className="mt-2">
-                        <p className="text-[15px] font-bold text-gray-500 line-through">
+                        <div className="mt-1">
+                        <p className="text-[13px] text-gray-500 line-through">
                             Rp. {formatPrice(product.originalPrice)}
                         </p>
-                        <p className="text-[18px] font-bold text-red-600 mt-1">
+                        <p className="text-[15px] font-bold text-red-600 mt-0.5">
                             Rp. {formatPrice(product.price)}
                         </p>
                         </div>
                         
-                        <p className="text-[13px] text-gray-500 mt-2">{product.location}</p>
+                        <p className="text-[13px] text-gray-500 mt-1">{product.location}</p>
                     </div>
                     </div>
                 ))}

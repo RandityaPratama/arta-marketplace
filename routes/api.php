@@ -34,7 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Protected routes (memerlukan token)
 Route::middleware('auth:sanctum', 'isUser')->group(function () {
-     Route::post('/logout', [UserAuthController::class, 'logout']);
+    Route::post('/logout', [UserAuthController::class, 'logout']);
     Route::get('/profile', [UserAuthController::class, 'profile']);
     Route::post('/profile/update', [UserProfileController::class, 'update']);
     Route::post('/profile/avatar', [UserProfileController::class, 'updateAvatar']);

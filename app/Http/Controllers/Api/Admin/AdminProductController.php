@@ -19,6 +19,9 @@ class AdminProductController extends Controller
         // Eager load 'user' untuk mendapatkan nama penjual
         $query = Product::with('user');
 
+        // Exclude products with status 'disembunyikan'
+        $query->where('status', '!=', 'disembunyikan');
+
         // 1. Filter Status
         if ($request->has('status') && $request->status !== 'semua') {
             $query->where('status', $request->status);
@@ -64,7 +67,8 @@ class AdminProductController extends Controller
      * Mengubah status produk (Approve, Reject, Hide)
      */
     public function updateStatus(Request $request, $id)
-    {
+{
+    try {
         $validator = Validator::make($request->all(), [
             'status' => 'required|in:aktif,ditolak,menunggu,terjual,disembunyikan',
             'reason' => 'nullable|string|required_if:status,ditolak',
@@ -81,42 +85,66 @@ class AdminProductController extends Controller
         $product = Product::find($id);
 
         if (!$product) {
-            return response()->json(['success' => false, 'message' => 'Produk tidak ditemukan'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Produk tidak ditemukan'
+            ], 404);
         }
 
         $product->status = $request->status;
-        // Simpan alasan penolakan jika status ditolak
-        if ($request->status === 'ditolak' && $request->has('reason')) {
+
+        if ($request->status === 'ditolak') {
             $product->rejection_reason = $request->reason;
-        } else if ($request->status !== 'ditolak') {
-            // Hapus rejection_reason jika status berubah dari ditolak ke status lain
+        } else {
             $product->rejection_reason = null;
         }
+
         $product->save();
 
-        Log::info("Admin updated product status", ['product_id' => $id, 'status' => $request->status]);
+        Log::info("Admin updated product status", [
+            'product_id' => $id,
+            'status' => $request->status
+        ]);
 
-        // Catat aktivitas admin ke database
-        try {
-            $adminName = $request->user()->name;
-            $actionText = "Admin {$adminName} mengubah status produk {$product->name} menjadi {$request->status}";
+        // ==== ACTIVITY LOG ====
+        $admin = $request->user(); // lebih aman
+
+        if ($admin) {
+            $actionText = "Admin {$admin->name} mengubah status produk {$product->name} menjadi {$request->status}";
 
             if ($request->status === 'aktif') {
-                $actionText = "Admin {$adminName} menyetujui produk {$product->name}";
+                $actionText = "Admin {$admin->name} menyetujui produk {$product->name}";
             } elseif ($request->status === 'ditolak') {
-                $actionText = "Admin {$adminName} menolak produk {$product->name}";
+                $actionText = "Admin {$admin->name} menolak produk {$product->name}";
             }
 
             Activity::create([
-                'user_id' => null, // Null karena admin berada di tabel terpisah
-                'admin_id' => $request->user()->id,
+                'user_id' => null,
+                'admin_id' => $admin->id,
                 'action' => $actionText,
                 'type' => 'admin',
             ]);
-        } catch (\Exception $e) {
-            Log::error('Gagal mencatat aktivitas admin', ['error' => $e->getMessage()]);
         }
 
-        return response()->json(['success' => true, 'message' => 'Status produk berhasil diperbarui']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Status produk berhasil diperbarui'
+        ]);
+
+    } catch (\Throwable $e) {
+
+        Log::error('Update status produk gagal', [
+            'product_id' => $id,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => config('app.debug')
+                ? $e->getMessage()
+                : 'Terjadi kesalahan pada server'
+        ], 500);
     }
+}
 }

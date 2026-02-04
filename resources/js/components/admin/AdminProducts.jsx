@@ -52,9 +52,9 @@ function AdminProductsContent() {
   };
 
   const handleHide = async (id) => {
-    if (confirm("Sembunyikan produk ini?")) {
+    if (confirm("Hapus produk ini?")) {
       const result = await hideProduct(id);
-      if (result.success) alert("Produk berhasil disembunyikan.");
+      if (result.success) alert("Produk berhasil hapus.");
     }
   };
 
@@ -89,7 +89,7 @@ function AdminProductsContent() {
       case "aktif":
         return (
           <Button variant="danger" size="sm" onClick={() => handleHide(product.id)}>
-            Sembunyikan
+            Hapus
           </Button>
         );
       default:

@@ -16,7 +16,7 @@ const formatPrice = (price) => {
 };
 
 // ✅ POSISI VERTIKAL FLEKSIBEL
-const badgeVerticalPosition = '54%';
+const badgeVerticalPosition = '62%';
 
 export default function FavoritePage() {
   const navigate = useNavigate();
@@ -125,7 +125,7 @@ export default function FavoritePage() {
                     </div>
                   )}
 
-                  <div className="bg-gray-200 h-32 w-full overflow-hidden">
+                  <div className="bg-gray-200 h-47 w-full overflow-hidden">
                     {product.images && product.images.length > 0 ? (
                       <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
                     ) : (
