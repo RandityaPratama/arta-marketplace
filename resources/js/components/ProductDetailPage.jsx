@@ -121,6 +121,7 @@ export default function ProductDetailPage() {
   if (!product) {
     return null;
   }
+  const isOutOfStock = (product.stock ?? 0) <= 0;
 
   const handleContactSeller = async () => {
     try {
@@ -373,8 +374,14 @@ export default function ProductDetailPage() {
               <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                 <div><p className="font-medium">Lokasi</p><p>{product.location}</p></div>
                 <div><p className="font-medium">Kondisi</p><p>{product.condition}</p></div>
+                <div><p className="font-medium">Stok</p><p>{product.stock ?? 0}</p></div>
                 <div><p className="font-medium">Dipublikasikan</p><p>{product.publishedDate}</p></div>
-                <div><p className="font-medium">Status</p><span className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Tersedia</span></div>
+                <div>
+                  <p className="font-medium">Status</p>
+                  <span className={`inline-block px-2 py-1 rounded-full text-xs ${isOutOfStock ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
+                    {isOutOfStock ? "Habis" : "Tersedia"}
+                  </span>
+                </div>
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row gap-3">
@@ -383,9 +390,9 @@ export default function ProductDetailPage() {
                   size="md" 
                   className="flex-1" 
                   onClick={() => setIsPurchaseModalOpen(true)}
-                  disabled={loadingPayment || loadingCod}
+                  disabled={loadingPayment || loadingCod || isOutOfStock}
                 >
-                  {(loadingPayment || loadingCod) ? "Memproses..." : "Beli Sekarang"}
+                  {isOutOfStock ? "Stok Habis" : ((loadingPayment || loadingCod) ? "Memproses..." : "Beli Sekarang")}
                 </Button>
                 <Button variant="outline" size="md" className="flex-1" onClick={handleContactSeller}>
                   Hubungi Penjual

@@ -25,6 +25,8 @@
     const [isDeleting, setIsDeleting] = useState(false);
     const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
+    const canEditStock = (product?.status || formData?.status) === "aktif";
+
     
     useEffect(() => {
         if (notification.show) {
@@ -61,6 +63,11 @@
         setFormData((prev) => ({ ...prev, discount: value }));
     };
 
+    const handleStockChange = (e) => {
+        const value = e.target.value.replace(/\D/g, '');
+        setFormData((prev) => ({ ...prev, stock: value }));
+    };
+
     const calculateDiscountedPrice = () => {
         const { originalPrice, discount } = formData;
         if (!originalPrice || !discount) return formData.price;
@@ -87,6 +94,11 @@
         price: finalPrice,
         onDiscount,
         };
+        if (!canEditStock) {
+        delete updatedProduct.stock;
+        } else if (updatedProduct.stock === "" || updatedProduct.stock === null || updatedProduct.stock === undefined) {
+        updatedProduct.stock = 0;
+        }
 
         try {
         await updateProduct(product.id, updatedProduct);
@@ -379,6 +391,25 @@
                         </p>
                     </div>
 
+                    {canEditStock ? (
+                        <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Stok</label>
+                        <input
+                            type="number"
+                            min="0"
+                            value={formData.stock ?? ""}
+                            onChange={handleStockChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none transition focus:ring-2 focus:ring-[#1E3A8A]"
+                            placeholder="Contoh: 10"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Masukkan jumlah stok yang tersedia.</p>
+                        </div>
+                    ) : (
+                        <div className="text-sm text-gray-500">
+                        Stok hanya bisa diatur setelah produk berstatus aktif.
+                        </div>
+                    )}
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Lokasi *</label>
                         <input
@@ -426,6 +457,10 @@
                         <div>
                         <p className="font-medium text-gray-900">Kondisi</p>
                         <p>{product.condition}</p>
+                        </div>
+                        <div>
+                        <p className="font-medium text-gray-900">Stok</p>
+                        <p>{product.stock ?? 0}</p>
                         </div>
                         <div>
                         <p className="font-medium text-gray-900">Dipublikasikan</p>

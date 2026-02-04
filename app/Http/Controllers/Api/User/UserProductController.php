@@ -32,6 +32,9 @@ class UserProductController extends Controller
     if (isset($requestData['original_price']) && $requestData['original_price'] === '') {
         $requestData['original_price'] = null;
     }
+    if (isset($requestData['stock']) && $requestData['stock'] === '') {
+        $requestData['stock'] = null;
+    }
 
     // 1. Validasi Input
     $validator = Validator::make($requestData, [
@@ -40,6 +43,7 @@ class UserProductController extends Controller
         'price' => 'required|numeric',
         'original_price' => 'nullable|numeric',
         'discount' => 'nullable|integer|min:0|max:100',
+        'stock' => 'nullable|integer|min:0',
         'location' => 'required|string',
         'condition' => 'required|string',
         'description' => 'required|string',
@@ -88,6 +92,7 @@ class UserProductController extends Controller
             'price' => $requestData['price'],
             'original_price' => $requestData['original_price'] ?? null,
             'discount' => $requestData['discount'] ?? null,
+            'stock' => isset($requestData['stock']) ? (int) $requestData['stock'] : 0,
             'location' => $requestData['location'],
             'condition' => $requestData['condition'],
             'description' => $requestData['description'],
@@ -200,6 +205,7 @@ class UserProductController extends Controller
                 'price' => $product->price,
                 'original_price' => $product->original_price,
                 'discount' => $product->discount,
+                'stock' => $product->stock,
                 'location' => $product->location,
                 'condition' => $product->condition,
                 'description' => $product->description,
@@ -314,6 +320,7 @@ class UserProductController extends Controller
             'price' => $product->price,
             'original_price' => $product->original_price,
             'discount' => $product->discount,
+            'stock' => $product->stock,
             'location' => $product->location,
             'condition' => $product->condition,
             'description' => $product->description,
@@ -365,6 +372,7 @@ class UserProductController extends Controller
             'price' => 'sometimes|required|numeric',
             'original_price' => 'nullable|numeric',
             'discount' => 'nullable|integer',
+            'stock' => 'nullable|integer|min:0',
             'location' => 'sometimes|required|string',
             'condition' => 'sometimes|required|string',
             'description' => 'sometimes|required|string',

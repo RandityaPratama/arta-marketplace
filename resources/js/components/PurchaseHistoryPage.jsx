@@ -4,7 +4,8 @@
     import NavbarAfter from "./NavbarAfter";
     import Footer from "./Footer";
     import Background from "../components/Background";
-    import { useReports } from "../components/context/ReportContext";
+import { useReports } from "../components/context/ReportContext";
+import { useChat } from "../components/context/ChatContext";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
@@ -17,6 +18,7 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
     export default function PurchaseHistoryPage() {
     const navigate = useNavigate();
     const { submitReport, reportReasons, fetchReportReasons } = useReports();
+    const { startChatAsBuyer } = useChat();
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [reportData, setReportData] = useState({ productId: null, productName: "", transactionId: null });
     const [selectedReasonId, setSelectedReasonId] = useState(null);
@@ -27,6 +29,7 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState({ id: null, type: null });
+  const [contactLoadingId, setContactLoadingId] = useState(null);
 
   useEffect(() => {
     const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
@@ -308,6 +311,28 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
     }
   };
 
+  const handleContactSeller = async (trx) => {
+    const productId = trx?.product_id || trx?.product?.id;
+    if (!productId) {
+      setNotification({ show: true, message: "Produk tidak tersedia untuk dihubungi.", type: "error" });
+      return;
+    }
+
+    try {
+      setContactLoadingId(trx.id);
+      const conversationId = await startChatAsBuyer(productId);
+      navigate(`/chatroom/${conversationId}`);
+    } catch (error) {
+      setNotification({ 
+        show: true, 
+        message: error.message || "Gagal menghubungi penjual.", 
+        type: "error" 
+      });
+    } finally {
+      setContactLoadingId(null);
+    }
+  };
+
     return (
         <>
         <NavbarAfter />
@@ -373,52 +398,63 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
                   {getStatusBadge(trx)}
                         </td>
                         <td className="px-6 py-4">
-                  {isCodTransaction(trx) && (trx.status === 'processing' || trx.status === 'pending') ? (
-                    <div className="flex gap-2">
+                  <div className="flex flex-col gap-2">
+                    {isCodTransaction(trx) && (trx.status === 'processing' || trx.status === 'pending') ? (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleCompleteCod(trx.id)}
+                          disabled={actionLoading.id === trx.id}
+                        >
+                          {actionLoading.id === trx.id && actionLoading.type === 'complete' ? "Memproses..." : "Selesaikan"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCancelCod(trx.id)}
+                          disabled={actionLoading.id === trx.id}
+                        >
+                          {actionLoading.id === trx.id && actionLoading.type === 'cancel' ? "Memproses..." : "Batalkan"}
+                        </Button>
+                      </div>
+                    ) : (!isCodTransaction(trx) && trx.status === 'shipping') ? (
                       <Button
                         variant="primary"
                         size="sm"
-                        onClick={() => handleCompleteCod(trx.id)}
+                        onClick={() => handleCompleteDelivery(trx.id)}
                         disabled={actionLoading.id === trx.id}
                       >
-                        {actionLoading.id === trx.id && actionLoading.type === 'complete' ? "Memproses..." : "Selesaikan"}
+                        {actionLoading.id === trx.id && actionLoading.type === 'delivery' ? "Memproses..." : "Selesaikan"}
                       </Button>
+                    ) : trx.status === 'pending' ? (
                       <Button
-                        variant="outline"
+                        variant="primary"
                         size="sm"
-                        onClick={() => handleCancelCod(trx.id)}
-                        disabled={actionLoading.id === trx.id}
+                        onClick={() => handlePay(trx.snap_token, trx.id)}
                       >
-                        {actionLoading.id === trx.id && actionLoading.type === 'cancel' ? "Memproses..." : "Batalkan"}
+                        Bayar
                       </Button>
-                    </div>
-                  ) : (!isCodTransaction(trx) && trx.status === 'shipping') ? (
+                    ) : (
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => openReportModal(trx.product_id, trx.product?.name, trx.id)}
+                        className="border border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
+                      >
+                        Laporkan
+                      </Button>
+                    )}
+
                     <Button
-                      variant="primary"
+                      variant="outline"
                       size="sm"
-                      onClick={() => handleCompleteDelivery(trx.id)}
-                      disabled={actionLoading.id === trx.id}
+                      onClick={() => handleContactSeller(trx)}
+                      disabled={contactLoadingId === trx.id || !(trx?.product_id || trx?.product?.id)}
                     >
-                      {actionLoading.id === trx.id && actionLoading.type === 'delivery' ? "Memproses..." : "Selesaikan"}
+                      {contactLoadingId === trx.id ? "Menghubungi..." : "Hubungi Penjual"}
                     </Button>
-                  ) : trx.status === 'pending' ? (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => handlePay(trx.snap_token, trx.id)}
-                    >
-                      Bayar
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => openReportModal(trx.product_id, trx.product?.name, trx.id)}
-                      className="border border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
-                    >
-                      Laporkan
-                    </Button>
-                  )}
+                  </div>
                         </td>
                         </tr>
                     ))}

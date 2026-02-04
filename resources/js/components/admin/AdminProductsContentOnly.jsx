@@ -32,21 +32,30 @@ export default function AdminProductsContentOnly() {
 
   const handleApprove = async (id) => {
     const result = await approveProduct(id);
-    if (result.success) alert("Produk berhasil disetujui!");
+    if (result.success) {
+      alert("Produk berhasil disetujui!");
+      fetchProducts(activeTab, 1, searchTerm);
+    }
   };
 
   const handleReject = async (id) => {
     const reason = prompt("Alasan penolakan:");
     if (reason) {
       const result = await rejectProduct(id, reason);
-      if (result.success) alert("Produk berhasil ditolak.");
+      if (result.success) {
+        alert("Produk berhasil ditolak.");
+        fetchProducts(activeTab, 1, searchTerm);
+      }
     }
   };
 
   const handleHide = async (id) => {
     if (confirm("Sembunyikan produk ini?")) {
       const result = await hideProduct(id);
-      if (result.success) alert("Produk berhasil disembunyikan.");
+      if (result.success) {
+        alert("Produk berhasil disembunyikan.");
+        fetchProducts(activeTab, 1, searchTerm);
+      }
     }
   };
 

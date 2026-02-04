@@ -44,6 +44,7 @@ const fetchProducts = useCallback(async (search = '', category = '') => {
 
                 return {
                     ...item,
+                    stock: item.stock ?? 0,
                     originalPrice: item.original_price,
                     sellerName: item.seller_name,
                     sellerAvatar: item.seller_avatar,
@@ -90,6 +91,7 @@ const fetchMyProducts = useCallback(async () => {
 
                 return {
                     ...item,
+                    stock: item.stock ?? 0,
                     originalPrice: item.original_price,
                     sellerName: item.seller_name,
                     sellerAvatar: item.seller_avatar,
@@ -133,6 +135,7 @@ const fetchProductById = useCallback(async (productId) => {
 
             const formattedProduct = {
                 ...item,
+                stock: item.stock ?? 0,
                 originalPrice: item.original_price,
                 sellerName: item.seller_name,
                 sellerAvatar: item.seller_avatar,
@@ -188,6 +191,7 @@ const fetchPopularProducts = useCallback(async () => {
 
                 return {
                     ...item,
+                    stock: item.stock ?? 0,
                     originalPrice: item.original_price,
                     sellerName: item.seller_name,
                     sellerAvatar: item.seller_avatar,
@@ -261,6 +265,7 @@ const updateProduct = async (productId, updatedData) => {
         'originalPrice',
         'original_price',
         'discount',
+        'stock',
         'location',
         'condition',
         'description',

@@ -19,6 +19,7 @@ export default function SellPage() {
     price: "",
     originalPrice: "",
     discount: "",
+    stock: "",
     location: "",
     condition: "Bekas Baik",
     description: "",
@@ -54,7 +55,7 @@ export default function SellPage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if ((name === "originalPrice" || name === "discount" || name === "price") && value !== "") {
+    if ((name === "originalPrice" || name === "discount" || name === "price" || name === "stock") && value !== "") {
       const numericValue = value.replace(/\D/g, "");
       setFormData(prev => ({ ...prev, [name]: numericValue }));
     } else {
@@ -144,6 +145,9 @@ export default function SellPage() {
     data.append("location", formData.location);
     data.append("condition", formData.condition);
     data.append("description", formData.description);
+    if (formData.stock !== "") {
+      data.append("stock", formData.stock);
+    }
 
     // ✅ Append gambar-gambar asli
     imageFiles.forEach((file) => {
@@ -392,6 +396,22 @@ export default function SellPage() {
                     className="w-full px-[16px] py-[10px] text-[15px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] focus:border-[#1E3A8A] transition"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-[500] text-gray-700 mb-[8px]">
+                  Stok
+                </label>
+                <input
+                  type="number"
+                  name="stock"
+                  min="0"
+                  value={formData.stock}
+                  onChange={handleInputChange}
+                  placeholder="Contoh: 10"
+                  className="w-full px-[16px] py-[10px] text-[15px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] focus:border-[#1E3A8A] transition"
+                />
+                <p className="text-[12px] text-gray-500 mt-1">Kosongkan jika belum ada stok</p>
               </div>
 
               <div>

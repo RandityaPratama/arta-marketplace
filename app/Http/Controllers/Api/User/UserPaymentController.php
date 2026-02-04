@@ -53,6 +53,7 @@ class UserPaymentController extends Controller
             $product = Product::with('user')->findOrFail($request->product_id);
 
             if ($product->user_id == $user->id) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak bisa membeli produk sendiri'
@@ -60,18 +61,19 @@ class UserPaymentController extends Controller
             }
 
             if ($product->status !== 'aktif') {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Produk tidak tersedia untuk dibeli'
                 ], 400);
             }
-
             $existingTransaction = Transaction::where('user_id', $user->id)
                 ->where('product_id', $product->id)
                 ->whereIn('status', ['pending', 'challenge'])
                 ->first();
 
             if ($existingTransaction) {
+                DB::rollBack();
                 return response()->json([
                     'success' => true,
                     'message' => 'Anda memiliki transaksi tertunda untuk produk ini',
@@ -83,6 +85,14 @@ class UserPaymentController extends Controller
                         'product_name' => $product->name,
                     ]
                 ], 200);
+            }
+
+            if ((int) $product->stock <= 0) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Stok produk habis'
+                ], 400);
             }
 
             $orderId = 'TRX-' . $user->id . '-' . time() . '-' . rand(100, 999);
@@ -176,6 +186,7 @@ class UserPaymentController extends Controller
             $product = Product::with('user')->findOrFail($request->product_id);
 
             if ($product->user_id == $user->id) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak bisa membeli produk sendiri'
@@ -183,12 +194,12 @@ class UserPaymentController extends Controller
             }
 
             if ($product->status !== 'aktif') {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Produk tidak tersedia untuk dibeli'
                 ], 400);
             }
-
             $existingTransaction = Transaction::where('user_id', $user->id)
                 ->where('product_id', $product->id)
                 ->whereIn('status', ['pending', 'processing'])
@@ -199,6 +210,7 @@ class UserPaymentController extends Controller
                 ->first();
 
             if ($existingTransaction) {
+                DB::rollBack();
                 return response()->json([
                     'success' => true,
                     'message' => 'Anda memiliki transaksi tertunda untuk produk ini',
@@ -209,6 +221,14 @@ class UserPaymentController extends Controller
                         'product_name' => $product->name,
                     ]
                 ], 200);
+            }
+
+            if ((int) $product->stock <= 0) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Stok produk habis'
+                ], 400);
             }
 
             $orderId = 'COD-' . $user->id . '-' . time() . '-' . rand(100, 999);
@@ -337,36 +357,50 @@ class UserPaymentController extends Controller
                 ]);
 
                 if ($status === 'shipping' && $previousStatus !== 'shipping') {
-                    $product = Product::find($trx->product_id);
+                    $product = null;
+                    DB::transaction(function () use ($trx, &$product) {
+                        $product = Product::where('id', $trx->product_id)->lockForUpdate()->first();
+                        if ($product) {
+                            $currentStock = (int) $product->stock;
+                            if ($currentStock > 0) {
+                                $product->stock = $currentStock - 1;
+                            }
+                            if ((int) $product->stock <= 0) {
+                                $product->status = 'terjual';
+                            }
+                            $product->save();
+                        }
+                    });
+
+                    \App\Services\NotificationService::createPaymentSuccessNotification(
+                        $trx->user_id,
+                        $product?->name ?? 'produk'
+                    );
+
                     if ($product) {
-                        $product->update(['status' => 'terjual']);
-
-                        \App\Services\NotificationService::createPaymentSuccessNotification(
-                            $trx->user_id,
-                            $product->name
-                        );
-
                         \App\Services\NotificationService::createProductSoldNotification(
                             $trx->seller_id,
                             $product->name
                         );
-
-                        try {
-                            $user = \App\Models\User::find($trx->user_id);
-                            if ($user) {
-                                Activity::create([
-                                    'user_id' => $user->id,
-                                    'action' => $user->name . ' menyelesaikan pembayaran produk ' . $product->name,
-                                    'type' => 'transaksi',
-                                ]);
-                            }
-                        } catch (\Exception $e) {
-                            Log::error('Gagal mencatat aktivitas pembelian', ['error' => $e->getMessage()]);
-                        }
                     }
 
-                    // Batalkan transaksi lain untuk produk yang sama agar tidak muncul di riwayat pembeli lain
-                    $this->autoCancelCompetingTransactions($trx);
+                    try {
+                        $user = \App\Models\User::find($trx->user_id);
+                        if ($user && $product) {
+                            Activity::create([
+                                'user_id' => $user->id,
+                                'action' => $user->name . ' menyelesaikan pembayaran produk ' . $product->name,
+                                'type' => 'transaksi',
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Gagal mencatat aktivitas pembelian', ['error' => $e->getMessage()]);
+                    }
+
+                    if ($product && (int) $product->stock <= 0) {
+                        // Batalkan transaksi lain untuk produk yang sama agar tidak muncul di riwayat pembeli lain
+                        $this->autoCancelCompetingTransactions($trx);
+                    }
                 }
             }
 
@@ -441,9 +475,16 @@ class UserPaymentController extends Controller
                     ]),
                 ]);
 
-                $product = $trx->product;
+                $product = Product::where('id', $trx->product_id)->lockForUpdate()->first();
                 if ($product) {
-                    $product->update(['status' => 'terjual']);
+                    $currentStock = (int) $product->stock;
+                    if ($currentStock > 0) {
+                        $product->stock = $currentStock - 1;
+                    }
+                    if ((int) $product->stock <= 0) {
+                        $product->status = 'terjual';
+                    }
+                    $product->save();
 
                     \App\Services\NotificationService::createPaymentSuccessNotification(
                         $trx->user_id,
@@ -469,8 +510,10 @@ class UserPaymentController extends Controller
                     }
                 }
 
-                // Batalkan transaksi lain untuk produk yang sama
-                $this->autoCancelCompetingTransactions($trx);
+                if ($product && (int) $product->stock <= 0) {
+                    // Batalkan transaksi lain untuk produk yang sama
+                    $this->autoCancelCompetingTransactions($trx);
+                }
             } else {
                 $trx->update([
                     'status' => 'paid',
@@ -629,9 +672,23 @@ class UserPaymentController extends Controller
             ]);
 
             if ($status === 'shipping' && $previousStatus !== 'shipping') {
-                $product = $trx->product;
-                if ($product && $product->status !== 'terjual') {
-                    $product->update(['status' => 'terjual']);
+                $product = null;
+                DB::transaction(function () use ($trx, &$product) {
+                    $product = Product::where('id', $trx->product_id)->lockForUpdate()->first();
+                    if ($product) {
+                        $currentStock = (int) $product->stock;
+                        if ($currentStock > 0) {
+                            $product->stock = $currentStock - 1;
+                        }
+                        if ((int) $product->stock <= 0) {
+                            $product->status = 'terjual';
+                        }
+                        $product->save();
+                    }
+                });
+
+                if ($product && (int) $product->stock <= 0) {
+                    $this->autoCancelCompetingTransactions($trx);
                 }
 
                 \App\Services\NotificationService::createPaymentSuccessNotification(
@@ -658,8 +715,6 @@ class UserPaymentController extends Controller
                 } catch (\Exception $e) {
                     Log::error('Gagal mencatat aktivitas pembayaran', ['error' => $e->getMessage()]);
                 }
-
-                $this->autoCancelCompetingTransactions($trx);
             }
         }
 

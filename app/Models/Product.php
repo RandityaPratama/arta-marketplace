@@ -16,6 +16,7 @@ class Product extends Model
         'price',
         'original_price',
         'discount',
+        'stock',
         'location',
         'condition',
         'description',
@@ -28,6 +29,7 @@ class Product extends Model
         'images' => 'array',
         'price' => 'decimal:2',
         'original_price' => 'decimal:2',
+        'stock' => 'integer',
     ];
 
     public function user()
