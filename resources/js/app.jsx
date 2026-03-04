@@ -43,6 +43,7 @@ import DiskonPage from "./components/DiskonPage";
 import PopularPage from "./components/PopularPage";
 import ForgotPasswordPage from "./components/ForgotPasswordPage";
 import ResetPasswordPage from './components/ResetPasswordPage';
+import CheckoutPage from "./components/CheckoutPage";
 
 // Admin Components
 import AdminLogin from "./components/admin/AdminLogin";
@@ -97,6 +98,7 @@ ReactDOM.createRoot(document.getElementById("app")).render(
                       <Route path="/history" element={<PurchaseHistoryPage />} />
                       <Route path="/diskon" element={<DiskonPage />} />
                       <Route path="/popular" element={<PopularPage />} />
+                      <Route path="/checkout/:id" element={<CheckoutPage />} />
                     </Route>
 
                     {/* ========== ADMIN ROUTES ========== */}

@@ -34,8 +34,14 @@ class UserPaymentController extends Controller
             ], 500);
         }
 
+        // ✅ Validasi input termasuk data pengiriman
         $validator = Validator::make($request->all(), [
             'product_id' => 'required|exists:products,id',
+            'shipping_address' => 'nullable|string|max:255',
+            'courier' => 'nullable|string|max:50',
+            'courier_name' => 'nullable|string|max:50',
+            'shipping_cost' => 'nullable|numeric|min:0',
+            'total_amount' => 'nullable|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -52,6 +58,7 @@ class UserPaymentController extends Controller
             $user = Auth::user();
             $product = Product::with('user')->findOrFail($request->product_id);
 
+            // Validasi keamanan: User tidak bisa membeli produk sendiri
             if ($product->user_id == $user->id) {
                 DB::rollBack();
                 return response()->json([
@@ -67,6 +74,8 @@ class UserPaymentController extends Controller
                     'message' => 'Produk tidak tersedia untuk dibeli'
                 ], 400);
             }
+
+            // Cek transaksi pending sebelumnya
             $existingTransaction = Transaction::where('user_id', $user->id)
                 ->where('product_id', $product->id)
                 ->whereIn('status', ['pending', 'challenge'])
@@ -97,13 +106,30 @@ class UserPaymentController extends Controller
 
             $orderId = 'TRX-' . $user->id . '-' . time() . '-' . rand(100, 999);
 
+            // ✅ Ambil data ongkir dari frontend (pastikan berupa float/number)
+            $shippingCost = (float) ($request->input('shipping_cost') ?? 1000);
+            
+            // ✅ HITUNG ULANG TOTAL DI BACKEND (Keamanan & Akurasi)
+            // Kita pastikan total = Harga Produk + Ongkir
+            $finalTotal = (int) ((float)$product->price + $shippingCost);
+
+            // Simpan transaksi dengan detail pengiriman
             $transaction = Transaction::create([
                 'order_id' => $orderId,
                 'user_id' => $user->id,
                 'product_id' => $product->id,
                 'seller_id' => $product->user_id,
-                'amount' => $product->price,
+                'amount' => $finalTotal, // Total sudah termasuk ongkir
                 'status' => 'pending',
+                'payment_type' => 'online',
+                'shipping_address' => $request->input('shipping_address'),
+                'courier' => $request->input('courier'),
+                'courier_name' => $request->input('courier_name'),
+                'shipping_cost' => $shippingCost,
+                'payment_details' => [
+                    'method' => 'online',
+                    'total_amount' => $finalTotal
+                ]
             ]);
 
             $finishRedirectUrl = env('MIDTRANS_FINISH_URL');
@@ -111,10 +137,11 @@ class UserPaymentController extends Controller
                 $finishRedirectUrl = rtrim(config('app.url', 'http://127.0.0.1:8000'), '/') . '/history';
             }
 
+            // ✅ PARAMETER MIDTRANS: Gunakan $finalTotal (sudah termasuk ongkir)
             $params = [
                 'transaction_details' => [
                     'order_id' => $orderId,
-                    'gross_amount' => (int) $product->price,
+                    'gross_amount' => $finalTotal, // <-- PENTING: Ini sekarang total bayar
                 ],
                 'customer_details' => array_filter([
                     'first_name' => $user->name,
@@ -124,7 +151,7 @@ class UserPaymentController extends Controller
                 'item_details' => [
                     [
                         'id' => (string) $product->id,
-                        'price' => (int) $product->price,
+                        'price' => (int) $finalTotal,
                         'quantity' => 1,
                         'name' => substr($product->name, 0, 50),
                     ]
@@ -148,7 +175,7 @@ class UserPaymentController extends Controller
                     'transaction_id' => $transaction->id,
                     'order_id' => $orderId,
                     'snap_token' => $snapToken,
-                    'amount' => $transaction->amount,
+                    'amount' => $finalTotal, // Tampilkan total yang benar
                     'product_name' => $product->name,
                 ]
             ], 201);
@@ -169,6 +196,10 @@ class UserPaymentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'product_id' => 'required|exists:products,id',
+            'shipping_address' => 'nullable|string|max:255',
+            'courier' => 'nullable|string|max:50',
+            'courier_name' => 'nullable|string|max:50',
+            'shipping_cost' => 'nullable|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -200,6 +231,7 @@ class UserPaymentController extends Controller
                     'message' => 'Produk tidak tersedia untuk dibeli'
                 ], 400);
             }
+
             $existingTransaction = Transaction::where('user_id', $user->id)
                 ->where('product_id', $product->id)
                 ->whereIn('status', ['pending', 'processing'])
@@ -232,15 +264,23 @@ class UserPaymentController extends Controller
             }
 
             $orderId = 'COD-' . $user->id . '-' . time() . '-' . rand(100, 999);
+            
+            // Hitung total untuk COD juga jika diperlukan
+            $shippingCost = (float) ($request->input('shipping_cost') ?? 0);
+            $totalAmount = (int) ((float)$product->price + $shippingCost);
 
             $transaction = Transaction::create([
                 'order_id' => $orderId,
                 'user_id' => $user->id,
                 'product_id' => $product->id,
                 'seller_id' => $product->user_id,
-                'amount' => $product->price,
+                'amount' => $totalAmount, // Total termasuk ongkir
                 'status' => 'processing',
                 'payment_type' => 'cod',
+                'shipping_address' => $request->input('shipping_address'),
+                'courier' => $request->input('courier'),
+                'courier_name' => $request->input('courier_name'),
+                'shipping_cost' => $shippingCost,
                 'payment_details' => [
                     'method' => 'cod',
                 ],
@@ -254,7 +294,7 @@ class UserPaymentController extends Controller
                 'data' => [
                     'transaction_id' => $transaction->id,
                     'order_id' => $orderId,
-                    'amount' => $transaction->amount,
+                    'amount' => $totalAmount,
                     'product_name' => $product->name,
                 ]
             ], 201);
@@ -398,7 +438,6 @@ class UserPaymentController extends Controller
                     }
 
                     if ($product && (int) $product->stock <= 0) {
-                        // Batalkan transaksi lain untuk produk yang sama agar tidak muncul di riwayat pembeli lain
                         $this->autoCancelCompetingTransactions($trx);
                     }
                 }
@@ -511,7 +550,6 @@ class UserPaymentController extends Controller
                 }
 
                 if ($product && (int) $product->stock <= 0) {
-                    // Batalkan transaksi lain untuk produk yang sama
                     $this->autoCancelCompetingTransactions($trx);
                 }
             } else {

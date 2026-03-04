@@ -19,6 +19,10 @@ class Transaction extends Model
         'snap_token',
         'payment_type',
         'payment_details',
+        'shipping_address',
+        'courier',
+        'courier_name',
+        'shipping_cost',
     ];
 
     protected $casts = [

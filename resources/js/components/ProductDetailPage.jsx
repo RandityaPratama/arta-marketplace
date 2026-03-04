@@ -13,7 +13,7 @@ import { useProducts } from "../components/context/ProductContext";
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
 
-// ✅ Fungsi format harga
+// ✅ Fungsi format harga dengan titik ribuan
 const formatPrice = (price) => {
   if (price === undefined || price === null) return "";
   return Number(price).toLocaleString('id-ID');
@@ -35,34 +35,26 @@ export default function ProductDetailPage() {
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [selectedReasonId, setSelectedReasonId] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
-  const [loadingPayment, setLoadingPayment] = useState(false);
-  const [loadingCod, setLoadingCod] = useState(false);
+  const [loadingCod, setLoadingCod] = useState(false); // ✅ Hanya COD yang butuh loading
 
-  // ✅ Fetch product data dengan favorites count terbaru
+  // ✅ Fetch product data
   useEffect(() => {
     const loadProduct = async () => {
       setLoadingProduct(true);
-      // Coba ambil dari cache dulu
       let productData = getProductById(parseInt(id));
       
-      // Jika tidak ada di cache atau perlu refresh, fetch dari API
       if (!productData) {
         productData = await fetchProductById(parseInt(id));
       } else {
-        // Refresh data di background untuk update favorites count
         fetchProductById(parseInt(id)).then(freshData => {
-          if (freshData) {
-            setProduct(freshData);
-          }
+          if (freshData) setProduct(freshData);
         });
       }
       
       setProduct(productData);
       setLoadingProduct(false);
       
-      if (!productData) {
-        navigate("/");
-      }
+      if (!productData) navigate("/");
     };
     
     loadProduct();
@@ -75,17 +67,16 @@ export default function ProductDetailPage() {
     }
   }, [isReportModalOpen, reportReasons.length, fetchReportReasons]);
 
-  // ✅ Load Midtrans Snap Script secara dinamis
+  // ✅ Load Midtrans Snap Script (tetap dipertahankan untuk halaman lain)
   useEffect(() => {
     const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
     const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
     
     if (!clientKey) {
-      console.error("❌ VITE_MIDTRANS_CLIENT_KEY tidak ditemukan. Pastikan Anda menambahkannya di file .env");
+      console.error("❌ VITE_MIDTRANS_CLIENT_KEY tidak ditemukan.");
       return;
     }
 
-    // Cek jika script sudah ada agar tidak double load
     if(document.querySelector(`script[src="${snapScript}"]`)) return;
 
     const script = document.createElement('script');
@@ -118,9 +109,8 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (!product) {
-    return null;
-  }
+  if (!product) return null;
+
   const isOutOfStock = (product.stock ?? 0) <= 0;
 
   const handleContactSeller = async () => {
@@ -156,118 +146,47 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleBuyNow = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        setNotification({ show: true, message: "Silakan login untuk membeli", type: "error" });
-        // navigate('/login'); // Opsional: redirect ke login
-        return;
-    }
-
-    setLoadingPayment(true);
-
-    try {
-        const response = await fetch(`${API_URL}/checkout`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ product_id: product.id })
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            // Tampilkan detail error dari backend agar mudah debugging
-            const errorMessage = result.error 
-                ? `${result.message}: ${result.error}` 
-                : (result.message || "Gagal memproses checkout");
-            throw new Error(errorMessage);
-        }
-
-        const snapToken = result.data.snap_token;
-        const transactionId = result.data.transaction_id;
-
-        if (window.snap) {
-            window.snap.pay(snapToken, {
-                onSuccess: async function(result){
-                    if (transactionId) {
-                        try {
-                            await fetch(`${API_URL}/transactions/${transactionId}/sync`, {
-                                method: 'POST',
-                                headers: {
-                                    'Authorization': `Bearer ${token}`,
-                                    'Accept': 'application/json'
-                                }
-                            });
-                        } catch (syncError) {
-                            console.error("Sync transaksi gagal:", syncError);
-                        }
-                    }
-                    setNotification({ show: true, message: "Pembayaran Berhasil!", type: "success" });
-                    navigate('/history'); 
-                },
-                onPending: function(result){
-                    setNotification({ show: true, message: "Menunggu Pembayaran...", type: "info" });
-                    navigate('/history');
-                },
-                onError: function(result){
-                    setNotification({ show: true, message: "Pembayaran Gagal!", type: "error" });
-                },
-                onClose: function(){
-                    setNotification({ show: true, message: "Anda menutup popup pembayaran", type: "info" });
-                }
-            });
-        } else {
-            console.error("Snap.js belum dimuat");
-            setNotification({ show: true, message: "Gagal memuat sistem pembayaran. Coba refresh halaman.", type: "error" });
-        }
-
-    } catch (error) {
-        console.error("Checkout Error:", error);
-        setNotification({ show: true, message: error.message, type: "error" });
-    } finally {
-        setLoadingPayment(false);
-    }
+  // ✅ ARAHKAN KE HALAMAN CHECKOUT BARU
+  const handleBuyNow = () => {
+    navigate(`/checkout/${product.id}`);
   };
 
   const handleBuyCod = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-        setNotification({ show: true, message: "Silakan login untuk membeli", type: "error" });
-        return;
+      setNotification({ show: true, message: "Silakan login untuk membeli", type: "error" });
+      return;
     }
 
     setLoadingCod(true);
 
     try {
-        const response = await fetch(`${API_URL}/checkout/cod`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ product_id: product.id })
-        });
+      const response = await fetch(`${API_URL}/checkout/cod`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ product_id: product.id })
+      });
 
-        const result = await response.json();
+      const result = await response.json();
 
-        if (!response.ok) {
-            const errorMessage = result.error 
-                ? `${result.message}: ${result.error}` 
-                : (result.message || "Gagal memproses COD");
-            throw new Error(errorMessage);
-        }
+      if (!response.ok) {
+        const errorMessage = result.error 
+          ? `${result.message}: ${result.error}` 
+          : (result.message || "Gagal memproses COD");
+        throw new Error(errorMessage);
+      }
 
-        setNotification({ show: true, message: "COD dibuat. Silakan cek riwayat pembelian.", type: "success" });
-        setIsPurchaseModalOpen(false);
-        navigate('/history');
+      setNotification({ show: true, message: "COD dibuat. Silakan cek riwayat pembelian.", type: "success" });
+      setIsPurchaseModalOpen(false);
+      navigate('/history');
     } catch (error) {
-        console.error("Checkout COD Error:", error);
-        setNotification({ show: true, message: error.message, type: "error" });
+      console.error("Checkout COD Error:", error);
+      setNotification({ show: true, message: error.message, type: "error" });
     } finally {
-        setLoadingCod(false);
+      setLoadingCod(false);
     }
   };
 
@@ -390,9 +309,9 @@ export default function ProductDetailPage() {
                   size="md" 
                   className="flex-1" 
                   onClick={() => setIsPurchaseModalOpen(true)}
-                  disabled={loadingPayment || loadingCod || isOutOfStock}
+                  disabled={loadingCod || isOutOfStock} // ✅ Tanpa loadingPayment
                 >
-                  {isOutOfStock ? "Stok Habis" : ((loadingPayment || loadingCod) ? "Memproses..." : "Beli Sekarang")}
+                  {isOutOfStock ? "Stok Habis" : ((loadingCod) ? "Memproses..." : "Beli Sekarang")}
                 </Button>
                 <Button variant="outline" size="md" className="flex-1" onClick={handleContactSeller}>
                   Hubungi Penjual
@@ -421,6 +340,7 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
+        {/* Modal Laporan */}
         {isReportModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl p-6 w-full max-w-md">
@@ -476,7 +396,7 @@ export default function ProductDetailPage() {
                   size="md"
                   onClick={submitReportForm}
                   disabled={loading}
-                  className="flex-1 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50"
                 >
                   {loading ? "Mengirim..." : "Kirim Laporan"}
                 </Button>
@@ -485,6 +405,7 @@ export default function ProductDetailPage() {
           </div>
         )}
 
+        {/* Modal Pilihan Pembelian */}
         {isPurchaseModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl p-6 w-full max-w-md">
@@ -492,17 +413,17 @@ export default function ProductDetailPage() {
               <p className="text-sm text-gray-600 mb-6">Silakan pilih metode yang Anda inginkan.</p>
 
               <div className="space-y-3 mb-6">
+                {/* ✅ ARAHKAN KE HALAMAN CHECKOUT */}
                 <Button
                   variant="primary"
                   size="md"
                   className="w-full"
                   onClick={() => {
                     setIsPurchaseModalOpen(false);
-                    handleBuyNow();
+                    handleBuyNow(); // ← arahkan ke /checkout/:id
                   }}
-                  disabled={loadingPayment}
                 >
-                  {loadingPayment ? "Memproses..." : "Beli Sekarang (Online)"}
+                  Beli Sekarang (Online)
                 </Button>
                 <Button
                   variant="outline"
@@ -520,7 +441,7 @@ export default function ProductDetailPage() {
                 size="md"
                 className="w-full"
                 onClick={() => setIsPurchaseModalOpen(false)}
-                disabled={loadingPayment || loadingCod}
+                disabled={loadingCod}
               >
                 Batal
               </Button>
@@ -528,6 +449,7 @@ export default function ProductDetailPage() {
           </div>
         )}
 
+        {/* Notifikasi */}
         {notification.show && (
           <div 
             className="fixed top-4 right-4 z-50 max-w-xs p-4 rounded-lg shadow-lg text-white animate-fade-in"

@@ -1,42 +1,46 @@
-    import React, { useState, useEffect } from "react";
-    import { useNavigate } from "react-router-dom";
-    import Button from "../components/ui/Button";
-    import NavbarAfter from "./NavbarAfter";
-    import Footer from "./Footer";
-    import Background from "../components/Background";
+// src/components/PurchaseHistoryPage.js
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Button from "../components/ui/Button";
+import NavbarAfter from "./NavbarAfter";
+import Footer from "./Footer";
+import Background from "../components/Background";
 import { useReports } from "../components/context/ReportContext";
 import { useChat } from "../components/context/ChatContext";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
 
-    const formatPrice = (price) => {
-      if (price === undefined || price === null) return "";
-      return Number(price).toLocaleString('id-ID');
-    };
+const formatPrice = (price) => {
+  if (price === undefined || price === null) return "";
+  return Number(price).toLocaleString('id-ID');
+};
 
-    export default function PurchaseHistoryPage() {
-    const navigate = useNavigate();
-    const { submitReport, reportReasons, fetchReportReasons } = useReports();
-    const { startChatAsBuyer } = useChat();
-    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-    const [reportData, setReportData] = useState({ productId: null, productName: "", transactionId: null });
-    const [selectedReasonId, setSelectedReasonId] = useState(null);
-    const [evidenceFiles, setEvidenceFiles] = useState([]);
-    const [evidencePreviews, setEvidencePreviews] = useState([]);
-    const [evidenceInputKey, setEvidenceInputKey] = useState(0);
-    const [notification, setNotification] = useState({ show: false, message: "", type: "" });
+export default function PurchaseHistoryPage() {
+  const navigate = useNavigate();
+  const { submitReport, reportReasons, fetchReportReasons } = useReports();
+  const { startChatAsBuyer } = useChat();
+  
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportData, setReportData] = useState({ productId: null, productName: "", transactionId: null });
+  const [selectedReasonId, setSelectedReasonId] = useState(null);
+  const [evidenceFiles, setEvidenceFiles] = useState([]);
+  const [evidencePreviews, setEvidencePreviews] = useState([]);
+  const [evidenceInputKey, setEvidenceInputKey] = useState(0);
+  const [notification, setNotification] = useState({ show: false, message: "", type: "" });
+  
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState({ id: null, type: null });
   const [contactLoadingId, setContactLoadingId] = useState(null);
 
+  // Load Midtrans Script
   useEffect(() => {
     const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
     const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
     
     if (!clientKey) {
-      console.error("VITE_MIDTRANS_CLIENT_KEY tidak ditemukan. Pastikan Anda menambahkannya di file .env");
+      console.error("VITE_MIDTRANS_CLIENT_KEY tidak ditemukan.");
       return;
     }
 
@@ -84,73 +88,72 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
     fetchTransactions();
   }, []);
 
-  // Fetch report reasons saat modal dibuka
   useEffect(() => {
     if (isReportModalOpen && reportReasons.length === 0) {
       fetchReportReasons();
     }
   }, [isReportModalOpen, reportReasons.length, fetchReportReasons]);
 
-    const openReportModal = (productId, productName, transactionId) => {
-        setReportData({ productId, productName, transactionId });
-        setSelectedReasonId(null);
-        setEvidenceFiles([]);
-        setEvidencePreviews((prev) => {
-          prev.forEach((url) => URL.revokeObjectURL(url));
-          return [];
-        });
-        setEvidenceInputKey((key) => key + 1);
-        setIsReportModalOpen(true);
-    };
+  const openReportModal = (productId, productName, transactionId) => {
+    setReportData({ productId, productName, transactionId });
+    setSelectedReasonId(null);
+    setEvidenceFiles([]);
+    setEvidencePreviews((prev) => {
+      prev.forEach((url) => URL.revokeObjectURL(url));
+      return [];
+    });
+    setEvidenceInputKey((key) => key + 1);
+    setIsReportModalOpen(true);
+  };
 
-    const handleEvidenceChange = (event) => {
-        const files = Array.from(event.target.files || []);
-        const previews = files.map((file) => URL.createObjectURL(file));
-        setEvidencePreviews((prev) => {
-            prev.forEach((url) => URL.revokeObjectURL(url));
-            return previews;
-        });
-        setEvidenceFiles(files);
-    };
+  const handleEvidenceChange = (event) => {
+    const files = Array.from(event.target.files || []);
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setEvidencePreviews((prev) => {
+        prev.forEach((url) => URL.revokeObjectURL(url));
+        return previews;
+    });
+    setEvidenceFiles(files);
+  };
 
-    const resetEvidence = () => {
-        setEvidenceFiles([]);
-        setEvidencePreviews((prev) => {
-            prev.forEach((url) => URL.revokeObjectURL(url));
-            return [];
-        });
-        setEvidenceInputKey((key) => key + 1);
-    };
+  const resetEvidence = () => {
+    setEvidenceFiles([]);
+    setEvidencePreviews((prev) => {
+        prev.forEach((url) => URL.revokeObjectURL(url));
+        return [];
+    });
+    setEvidenceInputKey((key) => key + 1);
+  };
 
-    const submitReportForm = async () => {
-        if (!selectedReasonId) {
-            setNotification({ show: true, message: "Silakan pilih alasan laporan!", type: "error" });
-            return;
-        }
+  const submitReportForm = async () => {
+    if (!selectedReasonId) {
+        setNotification({ show: true, message: "Silakan pilih alasan laporan!", type: "error" });
+        return;
+    }
+    
+    try {
+        await submitReport(reportData.productId, selectedReasonId, reportData.transactionId, 'transaksi', evidenceFiles);
+        setIsReportModalOpen(false);
+        resetEvidence();
         
-        try {
-            await submitReport(reportData.productId, selectedReasonId, reportData.transactionId, 'transaksi', evidenceFiles);
-            setIsReportModalOpen(false);
-            resetEvidence();
-            
-            setNotification({ 
-                show: true, 
-                message: "Laporan berhasil dikirim! Tim kami akan segera meninjau.", 
-                type: "success" 
-            });
-        } catch (error) {
-            setNotification({ show: true, message: error.message || "Gagal mengirim laporan", type: "error" });
-        }
-    };
+        setNotification({ 
+            show: true, 
+            message: "Laporan berhasil dikirim! Tim kami akan segera meninjau.", 
+            type: "success" 
+        });
+    } catch (error) {
+        setNotification({ show: true, message: error.message || "Gagal mengirim laporan", type: "error" });
+    }
+  };
 
-    useEffect(() => {
-        if (notification.show) {
+  useEffect(() => {
+    if (notification.show) {
         const timer = setTimeout(() => {
             setNotification({ show: false, message: "", type: "" });
         }, 3000);
         return () => clearTimeout(timer);
-        }
-    }, [notification.show]);
+    }
+  }, [notification.show]);
 
   const handlePay = (snapToken, transactionId) => {
     if (window.snap) {
@@ -333,22 +336,42 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
     }
   };
 
+  // ✅ Fungsi Render Info Kurir & Alamat
+  const renderShippingInfo = (trx) => {
+    if (!trx.courier_name && !trx.shipping_address) return <span className="text-gray-400 text-xs italic">-</span>;
+
     return (
-        <>
-        <NavbarAfter />
-        <Background>
-            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-                <div>
-                <h1 className="text-2xl font-bold text-gray-800">Riwayat Pembelian</h1>
-                <p className="text-sm text-gray-600 mt-1">
-            {transactions.length} transaksi
-                </p>
-                </div>
-                <Button variant="primary" size="md" onClick={() => navigate(-1)}>
-                Kembali
-                </Button>
+      <div className="flex flex-col gap-1">
+        {trx.courier_name && (
+          <span className="text-xs font-bold text-[#1E3A8A]">
+            🚚 {trx.courier_name}
+          </span>
+        )}
+        {trx.shipping_address && (
+          <span className="text-xs text-gray-500 truncate max-w-[150px]" title={trx.shipping_address}>
+            📍 {trx.shipping_address}
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <>
+    <NavbarAfter />
+    <Background>
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+            <div>
+            <h1 className="text-2xl font-bold text-gray-800">Riwayat Pembelian</h1>
+            <p className="text-sm text-gray-600 mt-1">
+                {transactions.length} transaksi
+            </p>
             </div>
+            <Button variant="primary" size="md" onClick={() => navigate(-1)}>
+            Kembali
+            </Button>
+        </div>
 
       {loading ? (
         <div className="text-center py-12 text-gray-500">Memuat riwayat transaksi...</div>
@@ -363,8 +386,9 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
                     <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Penjual</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Harga</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kurir & Alamat</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                     </tr>
@@ -388,12 +412,18 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
                             </div>
                         </td>
                 <td className="px-6 py-4 text-gray-700">{trx.seller?.name || 'Unknown'}</td>
-                <td className="px-6 py-4 font-medium">Rp. {formatPrice(trx.amount)}</td>
+                <td className="px-6 py-4 font-medium text-gray-900">Rp. {formatPrice(trx.amount)}</td>
                 <td className="px-6 py-4 text-gray-700">
                   {new Date(trx.created_at).toLocaleDateString('id-ID', {
                     day: 'numeric', month: 'long', year: 'numeric'
                   })}
                 </td>
+                
+                {/* ✅ Kolom Baru: Kurir & Alamat */}
+                <td className="px-6 py-4">
+                  {renderShippingInfo(trx)}
+                </td>
+
                         <td className="px-6 py-4">
                   {getStatusBadge(trx)}
                         </td>
@@ -575,6 +605,6 @@ const STORAGE_URL = API_URL.replace(/\/api\/?$/, '/storage');
             )}
         </Background>
         <Footer />
-        </>
+    </>
     );
-    }
+}
